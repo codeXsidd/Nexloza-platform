@@ -72,3 +72,20 @@ jobs:
           name: debug-apk
           path: app/build/app/outputs/flutter-apk/app-debug.apk
           retention-days: 7
+
+  build-web:
+    name: Build Web
+    runs-on: ubuntu-latest
+    needs: [analyze, test]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Install dependencies
+        run: flutter pub get
+        working-directory: app
+      - name: Build web
+        run: flutter build web
+        working-directory: app

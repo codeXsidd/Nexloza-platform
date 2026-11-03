@@ -8,9 +8,7 @@ class AutomationsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Automations'),
-      ),
+      appBar: AppBar(title: const Text('Automations')),
       body: NexiozaEmptyState(
         icon: Icons.bolt_rounded,
         title: 'No automations',

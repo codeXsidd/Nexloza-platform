@@ -39,10 +39,7 @@ class NexiozaCard extends StatelessWidget {
                 child: child,
               ),
             )
-          : Padding(
-              padding: padding ?? const EdgeInsets.all(16),
-              child: child,
-            ),
+          : Padding(padding: padding ?? const EdgeInsets.all(16), child: child),
     );
 
     return card;

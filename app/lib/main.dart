@@ -5,9 +5,5 @@ import 'package:nexioza/app.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(
-    const ProviderScope(
-      child: NexiozaApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: NexiozaApp()));
 }

@@ -38,15 +38,15 @@ class NexiozaButton extends StatelessWidget {
             ),
           )
         : icon != null
-            ? Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(icon, size: 18),
-                  const SizedBox(width: 8),
-                  Text(label),
-                ],
-              )
-            : Text(label);
+        ? Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 18),
+              const SizedBox(width: 8),
+              Text(label),
+            ],
+          )
+        : Text(label);
 
     return SizedBox(
       height: 48,
@@ -54,13 +54,13 @@ class NexiozaButton extends StatelessWidget {
         constraints: const BoxConstraints(minWidth: 120),
         child: switch (_variant) {
           _ButtonVariant.primary => FilledButton(
-              onPressed: isLoading ? null : onPressed,
-              child: child,
-            ),
+            onPressed: isLoading ? null : onPressed,
+            child: child,
+          ),
           _ButtonVariant.secondary => OutlinedButton(
-              onPressed: isLoading ? null : onPressed,
-              child: child,
-            ),
+            onPressed: isLoading ? null : onPressed,
+            child: child,
+          ),
         },
       ),
     );

@@ -51,8 +51,9 @@ class _NexiozaSearchBarState extends State<NexiozaSearchBar> {
           },
         ),
         filled: true,
-        fillColor: theme.colorScheme.surfaceContainerHighest
-            .withValues(alpha: 0.5),
+        fillColor: theme.colorScheme.surfaceContainerHighest.withValues(
+          alpha: 0.5,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
@@ -63,10 +64,7 @@ class _NexiozaSearchBarState extends State<NexiozaSearchBar> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(
-            color: theme.colorScheme.primary,
-            width: 1.5,
-          ),
+          borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,

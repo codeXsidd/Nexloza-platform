@@ -10,9 +10,7 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-      ),
+      appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         children: [
           const SizedBox(height: 8),
@@ -60,9 +58,7 @@ class SettingsScreen extends StatelessWidget {
                 groupValue: themeMode,
                 onChanged: (ThemeMode? value) {
                   if (value != null) {
-                    ref
-                        .read(themeModeProvider.notifier)
-                        .setThemeMode(value);
+                    ref.read(themeModeProvider.notifier).setThemeMode(value);
                   }
                 },
                 child: const Column(

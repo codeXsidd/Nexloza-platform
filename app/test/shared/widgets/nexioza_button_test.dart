@@ -13,10 +13,7 @@ void main() {
     testWidgets('renders label text', (tester) async {
       await tester.pumpWidget(
         buildTestWidget(
-          NexiozaButton.primary(
-            label: 'Test Button',
-            onPressed: () {},
-          ),
+          NexiozaButton.primary(label: 'Test Button', onPressed: () {}),
         ),
       );
 

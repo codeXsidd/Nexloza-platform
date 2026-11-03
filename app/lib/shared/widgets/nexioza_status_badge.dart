@@ -8,12 +8,12 @@ class NexiozaStatusBadge extends StatelessWidget {
   });
 
   const NexiozaStatusBadge.online({super.key})
-      : label = 'Online',
-        color = const Color(0xFF16A34A);
+    : label = 'Online',
+      color = const Color(0xFF16A34A);
 
   const NexiozaStatusBadge.offline({super.key})
-      : label = 'Offline',
-        color = const Color(0xFF9CA3AF);
+    : label = 'Offline',
+      color = const Color(0xFF9CA3AF);
 
   final String label;
   final Color color;
@@ -33,10 +33,7 @@ class NexiozaStatusBadge extends StatelessWidget {
           Container(
             width: 6,
             height: 6,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
           const SizedBox(width: 6),
           Text(

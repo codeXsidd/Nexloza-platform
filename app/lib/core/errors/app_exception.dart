@@ -21,25 +21,17 @@ class AuthException extends AppException {
 }
 
 class DeviceException extends AppException {
-  const DeviceException([
-    super.message = 'Device communication error.',
-  ]);
+  const DeviceException([super.message = 'Device communication error.']);
 }
 
 class StorageException extends AppException {
-  const StorageException([
-    super.message = 'Local storage error.',
-  ]);
+  const StorageException([super.message = 'Local storage error.']);
 }
 
 class MqttException extends AppException {
-  const MqttException([
-    super.message = 'MQTT connection error.',
-  ]);
+  const MqttException([super.message = 'MQTT connection error.']);
 }
 
 class AutomationException extends AppException {
-  const AutomationException([
-    super.message = 'Automation execution error.',
-  ]);
+  const AutomationException([super.message = 'Automation execution error.']);
 }

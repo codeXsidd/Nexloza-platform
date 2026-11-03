@@ -5,11 +5,7 @@ import 'package:nexioza/features/home/presentation/screens/home_screen.dart';
 
 void main() {
   Widget buildTestWidget() {
-    return const ProviderScope(
-      child: MaterialApp(
-        home: HomeScreen(),
-      ),
-    );
+    return const ProviderScope(child: MaterialApp(home: HomeScreen()));
   }
 
   group('HomeScreen', () {

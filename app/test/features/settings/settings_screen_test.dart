@@ -5,11 +5,7 @@ import 'package:nexioza/features/settings/presentation/screens/settings_screen.d
 
 void main() {
   Widget buildTestWidget() {
-    return const ProviderScope(
-      child: MaterialApp(
-        home: SettingsScreen(),
-      ),
-    );
+    return const ProviderScope(child: MaterialApp(home: SettingsScreen()));
   }
 
   group('SettingsScreen', () {

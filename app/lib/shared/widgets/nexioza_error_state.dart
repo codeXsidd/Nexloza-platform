@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 
 class NexiozaErrorState extends StatelessWidget {
-  const NexiozaErrorState({
-    required this.message,
-    super.key,
-    this.onRetry,
-  });
+  const NexiozaErrorState({required this.message, super.key, this.onRetry});
 
   final String message;
   final VoidCallback? onRetry;

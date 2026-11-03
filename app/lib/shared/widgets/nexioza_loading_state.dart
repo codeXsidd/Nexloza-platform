@@ -2,10 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
 class NexiozaLoadingState extends StatelessWidget {
-  const NexiozaLoadingState({
-    super.key,
-    this.itemCount = 3,
-  });
+  const NexiozaLoadingState({super.key, this.itemCount = 3});
 
   final int itemCount;
 

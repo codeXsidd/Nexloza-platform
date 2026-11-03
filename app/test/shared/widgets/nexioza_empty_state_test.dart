@@ -4,9 +4,7 @@ import 'package:nexioza/shared/widgets/nexioza_empty_state.dart';
 
 void main() {
   Widget buildTestWidget(Widget child) {
-    return MaterialApp(
-      home: Scaffold(body: child),
-    );
+    return MaterialApp(home: Scaffold(body: child));
   }
 
   group('NexiozaEmptyState', () {
@@ -52,8 +50,9 @@ void main() {
       expect(find.text('Nothing here yet.'), findsOneWidget);
     });
 
-    testWidgets('renders action button when actionLabel is provided',
-        (tester) async {
+    testWidgets('renders action button when actionLabel is provided', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         buildTestWidget(
           NexiozaEmptyState(
@@ -69,8 +68,9 @@ void main() {
       expect(find.text('Create'), findsOneWidget);
     });
 
-    testWidgets('does not render action button when actionLabel is null',
-        (tester) async {
+    testWidgets('does not render action button when actionLabel is null', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         buildTestWidget(
           const NexiozaEmptyState(

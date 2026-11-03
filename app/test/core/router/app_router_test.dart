@@ -17,10 +17,7 @@ void main() {
       addTearDown(container.dispose);
 
       final router = container.read(routerProvider);
-      expect(
-        router.routeInformationProvider.value.uri.path,
-        '/splash',
-      );
+      expect(router.routeInformationProvider.value.uri.path, '/splash');
     });
   });
 }

@@ -55,14 +55,8 @@ void main() {
     test('light and dark themes share the same primary color family', () {
       final light = AppTheme.light();
       final dark = AppTheme.dark();
-      expect(
-        light.colorScheme.primary.toARGB32() != 0,
-        isTrue,
-      );
-      expect(
-        dark.colorScheme.primary.toARGB32() != 0,
-        isTrue,
-      );
+      expect(light.colorScheme.primary.toARGB32() != 0, isTrue);
+      expect(dark.colorScheme.primary.toARGB32() != 0, isTrue);
     });
   });
 }

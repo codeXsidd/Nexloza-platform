@@ -4,10 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:nexioza/core/constants/app_strings.dart';
 
 class NavigationShell extends StatelessWidget {
-  const NavigationShell({
-    required this.navigationShell,
-    super.key,
-  });
+  const NavigationShell({required this.navigationShell, super.key});
 
   final StatefulNavigationShell navigationShell;
 

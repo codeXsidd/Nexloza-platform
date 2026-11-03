@@ -4,9 +4,7 @@ import 'package:nexioza/shared/widgets/nexioza_stat_card.dart';
 
 void main() {
   Widget buildTestWidget(Widget child) {
-    return MaterialApp(
-      home: Scaffold(body: child),
-    );
+    return MaterialApp(home: Scaffold(body: child));
   }
 
   group('NexiozaStatCard', () {
@@ -80,9 +78,7 @@ void main() {
 
       final trendFinder = find.byWidgetPredicate(
         (widget) =>
-            widget is Text &&
-            widget.data != 'Projects' &&
-            widget.data != '5',
+            widget is Text && widget.data != 'Projects' && widget.data != '5',
       );
       expect(trendFinder, findsNothing);
     });
