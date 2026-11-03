@@ -1,0 +1,73 @@
+# Environment
+.env
+.env.local
+.env.*.local
+*.env
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Flutter / Dart
+app/.dart_tool/
+app/.packages
+app/build/
+app/.flutter-plugins
+app/.flutter-plugins-dependencies
+*.iml
+
+# Android
+app/android/.gradle/
+app/android/local.properties
+app/android/key.properties
+app/android/*.jks
+app/android/*.keystore
+
+# iOS
+app/ios/Pods/
+app/ios/.symlinks/
+app/ios/Flutter/Flutter.framework
+app/ios/Flutter/Flutter.podspec
+
+# Coverage
+app/coverage/
+
+# Node
+node_modules/
+npm-debug.log
+package-lock.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Docker
+docker-compose.override.yml
+
+# Supabase
+backend/supabase/.temp/
+backend/supabase/.branches/
+
+# Firmware build artifacts
+firmware/**/*.elf
+firmware/**/*.bin
+firmware/**/*.hex
+firmware/**/.pio/
+
+# Secrets — never commit these
+*.pem
+*.key
+*.crt
+credentials.json
+service-account.json
