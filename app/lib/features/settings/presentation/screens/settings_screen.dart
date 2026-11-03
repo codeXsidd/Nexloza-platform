@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nexioza/features/auth/presentation/providers/auth_provider.dart';
+import 'package:nexioza/features/profile/presentation/providers/profile_provider.dart';
 import 'package:nexioza/shared/providers/theme_provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -12,9 +12,13 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final user = ref.watch(currentUserProvider);
+    final profile = ref.watch(profileProvider).valueOrNull;
     final displayName =
-        user?.userMetadata?['display_name'] as String? ?? 'NexIoza User';
+        profile?.displayName ??
+        user?.userMetadata?['display_name'] as String? ??
+        'NexIoza User';
     final email = user?.email ?? '';
+    final avatarUrl = profile?.avatarUrl;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
@@ -25,16 +29,21 @@ class SettingsScreen extends ConsumerWidget {
             leading: CircleAvatar(
               radius: 24,
               backgroundColor: theme.colorScheme.primaryContainer,
-              child: Text(
-                displayName.isNotEmpty
-                    ? displayName[0].toUpperCase()
-                    : 'U',
-                style: TextStyle(
-                  color: theme.colorScheme.primary,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 20,
-                ),
-              ),
+              backgroundImage: avatarUrl != null
+                  ? NetworkImage(avatarUrl)
+                  : null,
+              child: avatarUrl == null
+                  ? Text(
+                      displayName.isNotEmpty
+                          ? displayName[0].toUpperCase()
+                          : 'U',
+                      style: TextStyle(
+                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 20,
+                      ),
+                    )
+                  : null,
             ),
             title: Text(displayName),
             subtitle: Text(
@@ -44,14 +53,7 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
             trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Profile editing coming soon'),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            },
+            onTap: () => context.push('/settings/profile'),
           ),
           const Divider(indent: 16, endIndent: 16),
           Padding(
@@ -139,8 +141,7 @@ class SettingsScreen extends ConsumerWidget {
                   context: context,
                   builder: (ctx) => AlertDialog(
                     title: const Text('Sign Out'),
-                    content:
-                        const Text('Are you sure you want to sign out?'),
+                    content: const Text('Are you sure you want to sign out?'),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(ctx, false),
@@ -154,7 +155,11 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                 );
                 if (confirmed == true && context.mounted) {
-                  await Supabase.instance.client.auth.signOut();
+                  try {
+                    await ref.read(authRepositoryProvider).signOut();
+                  } catch (_) {
+                    // Sign out locally even if the network call fails
+                  }
                   if (context.mounted) context.go('/auth/login');
                 }
               },

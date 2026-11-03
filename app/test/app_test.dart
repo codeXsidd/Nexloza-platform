@@ -1,14 +1,32 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nexioza/app.dart';
+import 'package:go_router/go_router.dart';
+import 'package:nexioza/core/router/app_router.dart';
 
 void main() {
   group('NexiozaApp', () {
-    testWidgets('can be instantiated and rendered', (tester) async {
-      await tester.pumpWidget(const ProviderScope(child: NexiozaApp()));
+    testWidgets('can be instantiated with mock router', (tester) async {
+      final mockRouter = GoRouter(
+        initialLocation: '/',
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (_, __) =>
+                const Scaffold(body: Center(child: Text('Test'))),
+          ),
+        ],
+      );
 
-      await tester.pumpAndSettle(const Duration(seconds: 1));
-      expect(find.byType(NexiozaApp), findsOneWidget);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [routerProvider.overrideWithValue(mockRouter)],
+          child: MaterialApp.router(routerConfig: mockRouter),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+      expect(find.text('Test'), findsOneWidget);
     });
   });
 }

@@ -42,6 +42,15 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           ),
         );
       }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Network error. Please check your connection.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -75,13 +84,17 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(Icons.mark_email_read_outlined,
-            size: 64, color: theme.colorScheme.primary),
+        Icon(
+          Icons.mark_email_read_outlined,
+          size: 64,
+          color: theme.colorScheme.primary,
+        ),
         const SizedBox(height: 24),
         Text(
           'Check your email',
-          style: theme.textTheme.headlineSmall
-              ?.copyWith(fontWeight: FontWeight.w700),
+          style: theme.textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
         ),
         const SizedBox(height: 8),
         Text(
@@ -110,13 +123,17 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.lock_reset_rounded,
-              size: 64, color: theme.colorScheme.primary),
+          Icon(
+            Icons.lock_reset_rounded,
+            size: 64,
+            color: theme.colorScheme.primary,
+          ),
           const SizedBox(height: 24),
           Text(
             'Reset Password',
-            style: theme.textTheme.headlineSmall
-                ?.copyWith(fontWeight: FontWeight.w700),
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
           ),
           const SizedBox(height: 8),
           Text(

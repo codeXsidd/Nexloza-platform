@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nexioza/features/organizations/presentation/providers/organization_provider.dart';
 import 'package:nexioza/features/projects/presentation/providers/project_provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CreateProjectScreen extends ConsumerStatefulWidget {
   const CreateProjectScreen({super.key});
@@ -54,7 +53,9 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
 
     setState(() => _isLoading = true);
     try {
-      await ref.read(projectRepositoryProvider).createProject(
+      await ref
+          .read(projectRepositoryProvider)
+          .createProject(
             organizationId: _selectedOrgId!,
             name: _nameController.text.trim(),
             description: _descController.text.trim(),
@@ -63,11 +64,11 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
           );
       ref.invalidate(projectsProvider);
       if (mounted) context.pop(true);
-    } on PostgrestException catch (e) {
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.message),
+            content: Text('Failed to create project: $e'),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -97,7 +98,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
                   if (orgList.isEmpty) {
                     return const Text('No organizations available');
                   }
-                  _selectedOrgId ??= orgList.first['id'] as String;
+                  _selectedOrgId ??= orgList.first.id;
                   return DropdownButtonFormField<String>(
                     initialValue: _selectedOrgId,
                     decoration: const InputDecoration(
@@ -105,16 +106,17 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
                       prefixIcon: Icon(Icons.business_rounded),
                     ),
                     items: orgList
-                        .map((o) => DropdownMenuItem(
-                              value: o['id'] as String,
-                              child: Text(o['name'] as String),
-                            ))
+                        .map(
+                          (o) => DropdownMenuItem(
+                            value: o.id,
+                            child: Text(o.name),
+                          ),
+                        )
                         .toList(),
                     onChanged: (v) => setState(() => _selectedOrgId = v),
                   );
                 },
-                loading: () =>
-                    const Center(child: CircularProgressIndicator()),
+                loading: () => const Center(child: CircularProgressIndicator()),
                 error: (e, _) => Text('Error loading organizations: $e'),
               ),
               const SizedBox(height: 16),
@@ -154,17 +156,13 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
                       prefixIcon: Icon(Icons.category_outlined),
                     ),
                     items: [
-                      const DropdownMenuItem(
-                        value: null,
-                        child: Text('None'),
+                      const DropdownMenuItem(value: null, child: Text('None')),
+                      ...catList.map(
+                        (c) =>
+                            DropdownMenuItem(value: c.id, child: Text(c.label)),
                       ),
-                      ...catList.map((c) => DropdownMenuItem(
-                            value: c['id'] as String,
-                            child: Text(c['label'] as String),
-                          )),
                     ],
-                    onChanged: (v) =>
-                        setState(() => _selectedCategoryId = v),
+                    onChanged: (v) => setState(() => _selectedCategoryId = v),
                   );
                 },
                 loading: () => const SizedBox.shrink(),
@@ -173,17 +171,18 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
               const SizedBox(height: 24),
               Text(
                 'Color',
-                style: theme.textTheme.titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w600),
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: _colors.map((hex) {
-                  final color =
-                      Color(int.parse(hex.substring(1), radix: 16) +
-                          0xFF000000);
+                  final color = Color(
+                    int.parse(hex.substring(1), radix: 16) + 0xFF000000,
+                  );
                   final isSelected = hex == _selectedColor;
                   return GestureDetector(
                     onTap: () => setState(() => _selectedColor = hex),
@@ -196,12 +195,16 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
                         border: isSelected
                             ? Border.all(
                                 color: theme.colorScheme.onSurface,
-                                width: 3)
+                                width: 3,
+                              )
                             : null,
                       ),
                       child: isSelected
-                          ? const Icon(Icons.check,
-                              color: Colors.white, size: 20)
+                          ? const Icon(
+                              Icons.check,
+                              color: Colors.white,
+                              size: 20,
+                            )
                           : null,
                     ),
                   );

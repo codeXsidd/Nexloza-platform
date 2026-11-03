@@ -27,7 +27,12 @@ class _SplashScreenState extends State<SplashScreen> {
 
     final session = Supabase.instance.client.auth.currentSession;
     if (session != null) {
-      context.go('/home');
+      try {
+        await Supabase.instance.client.auth.refreshSession();
+        if (mounted) context.go('/home');
+      } catch (_) {
+        if (mounted) context.go('/auth/login');
+      }
     } else {
       context.go('/auth/login');
     }

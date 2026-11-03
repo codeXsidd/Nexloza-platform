@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
 import 'package:nexioza/features/auth/presentation/providers/auth_provider.dart';
+import 'package:nexioza/features/organizations/presentation/providers/organization_provider.dart';
 import 'package:nexioza/features/projects/presentation/providers/project_provider.dart';
 import 'package:nexioza/shared/widgets/nexioza_card.dart';
 import 'package:nexioza/shared/widgets/nexioza_empty_state.dart';
@@ -17,14 +17,19 @@ class HomeScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final user = ref.watch(currentUserProvider);
     final projects = ref.watch(projectsProvider);
+    final orgs = ref.watch(organizationsProvider);
     final projectCount = projects.valueOrNull?.length ?? 0;
+    final orgCount = orgs.valueOrNull?.length ?? 0;
     final displayName =
         user?.userMetadata?['display_name'] as String? ?? 'NexIoza';
 
     return Scaffold(
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: () async => ref.invalidate(projectsProvider),
+          onRefresh: () async {
+            ref.invalidate(projectsProvider);
+            ref.invalidate(organizationsProvider);
+          },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(16),
@@ -42,15 +47,13 @@ class HomeScreen extends ConsumerWidget {
                 Text(
                   'Your IoT command center',
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color:
-                        theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
                 const SizedBox(height: 24),
                 LayoutBuilder(
                   builder: (context, constraints) {
-                    final crossAxisCount =
-                        constraints.maxWidth > 400 ? 2 : 1;
+                    final crossAxisCount = constraints.maxWidth > 400 ? 2 : 1;
                     return GridView.count(
                       crossAxisCount: crossAxisCount,
                       shrinkWrap: true,
@@ -65,16 +68,16 @@ class HomeScreen extends ConsumerWidget {
                           icon: Icons.folder_outlined,
                           iconColor: const Color(0xFF6366F1),
                         ),
+                        NexiozaStatCard(
+                          label: 'Organizations',
+                          value: '$orgCount',
+                          icon: Icons.business_outlined,
+                          iconColor: const Color(0xFF0891B2),
+                        ),
                         const NexiozaStatCard(
                           label: 'Devices',
                           value: '0',
                           icon: Icons.devices_rounded,
-                          iconColor: Color(0xFF0891B2),
-                        ),
-                        const NexiozaStatCard(
-                          label: 'Online',
-                          value: '0',
-                          icon: Icons.cloud_done_outlined,
                           iconColor: Color(0xFF16A34A),
                         ),
                         const NexiozaStatCard(
@@ -88,49 +91,68 @@ class HomeScreen extends ConsumerWidget {
                   },
                 ),
                 const SizedBox(height: 24),
-                NexiozaCard(
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          Icons.add_circle_outline_rounded,
-                          color: theme.colorScheme.primary,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                Row(
+                  children: [
+                    Expanded(
+                      child: NexiozaCard(
+                        onTap: () => context.go('/projects'),
+                        child: Row(
                           children: [
-                            Text(
-                              'Create your first project',
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w600,
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.primaryContainer,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(
+                                Icons.folder_rounded,
+                                color: theme.colorScheme.primary,
+                                size: 20,
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(width: 12),
                             Text(
-                              'Start building your IoT solution',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurface
-                                    .withValues(alpha: 0.6),
+                              'Projects',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      FilledButton.tonal(
-                        onPressed: () => context.go('/projects'),
-                        child: const Text('Create'),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: NexiozaCard(
+                        onTap: () => context.go('/organizations'),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.secondaryContainer,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(
+                                Icons.business_rounded,
+                                color: theme.colorScheme.onSecondaryContainer,
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Orgs',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 24),
                 const NexiozaSectionHeader(title: 'Recent Activity'),
@@ -138,8 +160,7 @@ class HomeScreen extends ConsumerWidget {
                 const NexiozaEmptyState(
                   icon: Icons.history_rounded,
                   title: 'No recent activity',
-                  message:
-                      'Activity from your projects and devices will appear here.',
+                  message: 'Activity from your projects and devices will appear here.',
                 ),
                 const SizedBox(height: 48),
               ],

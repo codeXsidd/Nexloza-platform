@@ -32,9 +32,9 @@ class NavigationShell extends StatelessWidget {
             label: AppStrings.navProjects,
           ),
           NavigationDestination(
-            icon: Icon(Icons.bolt_outlined),
-            selectedIcon: Icon(Icons.bolt_rounded),
-            label: AppStrings.navAutomations,
+            icon: Icon(Icons.business_outlined),
+            selectedIcon: Icon(Icons.business_rounded),
+            label: 'Organizations',
           ),
           NavigationDestination(
             icon: Icon(Icons.notifications_outlined),

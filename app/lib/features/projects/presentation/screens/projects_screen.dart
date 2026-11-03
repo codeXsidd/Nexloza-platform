@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
 import 'package:nexioza/features/projects/presentation/providers/project_provider.dart';
 import 'package:nexioza/shared/widgets/nexioza_empty_state.dart';
 
@@ -17,6 +16,11 @@ class ProjectsScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Projects'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.dashboard_customize_outlined),
+            tooltip: 'Templates',
+            onPressed: () => context.push('/projects/templates'),
+          ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             onPressed: () => ref.invalidate(projectsProvider),
@@ -48,9 +52,9 @@ class ProjectsScreen extends ConsumerWidget {
               itemCount: list.length,
               itemBuilder: (context, index) {
                 final project = list[index];
-                final colorHex = project['color'] as String? ?? '#0891B2';
                 final color = Color(
-                    int.parse(colorHex.substring(1), radix: 16) + 0xFF000000);
+                  int.parse(project.color.substring(1), radix: 16) + 0xFF000000,
+                );
                 return Card(
                   margin: const EdgeInsets.only(bottom: 12),
                   child: ListTile(
@@ -59,27 +63,27 @@ class ProjectsScreen extends ConsumerWidget {
                       child: Icon(Icons.folder_rounded, color: color),
                     ),
                     title: Text(
-                      project['name'] as String? ?? '',
-                      style: theme.textTheme.titleSmall
-                          ?.copyWith(fontWeight: FontWeight.w600),
+                      project.name,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     subtitle: Text(
-                      project['description'] as String? ?? '',
+                      project.description ?? '',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface
-                            .withValues(alpha: 0.6),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.6,
+                        ),
                       ),
                     ),
                     trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Project detail coming soon'),
-                          behavior: SnackBarBehavior.floating,
-                        ),
+                    onTap: () async {
+                      final changed = await context.push<bool>(
+                        '/projects/${project.id}',
                       );
+                      if (changed == true) ref.invalidate(projectsProvider);
                     },
                   ),
                 );
