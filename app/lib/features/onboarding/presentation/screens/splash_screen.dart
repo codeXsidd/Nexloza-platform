@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -8,23 +9,28 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen> {
   double _opacity = 0.0;
 
   @override
   void initState() {
     super.initState();
     Future<void>.delayed(const Duration(milliseconds: 200), () {
-      if (mounted) {
-        setState(() => _opacity = 1.0);
-      }
+      if (mounted) setState(() => _opacity = 1.0);
     });
-    Future<void>.delayed(const Duration(milliseconds: 2500), () {
-      if (mounted) {
-        context.go('/home');
-      }
-    });
+    _checkAuth();
+  }
+
+  Future<void> _checkAuth() async {
+    await Future<void>.delayed(const Duration(milliseconds: 2500));
+    if (!mounted) return;
+
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session != null) {
+      context.go('/home');
+    } else {
+      context.go('/auth/login');
+    }
   }
 
   @override

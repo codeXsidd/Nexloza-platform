@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import 'package:go_router/go_router.dart';
+import 'package:nexioza/features/auth/presentation/providers/auth_provider.dart';
 import 'package:nexioza/shared/providers/theme_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final user = ref.watch(currentUserProvider);
+    final displayName =
+        user?.userMetadata?['display_name'] as String? ?? 'NexIoza User';
+    final email = user?.email ?? '';
+
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
@@ -18,14 +25,20 @@ class SettingsScreen extends StatelessWidget {
             leading: CircleAvatar(
               radius: 24,
               backgroundColor: theme.colorScheme.primaryContainer,
-              child: Icon(
-                Icons.person_rounded,
-                color: theme.colorScheme.primary,
+              child: Text(
+                displayName.isNotEmpty
+                    ? displayName[0].toUpperCase()
+                    : 'U',
+                style: TextStyle(
+                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 20,
+                ),
               ),
             ),
-            title: const Text('NexIoza User'),
+            title: Text(displayName),
             subtitle: Text(
-              'user@example.com',
+              email,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
@@ -34,7 +47,7 @@ class SettingsScreen extends StatelessWidget {
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Profile editing coming in Phase 2'),
+                  content: Text('Profile editing coming soon'),
                   behavior: SnackBarBehavior.floating,
                 ),
               );
@@ -116,13 +129,41 @@ class SettingsScreen extends StatelessWidget {
               );
             },
           ),
-          ListTile(
-            leading: const Icon(Icons.hub_rounded),
-            title: const Text('About NexIoza'),
-            subtitle: Text(
-              'One Platform. Unlimited IoT Possibilities.',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          const Divider(indent: 16, endIndent: 16),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: OutlinedButton.icon(
+              onPressed: () async {
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Sign Out'),
+                    content:
+                        const Text('Are you sure you want to sign out?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: const Text('Cancel'),
+                      ),
+                      FilledButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        child: const Text('Sign Out'),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirmed == true && context.mounted) {
+                  await Supabase.instance.client.auth.signOut();
+                  if (context.mounted) context.go('/auth/login');
+                }
+              },
+              icon: const Icon(Icons.logout_rounded),
+              label: const Text('Sign Out'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: theme.colorScheme.error,
+                side: BorderSide(color: theme.colorScheme.error),
+                minimumSize: const Size(double.infinity, 48),
               ),
             ),
           ),
