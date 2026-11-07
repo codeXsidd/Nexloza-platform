@@ -11,13 +11,21 @@ class DeviceRepository {
 
   DeviceRepository(this._client);
 
-  Future<Result<List<Device>>> getDevices({String? projectId}) async {
+  Future<Result<List<Device>>> getDevices({
+    String? projectId,
+    int page = 0,
+    int pageSize = 20,
+  }) async {
     try {
       var query = _client.from('devices').select();
       if (projectId != null) {
         query = query.eq('project_id', projectId);
       }
-      final response = await query.order('created_at', ascending: false);
+      final from = page * pageSize;
+      final to = from + pageSize - 1;
+      final response = await query
+          .order('created_at', ascending: false)
+          .range(from, to);
       final devices = (response as List)
           .map((e) => Device.fromJson(e))
           .toList();

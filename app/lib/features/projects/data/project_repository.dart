@@ -11,12 +11,18 @@ class ProjectRepository {
 
   ProjectRepository(this._client);
 
-  Future<Result<List<Project>>> getProjects() async {
+  Future<Result<List<Project>>> getProjects({
+    int page = 0,
+    int pageSize = 20,
+  }) async {
     try {
+      final from = page * pageSize;
+      final to = from + pageSize - 1;
       final response = await _client
           .from('projects')
           .select()
-          .order('created_at', ascending: false);
+          .order('created_at', ascending: false)
+          .range(from, to);
       final projects = (response as List)
           .map((e) => Project.fromJson(e))
           .toList();

@@ -11,13 +11,21 @@ class AutomationRepository {
 
   AutomationRepository(this._client);
 
-  Future<Result<List<Automation>>> getAutomations({String? projectId}) async {
+  Future<Result<List<Automation>>> getAutomations({
+    String? projectId,
+    int page = 0,
+    int pageSize = 20,
+  }) async {
     try {
       var query = _client.from('automations').select();
       if (projectId != null) {
         query = query.eq('project_id', projectId);
       }
-      final response = await query.order('created_at', ascending: false);
+      final from = page * pageSize;
+      final to = from + pageSize - 1;
+      final response = await query
+          .order('created_at', ascending: false)
+          .range(from, to);
       final automations = (response as List)
           .map((e) => Automation.fromJson(e))
           .toList();

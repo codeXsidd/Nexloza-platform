@@ -1,20 +1,55 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, content-type",
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { status: 200 });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { device_id, sensor_key, value } = await req.json();
+    const body = await req.json();
+    const { device_id, sensor_key, value } = body;
+
+    if (!device_id || typeof device_id !== "string") {
+      return new Response(
+        JSON.stringify({ error: "device_id (string) required" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    if (!sensor_key || typeof sensor_key !== "string") {
+      return new Response(
+        JSON.stringify({ error: "sensor_key (string) required" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    if (typeof value !== "number" || !isFinite(value)) {
+      return new Response(
+        JSON.stringify({ error: "value must be a finite number" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Get device info
     const { data: device } = await supabase
       .from("devices")
       .select("id, project_id")
@@ -23,7 +58,8 @@ serve(async (req) => {
 
     if (!device) {
       return new Response(JSON.stringify({ error: "Device not found" }), {
-        status: 404, headers: { "Content-Type": "application/json" },
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -51,40 +87,102 @@ serve(async (req) => {
       if (op === "eq" && value === threshold) shouldFire = true;
       if (op === "gte" && value >= threshold) shouldFire = true;
       if (op === "lte" && value <= threshold) shouldFire = true;
-      if (op === "between" && value >= config.low && value <= config.high) shouldFire = true;
+      if (
+        op === "between" &&
+        value >= config.low &&
+        value <= config.high
+      )
+        shouldFire = true;
 
       if (shouldFire) {
-        // Check cooldown
         const automation = trigger.automations;
+
+        // Check cooldown
         const { data: recentExec } = await supabase
           .from("automation_executions")
           .select("id")
           .eq("automation_id", automation.id)
-          .gte("started_at", new Date(Date.now() - automation.cooldown_seconds * 1000).toISOString())
+          .gte(
+            "started_at",
+            new Date(
+              Date.now() - automation.cooldown_seconds * 1000
+            ).toISOString()
+          )
           .limit(1);
 
         if (recentExec && recentExec.length > 0) continue;
 
-        // Execute automation
+        // Check max executions per hour
+        const { count: hourlyCount } = await supabase
+          .from("automation_executions")
+          .select("id", { count: "exact", head: true })
+          .eq("automation_id", automation.id)
+          .gte(
+            "started_at",
+            new Date(Date.now() - 3600000).toISOString()
+          );
+
+        if (
+          hourlyCount !== null &&
+          hourlyCount >= automation.max_executions_per_hour
+        )
+          continue;
+
+        // Execute automation — load actions and mark execution
+        const { data: actions } = await supabase
+          .from("automation_actions")
+          .select("*")
+          .eq("automation_id", automation.id)
+          .order("sort_order");
+
+        const actionsExecuted = [];
+        for (const action of actions || []) {
+          actionsExecuted.push({
+            action_id: action.id,
+            action_type: action.action_type,
+            status: "completed",
+            executed_at: new Date().toISOString(),
+          });
+        }
+
+        const startedAt = new Date().toISOString();
         await supabase.from("automation_executions").insert({
           automation_id: automation.id,
+          trigger_id: trigger.id,
           trigger_data: { device_id, sensor_key, value },
           status: "completed",
-          started_at: new Date().toISOString(),
+          started_at: startedAt,
           completed_at: new Date().toISOString(),
+          actions_executed: actionsExecuted,
         });
+
+        // Update automation execution count
+        await supabase
+          .from("automations")
+          .update({
+            execution_count: automation.execution_count + 1,
+            last_executed_at: startedAt,
+          })
+          .eq("id", automation.id);
 
         executedAutomations.push(automation.id);
       }
     }
 
     return new Response(
-      JSON.stringify({ processed: true, executions: executedAutomations.length }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
+      JSON.stringify({
+        processed: true,
+        executions: executedAutomations.length,
+      }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
     );
   } catch (err) {
     return new Response(JSON.stringify({ error: "Internal server error" }), {
-      status: 500, headers: { "Content-Type": "application/json" },
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
