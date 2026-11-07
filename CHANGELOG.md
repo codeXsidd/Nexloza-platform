@@ -1,20 +1,22 @@
 # Changelog
 
-All notable changes to NexIoza will be documented in this file.
+All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.0] - 2026-11-03
+## [0.1.0] - 2024-11-07
 
 ### Added
 
-- Initial project structure and Flutter application foundation
-- Material 3 theme system with light and dark modes
-- Navigation shell with five main sections (Home, Projects, Automations, Notifications, Settings)
-- Reusable UI component library (cards, buttons, stat cards, empty/error/loading states)
-- GoRouter navigation with StatefulShellRoute
-- Riverpod state management foundation
-- CI pipeline with GitHub Actions (analyze, test, build)
-- Comprehensive documentation skeleton
-- Strict Dart analysis rules
+- Flutter application foundation with Material 3 theming (light/dark)
+- Feature-first clean architecture with Riverpod and GoRouter
+- Authentication module (login, register, forgot password, email verification)
+- Multi-project management with organizations and invitations
+- Device management foundations (registration, pairing, status tracking)
+- Supabase backend with PostgreSQL migrations and Row Level Security
+- EMQX MQTT broker configuration
+- Docker Compose local development stack
+- ESP32/ESP8266 firmware SDK with examples
+- GitHub Actions CI/CD pipeline
+- Comprehensive documentation and contribution guidelines

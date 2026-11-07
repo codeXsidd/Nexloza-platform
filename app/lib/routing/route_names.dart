@@ -1,0 +1,30 @@
+abstract final class RouteNames {
+  static const String login = 'login';
+  static const String register = 'register';
+  static const String forgotPassword = 'forgotPassword';
+  static const String emailVerification = 'emailVerification';
+  static const String home = 'home';
+  static const String projects = 'projects';
+  static const String projectDetail = 'projectDetail';
+  static const String createProject = 'createProject';
+  static const String devices = 'devices';
+  static const String deviceDetail = 'deviceDetail';
+  static const String addDevice = 'addDevice';
+  static const String devicePairing = 'devicePairing';
+  static const String automations = 'automations';
+  static const String automationDetail = 'automationDetail';
+  static const String createAutomation = 'createAutomation';
+  static const String aiAssistant = 'aiAssistant';
+  static const String notifications = 'notifications';
+  static const String settings = 'settings';
+  static const String profile = 'profile';
+  static const String organization = 'organization';
+  static const String apiKeys = 'apiKeys';
+  static const String dashboardEditor = 'dashboardEditor';
+  static const String sensors = 'sensors';
+  static const String sensorDetail = 'sensorDetail';
+  static const String actuators = 'actuators';
+  static const String scenes = 'scenes';
+  static const String analytics = 'analytics';
+  static const String integrations = 'integrations';
+}

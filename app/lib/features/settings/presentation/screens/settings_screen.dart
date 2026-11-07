@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:nexioza/features/auth/presentation/providers/auth_provider.dart';
-import 'package:nexioza/features/profile/presentation/providers/profile_provider.dart';
-import 'package:nexioza/shared/providers/theme_provider.dart';
+import '../../../../routing/route_names.dart';
+import '../../../../shared/widgets/confirmation_dialog.dart';
+import '../../../../theme/app_spacing.dart';
+import '../../../authentication/presentation/providers/auth_provider.dart';
+
+final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.system);
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -11,169 +14,119 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final user = ref.watch(currentUserProvider);
-    final profile = ref.watch(profileProvider).valueOrNull;
-    final displayName =
-        profile?.displayName ??
-        user?.userMetadata?['display_name'] as String? ??
-        'NexIoza User';
-    final email = user?.email ?? '';
-    final avatarUrl = profile?.avatarUrl;
+    final themeMode = ref.watch(themeModeProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         children: [
-          const SizedBox(height: 8),
+          _SectionHeader('Account'),
           ListTile(
-            leading: CircleAvatar(
-              radius: 24,
-              backgroundColor: theme.colorScheme.primaryContainer,
-              backgroundImage: avatarUrl != null
-                  ? NetworkImage(avatarUrl)
-                  : null,
-              child: avatarUrl == null
-                  ? Text(
-                      displayName.isNotEmpty
-                          ? displayName[0].toUpperCase()
-                          : 'U',
-                      style: TextStyle(
-                        color: theme.colorScheme.primary,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 20,
-                      ),
-                    )
-                  : null,
-            ),
-            title: Text(displayName),
-            subtitle: Text(
-              email,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-              ),
-            ),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () => context.push('/settings/profile'),
-          ),
-          const Divider(indent: 16, endIndent: 16),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-            child: Text(
-              'Appearance',
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.2,
-              ),
-            ),
-          ),
-          Consumer(
-            builder: (context, ref, _) {
-              final themeMode = ref.watch(themeModeProvider);
-              return RadioGroup<ThemeMode>(
-                groupValue: themeMode,
-                onChanged: (ThemeMode? value) {
-                  if (value != null) {
-                    ref.read(themeModeProvider.notifier).setThemeMode(value);
-                  }
-                },
-                child: const Column(
-                  children: [
-                    RadioListTile<ThemeMode>(
-                      title: Text('System default'),
-                      subtitle: Text('Match device settings'),
-                      value: ThemeMode.system,
-                    ),
-                    RadioListTile<ThemeMode>(
-                      title: Text('Light'),
-                      value: ThemeMode.light,
-                    ),
-                    RadioListTile<ThemeMode>(
-                      title: Text('Dark'),
-                      value: ThemeMode.dark,
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-          const Divider(indent: 16, endIndent: 16),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-            child: Text(
-              'About',
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.2,
-              ),
-            ),
+            leading: const Icon(Icons.person_outlined),
+            title: const Text('Profile'),
+            subtitle: const Text('Name, email, avatar'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.pushNamed(RouteNames.profile),
           ),
           ListTile(
-            leading: const Icon(Icons.info_outline_rounded),
+            leading: const Icon(Icons.business_outlined),
+            title: const Text('Organizations'),
+            subtitle: const Text('Manage teams and access'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {},
+          ),
+          ListTile(
+            leading: const Icon(Icons.vpn_key_outlined),
+            title: const Text('API Keys'),
+            subtitle: const Text('Manage device API credentials'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {},
+          ),
+          const Divider(),
+          _SectionHeader('Appearance'),
+          ListTile(
+            leading: const Icon(Icons.palette_outlined),
+            title: const Text('Theme'),
+            trailing: SegmentedButton<ThemeMode>(
+              segments: const [
+                ButtonSegment(value: ThemeMode.light, icon: Icon(Icons.light_mode, size: 18)),
+                ButtonSegment(value: ThemeMode.system, icon: Icon(Icons.settings_brightness, size: 18)),
+                ButtonSegment(value: ThemeMode.dark, icon: Icon(Icons.dark_mode, size: 18)),
+              ],
+              selected: {themeMode},
+              onSelectionChanged: (s) => ref.read(themeModeProvider.notifier).state = s.first,
+            ),
+          ),
+          const Divider(),
+          _SectionHeader('Notifications'),
+          SwitchListTile(
+            secondary: const Icon(Icons.notifications_outlined),
+            title: const Text('Push Notifications'),
+            value: true,
+            onChanged: (v) {},
+          ),
+          SwitchListTile(
+            secondary: const Icon(Icons.email_outlined),
+            title: const Text('Email Notifications'),
+            value: false,
+            onChanged: (v) {},
+          ),
+          const Divider(),
+          _SectionHeader('About'),
+          ListTile(
+            leading: const Icon(Icons.info_outlined),
             title: const Text('Version'),
-            trailing: Text(
-              '0.1.0',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-              ),
-            ),
+            subtitle: const Text('0.1.0'),
           ),
           ListTile(
             leading: const Icon(Icons.description_outlined),
             title: const Text('Licenses'),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () {
-              showLicensePage(
-                context: context,
-                applicationName: 'NexIoza',
-                applicationVersion: '0.1.0',
-                applicationLegalese:
-                    'One Platform. Unlimited IoT Possibilities.',
-              );
-            },
+            onTap: () => showLicensePage(context: context, applicationName: 'Nexloza'),
           ),
-          const Divider(indent: 16, endIndent: 16),
-          const SizedBox(height: 8),
+          const Divider(),
+          AppSpacing.verticalSm,
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: OutlinedButton.icon(
               onPressed: () async {
-                final confirmed = await showDialog<bool>(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: const Text('Sign Out'),
-                    content: const Text('Are you sure you want to sign out?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(ctx, false),
-                        child: const Text('Cancel'),
-                      ),
-                      FilledButton(
-                        onPressed: () => Navigator.pop(ctx, true),
-                        child: const Text('Sign Out'),
-                      ),
-                    ],
-                  ),
+                final confirmed = await showConfirmationDialog(
+                  context,
+                  title: 'Log Out',
+                  message: 'Are you sure you want to log out?',
+                  confirmLabel: 'Log Out',
+                  isDestructive: true,
                 );
-                if (confirmed == true && context.mounted) {
-                  try {
-                    await ref.read(authRepositoryProvider).signOut();
-                  } catch (_) {
-                    // Sign out locally even if the network call fails
-                  }
-                  if (context.mounted) context.go('/auth/login');
+                if (confirmed) {
+                  ref.read(authProvider.notifier).signOut();
                 }
               },
-              icon: const Icon(Icons.logout_rounded),
-              label: const Text('Sign Out'),
+              icon: const Icon(Icons.logout),
+              label: const Text('Log Out'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: theme.colorScheme.error,
-                side: BorderSide(color: theme.colorScheme.error),
-                minimumSize: const Size(double.infinity, 48),
               ),
             ),
           ),
-          const SizedBox(height: 32),
+          AppSpacing.verticalXl,
         ],
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  const _SectionHeader(this.title);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: Theme.of(context).colorScheme.primary,
+            ),
       ),
     );
   }

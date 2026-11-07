@@ -1,34 +1,46 @@
 ---
 name: Bug Report
-about: Report a bug in NexIoza
+about: Report a bug to help us improve NexLoza
+title: "[BUG] "
 labels: bug
+assignees: ""
 ---
 
-## Description
+## Describe the Bug
 
-<!-- A clear description of the bug -->
+A clear and concise description of what the bug is.
 
-## Steps to Reproduce
+## To Reproduce
 
-1.
-2.
-3.
+Steps to reproduce the behavior:
+
+1. Go to '...'
+2. Click on '...'
+3. Scroll down to '...'
+4. See error
 
 ## Expected Behavior
 
-<!-- What should happen -->
-
-## Actual Behavior
-
-<!-- What actually happens -->
+A clear and concise description of what you expected to happen.
 
 ## Screenshots
 
-<!-- If applicable, add screenshots -->
+If applicable, add screenshots to help explain your problem.
 
 ## Environment
 
-- App version:
-- Device:
-- OS version:
-- Flutter version:
+- **OS**: [e.g., Android 14, iOS 17, Windows 11]
+- **App Version**: [e.g., 0.1.0]
+- **Flutter Version**: [e.g., 3.47.5]
+- **Device/Hardware**: [e.g., ESP32-WROOM-32, Pixel 8]
+- **MQTT Broker**: [e.g., EMQX 5.8.3]
+
+## Logs
+
+```
+Paste relevant logs here
+```
+
+## Additional Context
+
+Add any other context about the problem here.

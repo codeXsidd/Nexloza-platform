@@ -1,4 +1,4 @@
-# nexioza
+# nexloza
 
 A new Flutter project.
 

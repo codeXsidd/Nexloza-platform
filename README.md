@@ -1,110 +1,140 @@
-# NexIoza
+<p align="center">
+  <img src="docs/assets/nexloza-logo.png" alt="NexLoza Logo" width="200" />
+</p>
 
-**One Platform. Unlimited IoT Possibilities.**
+<h1 align="center">NexLoza</h1>
 
-[![CI](https://github.com/codeXsidd/nexioza-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/codeXsidd/nexioza-platform/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Flutter](https://img.shields.io/badge/Flutter-3.47+-02569B.svg?logo=flutter)](https://flutter.dev)
+<p align="center">
+  <strong>One Platform. Unlimited IoT Possibilities.</strong>
+</p>
 
-NexIoza is a universal, customizable, open-source IoT platform. Create and manage multiple independent IoT projects — smart agriculture, industrial monitoring, energy management, environmental sensing, and more — all from a single application.
+<p align="center">
+  <a href="https://github.com/codeXsidd/nexioza-platform/actions"><img src="https://github.com/codeXsidd/nexioza-platform/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://github.com/codeXsidd/nexioza-platform/blob/main/LICENSE"><img src="https://img.shields.io/github/license/codeXsidd/nexioza-platform" alt="License" /></a>
+  <a href="https://flutter.dev"><img src="https://img.shields.io/badge/Flutter-3.47+-02569B?logo=flutter" alt="Flutter" /></a>
+  <a href="https://supabase.com"><img src="https://img.shields.io/badge/Supabase-Backend-3ECF8E?logo=supabase" alt="Supabase" /></a>
+  <a href="https://www.emqx.io"><img src="https://img.shields.io/badge/EMQX-MQTT-5C2D91" alt="MQTT" /></a>
+</p>
+
+---
+
+## What is NexLoza?
+
+NexLoza is an open-source, universal IoT platform that lets anyone create and manage multiple independent IoT projects — smart home, agriculture, industrial monitoring, energy metering, and more — from a single application.
+
+Think of it as **Blynk + IFTTT + Home Assistant + AWS IoT**, fully open-source and self-hostable.
 
 ## Features
 
-- **Multi-Project Management** — Create unlimited independent IoT projects with custom configurations
-- **Dynamic Dashboard Builder** — Drag-and-drop widgets: gauges, charts, switches, sliders, maps, and more
-- **Automation Engine** — Visual WHEN/IF/THEN rule builder with scheduling, conditions, and chained actions
-- **Device Management** — ESP32, ESP8266, Raspberry Pi, and any MQTT-compatible hardware
-- **Real-Time Monitoring** — Live sensor data, historical charts, event logs, and CSV/JSON export
-- **Secure Device Provisioning** — QR-based pairing with per-device MQTT credentials
-- **Voice Control** — Amazon Alexa, Google Home, and in-app voice commands
-- **AI Assistant** — Claude-powered assistant via Amazon Bedrock for automation drafting, troubleshooting, and data analysis
-- **Offline-First** — Local storage, command queuing, and automatic sync
-- **Multi-User Collaboration** — Project sharing with role-based permissions (Owner, Admin, Editor, Viewer)
-- **OTA Firmware Updates** — Over-the-air update framework for connected devices
-- **Notifications** — Push notifications via FCM with configurable thresholds and alerts
+- **Multi-Project Management** — Create unlimited IoT projects with isolated data, devices, and dashboards
+- **Universal Device Support** — ESP32, ESP8266, Raspberry Pi, Arduino, and any MQTT-compatible device
+- **Dynamic Dashboard Builder** — Drag-and-drop widgets: gauges, charts, switches, sliders, maps, and 20+ widget types
+- **Automation Engine** — Visual trigger → condition → action builder with scheduling, webhooks, and scenes
+- **AI Assistant** — Claude-powered IoT assistant via Amazon Bedrock for diagnostics, automation generation, and firmware help
+- **Voice Control** — Alexa Smart Home and Google Home integration
+- **Real-time Telemetry** — Live sensor data, historical analytics, and configurable alerts
+- **Device SDK** — Arduino-compatible SDK for ESP32/ESP8266 with provisioning, OTA updates, and secure MQTT
+- **Team Collaboration** — Organizations, project invitations, and role-based access (Owner, Admin, Developer, Viewer)
+- **Offline Support** — Local caching, pending commands, and automatic reconnection
 
-## Architecture
+## Tech Stack
 
-```
-Flutter App ──── HTTPS/WS ────► Supabase Backend ──── MQTT ────► Devices
-     │                              │                               │
-     │                              ├── Edge Functions              ├── ESP32
-     │                              ├── PostgreSQL + RLS            ├── ESP8266
-     │                              ├── Realtime                    ├── Raspberry Pi
-     │                              └── Storage                     └── Generic MQTT
-     │
-     ├── Claude AI ──► AWS Lambda ──► Amazon Bedrock
-     ├── Alexa ──► Smart Home Skill ──► OAuth ──► Fulfillment
-     └── Google Home ──► Cloud-to-cloud ──► Fulfillment
-```
+| Layer | Technology |
+|---|---|
+| Mobile & Web | Flutter, Dart, Riverpod, GoRouter, Material 3 |
+| Backend | Supabase (PostgreSQL, Auth, Realtime, Edge Functions, Storage) |
+| IoT Communication | MQTT 3.1.1/5 via EMQX, WebSockets, REST |
+| AI | Amazon Bedrock (Claude), Converse API, Tool Calling |
+| Voice | Alexa Smart Home Skill, Google Home Cloud-to-Cloud |
+| Firmware | ESP-IDF, Arduino, NexLoza Device SDK (C/C++) |
+| Infrastructure | Docker Compose, GitHub Actions CI/CD |
 
 ## Quick Start
 
 ### Prerequisites
 
-- Flutter 3.47+ and Dart 3.13+
-- Android SDK 34+
-- Docker (for local Supabase and MQTT broker)
-- Node.js 20+ (for device simulator and Edge Functions)
+- [Flutter](https://flutter.dev/docs/get-started/install) 3.47+
+- [Docker](https://docs.docker.com/get-docker/) & Docker Compose
+- [Supabase CLI](https://supabase.com/docs/guides/cli) (optional, for migrations)
+- Git
 
-### Setup
+### 1. Clone the Repository
 
 ```bash
-# Clone the repository
 git clone https://github.com/codeXsidd/nexioza-platform.git
 cd nexioza-platform
+```
 
-# Copy environment template
+### 2. Configure Environment
+
+```bash
 cp .env.example .env
+# Edit .env with your Supabase, MQTT, and AWS credentials
+```
 
-# Install Flutter dependencies
+### 3. Start Backend Services
+
+```bash
+docker compose up -d
+```
+
+This starts PostgreSQL, Supabase services, and the EMQX MQTT broker.
+
+### 4. Run Database Migrations
+
+```bash
+cd backend/supabase
+supabase db push
+```
+
+### 5. Run the App
+
+```bash
 cd app
 flutter pub get
-
-# Run the app
 flutter run
 ```
 
-See [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) for complete setup instructions.
+## Architecture
+
+```
+nexloza/
+├── app/                    # Flutter application
+│   └── lib/
+│       ├── core/           # Theme, routing, constants, shared utilities
+│       └── features/       # Feature-first modules (auth, projects, devices, ...)
+├── backend/
+│   └── supabase/
+│       ├── migrations/     # PostgreSQL migrations with RLS
+│       └── functions/      # Supabase Edge Functions
+├── firmware/
+│   ├── nexloza-sdk/        # Device SDK (C/C++)
+│   ├── esp32/              # ESP32 implementations
+│   ├── esp8266/            # ESP8266 implementations
+│   └── examples/           # Ready-to-flash example projects
+├── mqtt/                   # EMQX broker configuration
+├── integrations/           # Alexa, Google Home, webhooks
+├── docs/                   # Architecture, API, setup guides
+└── docker-compose.yml      # Local development stack
+```
 
 ## Documentation
 
-| Document | Description |
-|---|---|
-| [Architecture](docs/ARCHITECTURE.md) | System design and data flow |
-| [Getting Started](docs/GETTING_STARTED.md) | First-time setup guide |
-| [Flutter Setup](docs/FLUTTER_SETUP.md) | Mobile app development |
-| [Supabase Setup](docs/SUPABASE_SETUP.md) | Backend configuration |
-| [MQTT Protocol](docs/MQTT_PROTOCOL.md) | Device communication protocol |
-| [Device SDK](docs/DEVICE_SDK.md) | Firmware library and examples |
-| [Dashboard Builder](docs/DASHBOARD_BUILDER.md) | Widget system and layouts |
-| [Automation Engine](docs/AUTOMATION_ENGINE.md) | Rule builder and scheduling |
-| [Security Model](docs/SECURITY_MODEL.md) | Authentication, authorization, encryption |
-| [API Reference](docs/API_REFERENCE.md) | Backend API endpoints |
-
-## Device Support
-
-| Platform | Protocol | Status |
-|---|---|---|
-| ESP32 | MQTT over TLS | Supported |
-| ESP8266 | MQTT over TLS | Supported |
-| Raspberry Pi | MQTT / HTTP | Supported |
-| Generic MQTT | MQTT 3.1.1 / 5.0 | Supported |
-| Custom HTTP | REST API | Planned |
-| BLE Gateway | BLE → MQTT bridge | Planned |
+- [Architecture Overview](docs/architecture/)
+- [Setup Guide](docs/setup/)
+- [API Reference](docs/api/)
+- [Firmware SDK Guide](docs/firmware/)
+- [Security Policy](SECURITY.md)
+- [Contributing Guide](CONTRIBUTING.md)
 
 ## Contributing
 
-Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting a pull request.
-
-## Security
-
-If you discover a security vulnerability, please follow our [security policy](SECURITY.md). Do not open a public issue.
+We welcome contributions! Please read our [Contributing Guide](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md) before submitting a pull request.
 
 ## License
 
-This project is licensed under the MIT License — see [LICENSE](LICENSE) for details.
+NexLoza is released under the [MIT License](LICENSE).
 
 ---
 
-Built with Flutter, Supabase, MQTT, and Claude AI.
+<p align="center">Built with purpose by the NexLoza community.</p>

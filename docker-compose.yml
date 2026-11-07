@@ -1,0 +1,224 @@
+version: "3.8"
+
+services:
+  # ──────────────────────────────────────────────
+  # PostgreSQL — Primary database
+  # ──────────────────────────────────────────────
+  postgres:
+    image: supabase/postgres:15.6.1.143
+    container_name: nexloza-postgres
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_PORT:-54322}:5432"
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+      JWT_SECRET: ${SUPABASE_JWT_SECRET:-super-secret-jwt-token-with-at-least-32-characters-long}
+      JWT_EXP: 3600
+    volumes:
+      - nexloza-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ──────────────────────────────────────────────
+  # Supabase Auth (GoTrue)
+  # ──────────────────────────────────────────────
+  auth:
+    image: supabase/gotrue:v2.164.0
+    container_name: nexloza-auth
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${AUTH_PORT:-54321}:9999"
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: ${API_EXTERNAL_URL:-http://localhost:54321}
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:postgres@postgres:5432/postgres
+      GOTRUE_SITE_URL: ${SITE_URL:-http://localhost:3000}
+      GOTRUE_URI_ALLOW_LIST: ${ADDITIONAL_REDIRECT_URLS:-}
+      GOTRUE_DISABLE_SIGNUP: ${DISABLE_SIGNUP:-false}
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_JWT_EXP: ${JWT_EXPIRY:-3600}
+      GOTRUE_JWT_SECRET: ${SUPABASE_JWT_SECRET:-super-secret-jwt-token-with-at-least-32-characters-long}
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: ${ENABLE_EMAIL_SIGNUP:-true}
+      GOTRUE_MAILER_AUTOCONFIRM: ${ENABLE_EMAIL_AUTOCONFIRM:-true}
+      GOTRUE_SMTP_HOST: ${SMTP_HOST:-inbucket}
+      GOTRUE_SMTP_PORT: ${SMTP_PORT:-2500}
+      GOTRUE_SMTP_ADMIN_EMAIL: ${SMTP_ADMIN_EMAIL:-admin@nexloza.local}
+      GOTRUE_SMTP_MAX_FREQUENCY: 1s
+      GOTRUE_MAILER_URLPATHS_INVITE: ${MAILER_URLPATHS_INVITE:-/auth/v1/verify}
+      GOTRUE_MAILER_URLPATHS_CONFIRMATION: ${MAILER_URLPATHS_CONFIRMATION:-/auth/v1/verify}
+      GOTRUE_MAILER_URLPATHS_RECOVERY: ${MAILER_URLPATHS_RECOVERY:-/auth/v1/verify}
+      GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE: ${MAILER_URLPATHS_EMAIL_CHANGE:-/auth/v1/verify}
+
+  # ──────────────────────────────────────────────
+  # Supabase REST (PostgREST)
+  # ──────────────────────────────────────────────
+  rest:
+    image: postgrest/postgrest:v12.2.3
+    container_name: nexloza-rest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${REST_PORT:-54323}:3000"
+    environment:
+      PGRST_DB_URI: postgres://authenticator:postgres@postgres:5432/postgres
+      PGRST_DB_SCHEMAS: ${PGRST_DB_SCHEMAS:-public,storage,graphql_public}
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${SUPABASE_JWT_SECRET:-super-secret-jwt-token-with-at-least-32-characters-long}
+      PGRST_DB_USE_LEGACY_GUCS: "false"
+
+  # ──────────────────────────────────────────────
+  # Supabase Realtime
+  # ──────────────────────────────────────────────
+  realtime:
+    image: supabase/realtime:v2.30.34
+    container_name: nexloza-realtime
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${REALTIME_PORT:-54324}:4000"
+    environment:
+      PORT: 4000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: supabase_admin
+      DB_PASSWORD: postgres
+      DB_NAME: postgres
+      DB_AFTER_CONNECT_QUERY: "SET search_path TO _realtime"
+      DB_ENC_KEY: supabaserealtime
+      API_JWT_SECRET: ${SUPABASE_JWT_SECRET:-super-secret-jwt-token-with-at-least-32-characters-long}
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:-UpNVntn3cDxHJpq99YMc1T1AQgQpc8kfYTuRgBiYa15BLrx8etQoXz3gZv1/u2oq}
+      ERL_AFLAGS: -proto_dist inet_tcp
+      DNS_NODES: "''"
+      RLIMIT_NOFILE: "10000"
+
+  # ──────────────────────────────────────────────
+  # Supabase Storage
+  # ──────────────────────────────────────────────
+  storage:
+    image: supabase/storage-api:v1.11.13
+    container_name: nexloza-storage
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${STORAGE_PORT:-54325}:5000"
+    environment:
+      ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder}
+      SERVICE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder}
+      POSTGREST_URL: http://rest:3000
+      PGRST_JWT_SECRET: ${SUPABASE_JWT_SECRET:-super-secret-jwt-token-with-at-least-32-characters-long}
+      DATABASE_URL: postgres://supabase_storage_admin:postgres@postgres:5432/postgres
+      FILE_SIZE_LIMIT: 52428800
+      STORAGE_BACKEND: file
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      REGION: local
+      GLOBAL_S3_BUCKET: stub
+    volumes:
+      - nexloza-storage-data:/var/lib/storage
+
+  # ──────────────────────────────────────────────
+  # Supabase Studio (Dashboard)
+  # ──────────────────────────────────────────────
+  studio:
+    image: supabase/studio:20240923-71e6a79
+    container_name: nexloza-studio
+    restart: unless-stopped
+    depends_on:
+      - rest
+      - auth
+    ports:
+      - "${STUDIO_PORT:-54326}:3000"
+    environment:
+      STUDIO_PG_META_URL: http://meta:8080
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      DEFAULT_ORGANIZATION_NAME: NexLoza
+      DEFAULT_PROJECT_NAME: NexLoza Platform
+      SUPABASE_URL: http://localhost:${REST_PORT:-54323}
+      SUPABASE_PUBLIC_URL: ${API_EXTERNAL_URL:-http://localhost:54321}
+      NEXT_PUBLIC_ENABLE_LOGS: true
+
+  # ──────────────────────────────────────────────
+  # Supabase Meta (pg-meta)
+  # ──────────────────────────────────────────────
+  meta:
+    image: supabase/postgres-meta:v0.83.2
+    container_name: nexloza-meta
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${META_PORT:-54327}:8080"
+    environment:
+      PG_META_PORT: 8080
+      PG_META_DB_HOST: postgres
+      PG_META_DB_PORT: 5432
+      PG_META_DB_NAME: postgres
+      PG_META_DB_USER: postgres
+      PG_META_DB_PASSWORD: postgres
+
+  # ──────────────────────────────────────────────
+  # Inbucket — Local email testing
+  # ──────────────────────────────────────────────
+  inbucket:
+    image: inbucket/inbucket:3.0.3
+    container_name: nexloza-inbucket
+    restart: unless-stopped
+    ports:
+      - "${INBUCKET_WEB_PORT:-54324}:9000"
+      - "${INBUCKET_SMTP_PORT:-2500}:2500"
+      - "${INBUCKET_POP3_PORT:-1100}:1100"
+
+  # ──────────────────────────────────────────────
+  # EMQX — MQTT Broker
+  # ──────────────────────────────────────────────
+  emqx:
+    image: emqx/emqx:5.8.3
+    container_name: nexloza-emqx
+    restart: unless-stopped
+    ports:
+      - "${MQTT_PORT:-1883}:1883"           # MQTT
+      - "${MQTT_TLS_PORT:-8883}:8883"       # MQTT over TLS
+      - "${MQTT_WS_PORT:-8083}:8083"        # MQTT WebSocket
+      - "${MQTT_WSS_PORT:-8084}:8084"       # MQTT WebSocket TLS
+      - "${EMQX_DASHBOARD_PORT:-18083}:18083" # EMQX Dashboard
+    environment:
+      EMQX_NAME: nexloza-emqx
+      EMQX_HOST: 0.0.0.0
+      EMQX_DASHBOARD__DEFAULT_USERNAME: ${MQTT_ADMIN_USERNAME:-admin}
+      EMQX_DASHBOARD__DEFAULT_PASSWORD: ${MQTT_ADMIN_PASSWORD:-nexloza_mqtt_2024}
+      EMQX_LOADED_PLUGINS: "emqx_dashboard,emqx_management,emqx_auth_mnesia"
+    volumes:
+      - nexloza-emqx-data:/opt/emqx/data
+      - nexloza-emqx-log:/opt/emqx/log
+    healthcheck:
+      test: ["CMD", "emqx", "ctl", "status"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+volumes:
+  nexloza-db-data:
+    driver: local
+  nexloza-storage-data:
+    driver: local
+  nexloza-emqx-data:
+    driver: local
+  nexloza-emqx-log:
+    driver: local

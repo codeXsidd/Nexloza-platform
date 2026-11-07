@@ -1,0 +1,23 @@
+{
+  "name": "NexlozaSDK",
+  "version": "0.1.0",
+  "description": "Nexloza IoT Platform device SDK for ESP32 and ESP8266",
+  "keywords": "iot, mqtt, esp32, esp8266, nexloza, telemetry, device",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/codeXsidd/nexioza-platform.git"
+  },
+  "authors": [
+    {
+      "name": "NexLoza Contributors"
+    }
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/codeXsidd/nexioza-platform",
+  "frameworks": ["arduino"],
+  "platforms": ["espressif32", "espressif8266"],
+  "dependencies": {
+    "bblanchon/ArduinoJson": "^7.0.0",
+    "knolleary/PubSubClient": "^2.8.0"
+  }
+}

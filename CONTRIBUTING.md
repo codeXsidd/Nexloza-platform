@@ -1,89 +1,76 @@
-# Contributing to NexIoza
+# Contributing to NexLoza
 
-Thank you for your interest in contributing to NexIoza. This guide will help you get started.
+Thank you for your interest in contributing to NexLoza! This guide will help you get started.
 
-## Code of Conduct
+## Getting Started
 
-This project follows the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
-
-## How to Contribute
-
-### Reporting Bugs
-
-- Use the [Bug Report](https://github.com/codeXsidd/nexioza-platform/issues/new?template=bug_report.md) issue template.
-- Include steps to reproduce, expected behavior, and actual behavior.
-- Include your Flutter version, device, and OS version.
-
-### Suggesting Features
-
-- Use the [Feature Request](https://github.com/codeXsidd/nexioza-platform/issues/new?template=feature_request.md) issue template.
-- Describe the use case and proposed solution.
-
-### Submitting Pull Requests
-
-1. Fork the repository.
-2. Create a feature branch from `main`: `git checkout -b feat/your-feature`.
-3. Make your changes.
-4. Run `flutter analyze` and `flutter test` in the `app/` directory.
-5. Commit using conventional commit messages.
-6. Push and open a pull request against `main`.
+1. **Fork** the repository
+2. **Clone** your fork locally
+3. **Create a branch** for your feature or fix: `git checkout -b feat/my-feature`
+4. **Make your changes** following the guidelines below
+5. **Test** your changes thoroughly
+6. **Commit** with a clear message following [Conventional Commits](https://www.conventionalcommits.org/)
+7. **Push** to your fork and open a **Pull Request**
 
 ## Development Setup
 
-### Prerequisites
+See the [Quick Start](README.md#quick-start) section in the README for environment setup.
 
-- Flutter 3.47+
-- Dart 3.13+
-- Android SDK 34+
-- Docker (optional, for local backend)
+## Code Guidelines
 
-### Getting Started
+### Flutter / Dart
 
-```bash
-cd app
-flutter pub get
-flutter run
-```
+- Follow the official [Dart Style Guide](https://dart.dev/effective-dart/style)
+- Use `dart format` before committing
+- Ensure `flutter analyze` passes with zero issues
+- Write tests for new features and bug fixes
+- Use Riverpod for state management
+- Follow feature-first folder structure
 
-### Running Tests
+### Backend (Supabase)
 
-```bash
-cd app
-flutter test
-```
+- Write database migrations, never modify the database manually
+- Always add Row Level Security policies for new tables
+- Test RLS policies to verify data isolation
+- Document Edge Function APIs
 
-### Running Analysis
+### Firmware
 
-```bash
-cd app
-flutter analyze
-dart format lib/ test/
-```
-
-## Coding Standards
-
-- Follow the [Effective Dart](https://dart.dev/effective-dart) style guide.
-- Use `flutter analyze` with strict rules (configured in `analysis_options.yaml`).
-- Write tests for new features and bug fixes.
-- Keep functions focused and files under 300 lines where practical.
+- Follow Arduino coding conventions
+- Test on actual hardware when possible; clearly label simulated tests
+- Document pin configurations and wiring
 
 ## Commit Messages
 
 Use [Conventional Commits](https://www.conventionalcommits.org/):
 
 ```
-feat: add dashboard widget drag-and-drop
-fix: resolve MQTT reconnection loop
+feat: add soil moisture sensor widget
+fix: correct MQTT reconnection on Wi-Fi dropout
 docs: update ESP32 wiring guide
-test: add automation engine unit tests
-refactor: extract device provisioning service
+test: add RLS isolation tests for device_commands
 chore: update Flutter dependencies
 ```
 
-## Pull Request Guidelines
+## Pull Request Process
 
-- Keep PRs focused on a single change.
-- Include tests for new functionality.
-- Update documentation if behavior changes.
-- Ensure CI passes before requesting review.
-- Reference related issues in the PR description.
+1. Fill out the PR template completely
+2. Link related issues
+3. Ensure CI passes (lint, analyze, tests, build)
+4. Request review from a maintainer
+5. Address review feedback
+6. Squash and merge when approved
+
+## Reporting Issues
+
+- Use the [Bug Report](.github/ISSUE_TEMPLATE/bug_report.md) template for bugs
+- Use the [Feature Request](.github/ISSUE_TEMPLATE/feature_request.md) template for ideas
+- Check existing issues before creating duplicates
+
+## Code of Conduct
+
+This project follows the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md). Please read it before participating.
+
+## License
+
+By contributing, you agree that your contributions will be licensed under the [MIT License](LICENSE).

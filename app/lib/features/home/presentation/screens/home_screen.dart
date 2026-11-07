@@ -1,171 +1,58 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:nexioza/features/auth/presentation/providers/auth_provider.dart';
-import 'package:nexioza/features/organizations/presentation/providers/organization_provider.dart';
-import 'package:nexioza/features/projects/presentation/providers/project_provider.dart';
-import 'package:nexioza/shared/widgets/nexioza_card.dart';
-import 'package:nexioza/shared/widgets/nexioza_empty_state.dart';
-import 'package:nexioza/shared/widgets/nexioza_section_header.dart';
-import 'package:nexioza/shared/widgets/nexioza_stat_card.dart';
+import '../../../../routing/route_names.dart';
+import '../../../../theme/app_spacing.dart';
+import '../widgets/project_summary_card.dart';
+import '../widgets/device_status_card.dart';
+import '../widgets/quick_actions_widget.dart';
+import '../widgets/recent_activity_widget.dart';
+import '../../../authentication/presentation/providers/auth_provider.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final auth = ref.watch(authProvider);
     final theme = Theme.of(context);
-    final user = ref.watch(currentUserProvider);
-    final projects = ref.watch(projectsProvider);
-    final orgs = ref.watch(organizationsProvider);
-    final projectCount = projects.valueOrNull?.length ?? 0;
-    final orgCount = orgs.valueOrNull?.length ?? 0;
-    final displayName =
-        user?.userMetadata?['display_name'] as String? ?? 'NexIoza';
+    final userName = auth.user?.userMetadata?['full_name'] as String? ?? 'there';
 
     return Scaffold(
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: () async {
-            ref.invalidate(projectsProvider);
-            ref.invalidate(organizationsProvider);
-          },
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 8),
-                Text(
-                  'Welcome, $displayName',
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Your IoT command center',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final crossAxisCount = constraints.maxWidth > 400 ? 2 : 1;
-                    return GridView.count(
-                      crossAxisCount: crossAxisCount,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      mainAxisSpacing: 8,
-                      crossAxisSpacing: 8,
-                      childAspectRatio: 2.4,
-                      children: [
-                        NexiozaStatCard(
-                          label: 'Projects',
-                          value: '$projectCount',
-                          icon: Icons.folder_outlined,
-                          iconColor: const Color(0xFF6366F1),
-                        ),
-                        NexiozaStatCard(
-                          label: 'Organizations',
-                          value: '$orgCount',
-                          icon: Icons.business_outlined,
-                          iconColor: const Color(0xFF0891B2),
-                        ),
-                        const NexiozaStatCard(
-                          label: 'Devices',
-                          value: '0',
-                          icon: Icons.devices_rounded,
-                          iconColor: Color(0xFF16A34A),
-                        ),
-                        const NexiozaStatCard(
-                          label: 'Automations',
-                          value: '0',
-                          icon: Icons.bolt_rounded,
-                          iconColor: Color(0xFFF59E0B),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: NexiozaCard(
-                        onTap: () => context.go('/projects'),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.primaryContainer,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Icon(
-                                Icons.folder_rounded,
-                                color: theme.colorScheme.primary,
-                                size: 20,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              'Projects',
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: NexiozaCard(
-                        onTap: () => context.go('/organizations'),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.secondaryContainer,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Icon(
-                                Icons.business_rounded,
-                                color: theme.colorScheme.onSecondaryContainer,
-                                size: 20,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              'Orgs',
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                const NexiozaSectionHeader(title: 'Recent Activity'),
-                const SizedBox(height: 48),
-                const NexiozaEmptyState(
-                  icon: Icons.history_rounded,
-                  title: 'No recent activity',
-                  message: 'Activity from your projects and devices will appear here.',
-                ),
-                const SizedBox(height: 48),
-              ],
-            ),
+      appBar: AppBar(
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Hello, $userName', style: theme.textTheme.titleLarge),
+            Text('Welcome to Nexloza', style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            )),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            onPressed: () => context.pushNamed(RouteNames.notifications),
           ),
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => context.pushNamed(RouteNames.settings),
+          ),
+        ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: () async {},
+        child: ListView(
+          padding: AppSpacing.screenPadding,
+          children: const [
+            ProjectSummaryCard(),
+            AppSpacing.verticalMd,
+            DeviceStatusCard(),
+            AppSpacing.verticalMd,
+            QuickActionsWidget(),
+            AppSpacing.verticalMd,
+            RecentActivityWidget(),
+          ],
         ),
       ),
     );

@@ -1,23 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'routing/app_router.dart';
+import 'theme/app_theme.dart';
+import 'features/settings/presentation/screens/settings_screen.dart';
 
-import 'package:nexioza/core/router/app_router.dart';
-import 'package:nexioza/core/theme/app_theme.dart';
-import 'package:nexioza/shared/providers/theme_provider.dart';
-
-class NexiozaApp extends ConsumerWidget {
-  const NexiozaApp({super.key});
+class NexlozaApp extends ConsumerWidget {
+  const NexlozaApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch(themeModeProvider);
     final router = ref.watch(routerProvider);
+    final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp.router(
-      title: 'NexIoza',
+      title: 'Nexloza',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light(),
-      darkTheme: AppTheme.dark(),
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
       themeMode: themeMode,
       routerConfig: router,
     );
