@@ -9,15 +9,15 @@ enum TriggerType {
   deviceOffline;
 
   String get displayName => switch (this) {
-        sensorThreshold => 'Sensor Threshold',
-        deviceStateChange => 'Device State Change',
-        schedule => 'Schedule',
-        time => 'Time',
-        webhook => 'Webhook',
-        manual => 'Manual',
-        deviceOnline => 'Device Online',
-        deviceOffline => 'Device Offline',
-      };
+    sensorThreshold => 'Sensor Threshold',
+    deviceStateChange => 'Device State Change',
+    schedule => 'Schedule',
+    time => 'Time',
+    webhook => 'Webhook',
+    manual => 'Manual',
+    deviceOnline => 'Device Online',
+    deviceOffline => 'Device Offline',
+  };
 }
 
 class AutomationTrigger {

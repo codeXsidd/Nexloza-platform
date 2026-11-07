@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../../core/constants/app_strings.dart';
 import '../../../../routing/route_names.dart';
 import '../../../../shared/widgets/empty_state_widget.dart';
@@ -13,9 +14,7 @@ class AutomationsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text(AppStrings.automations),
-        actions: [
-          IconButton(icon: const Icon(Icons.search), onPressed: () {}),
-        ],
+        actions: [IconButton(icon: const Icon(Icons.search), onPressed: () {})],
       ),
       body: const EmptyStateWidget(
         icon: Icons.auto_awesome_outlined,

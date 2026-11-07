@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
+
 import '../../../../theme/app_colors.dart';
 
 class DeviceStatusIndicator extends StatelessWidget {
   final bool isOnline;
   final double size;
 
-  const DeviceStatusIndicator({super.key, required this.isOnline, this.size = 12});
+  const DeviceStatusIndicator({
+    super.key,
+    required this.isOnline,
+    this.size = 12,
+  });
 
   @override
   Widget build(BuildContext context) {

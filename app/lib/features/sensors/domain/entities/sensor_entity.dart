@@ -51,17 +51,35 @@ class SensorDefinition {
       minValue: (json['min_value'] as num?)?.toDouble(),
       maxValue: (json['max_value'] as num?)?.toDouble(),
       warningThresholdLow: (json['warning_threshold_low'] as num?)?.toDouble(),
-      warningThresholdHigh: (json['warning_threshold_high'] as num?)?.toDouble(),
-      criticalThresholdLow: (json['critical_threshold_low'] as num?)?.toDouble(),
-      criticalThresholdHigh: (json['critical_threshold_high'] as num?)?.toDouble(),
+      warningThresholdHigh: (json['warning_threshold_high'] as num?)
+          ?.toDouble(),
+      criticalThresholdLow: (json['critical_threshold_low'] as num?)
+          ?.toDouble(),
+      criticalThresholdHigh: (json['critical_threshold_high'] as num?)
+          ?.toDouble(),
       isActive: json['is_active'] as bool? ?? true,
       createdAt: DateTime.parse(json['created_at'] as String),
     );
   }
 
   static const List<String> sensorTypes = [
-    'temperature', 'humidity', 'pressure', 'gas', 'smoke', 'motion',
-    'distance', 'water_level', 'soil_moisture', 'light', 'sound',
-    'vibration', 'current', 'voltage', 'energy', 'gps', 'air_quality', 'custom',
+    'temperature',
+    'humidity',
+    'pressure',
+    'gas',
+    'smoke',
+    'motion',
+    'distance',
+    'water_level',
+    'soil_moisture',
+    'light',
+    'sound',
+    'vibration',
+    'current',
+    'voltage',
+    'energy',
+    'gps',
+    'air_quality',
+    'custom',
   ];
 }

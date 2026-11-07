@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/app_text_field.dart';
 import '../../../../shared/widgets/app_button.dart';
@@ -44,7 +45,10 @@ class _AddDeviceScreenState extends ConsumerState<AddDeviceScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Device Setup', style: Theme.of(context).textTheme.titleMedium),
+                      Text(
+                        'Device Setup',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
                       AppSpacing.verticalMd,
                       AppTextField(
                         controller: _nameController,
@@ -67,9 +71,16 @@ class _AddDeviceScreenState extends ConsumerState<AddDeviceScreen> {
                           prefixIcon: Icon(Icons.memory),
                         ),
                         items: HardwarePlatform.values
-                            .map((p) => DropdownMenuItem(value: p, child: Text(p.displayName)))
+                            .map(
+                              (p) => DropdownMenuItem(
+                                value: p,
+                                child: Text(p.displayName),
+                              ),
+                            )
                             .toList(),
-                        onChanged: (v) => setState(() => _platform = v ?? HardwarePlatform.esp32),
+                        onChanged: (v) => setState(
+                          () => _platform = v ?? HardwarePlatform.esp32,
+                        ),
                       ),
                     ],
                   ),
@@ -82,7 +93,10 @@ class _AddDeviceScreenState extends ConsumerState<AddDeviceScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Quick Pairing', style: Theme.of(context).textTheme.titleMedium),
+                      Text(
+                        'Quick Pairing',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
                       AppSpacing.verticalSm,
                       Text(
                         'Scan a QR code on your device to automatically configure it.',
@@ -106,7 +120,11 @@ class _AddDeviceScreenState extends ConsumerState<AddDeviceScreen> {
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Device registration requires Supabase connection')),
+                      const SnackBar(
+                        content: Text(
+                          'Device registration requires Supabase connection',
+                        ),
+                      ),
                     );
                   }
                 },

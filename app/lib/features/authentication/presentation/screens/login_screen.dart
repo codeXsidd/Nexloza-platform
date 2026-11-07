@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/app_text_field.dart';
@@ -31,7 +32,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   void _onLogin() {
     if (_formKey.currentState!.validate()) {
-      ref.read(authProvider.notifier).signIn(
+      ref
+          .read(authProvider.notifier)
+          .signIn(
             email: _emailController.text.trim(),
             password: _passwordController.text,
           );
@@ -46,7 +49,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     ref.listen<AuthState>(authProvider, (_, state) {
       if (state.errorMessage != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(state.errorMessage!), backgroundColor: theme.colorScheme.error),
+          SnackBar(
+            content: Text(state.errorMessage!),
+            backgroundColor: theme.colorScheme.error,
+          ),
         );
       }
     });
@@ -100,9 +106,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       prefixIcon: const Icon(Icons.lock_outlined),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                          _obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
                         ),
-                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                        onPressed: () => setState(
+                          () => _obscurePassword = !_obscurePassword,
+                        ),
                       ),
                       validator: Validators.password,
                       onSubmitted: (_) => _onLogin(),
@@ -110,7 +120,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
-                        onPressed: () => context.pushNamed(RouteNames.forgotPassword),
+                        onPressed: () =>
+                            context.pushNamed(RouteNames.forgotPassword),
                         child: const Text(AppStrings.forgotPassword),
                       ),
                     ),
@@ -124,10 +135,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(AppStrings.dontHaveAccount,
-                            style: theme.textTheme.bodyMedium),
+                        Text(
+                          AppStrings.dontHaveAccount,
+                          style: theme.textTheme.bodyMedium,
+                        ),
                         TextButton(
-                          onPressed: () => context.pushNamed(RouteNames.register),
+                          onPressed: () =>
+                              context.pushNamed(RouteNames.register),
                           child: const Text(AppStrings.signUp),
                         ),
                       ],

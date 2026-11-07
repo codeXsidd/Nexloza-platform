@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../../theme/app_spacing.dart';
 import '../../../../shared/widgets/app_button.dart';
 
@@ -16,7 +17,11 @@ class EmailVerificationScreen extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.mark_email_unread, size: 80, color: theme.colorScheme.primary),
+                Icon(
+                  Icons.mark_email_unread,
+                  size: 80,
+                  color: theme.colorScheme.primary,
+                ),
                 AppSpacing.verticalLg,
                 Text('Check Your Email', style: theme.textTheme.headlineMedium),
                 AppSpacing.verticalSm,
@@ -26,10 +31,7 @@ class EmailVerificationScreen extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
                 AppSpacing.verticalXl,
-                AppButton(
-                  label: 'Open Email App',
-                  onPressed: () {},
-                ),
+                AppButton(label: 'Open Email App', onPressed: () {}),
               ],
             ),
           ),

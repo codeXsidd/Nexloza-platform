@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/app_text_field.dart';
 import '../../../../shared/widgets/app_button.dart';
@@ -11,7 +12,8 @@ class CreateProjectScreen extends ConsumerStatefulWidget {
   const CreateProjectScreen({super.key});
 
   @override
-  ConsumerState<CreateProjectScreen> createState() => _CreateProjectScreenState();
+  ConsumerState<CreateProjectScreen> createState() =>
+      _CreateProjectScreenState();
 }
 
 class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
@@ -30,7 +32,9 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
   void _onCreate() {
     if (_formKey.currentState!.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Project creation requires Supabase connection')),
+        const SnackBar(
+          content: Text('Project creation requires Supabase connection'),
+        ),
       );
     }
   }
@@ -69,7 +73,8 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
                 items: Project.categories
                     .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                     .toList(),
-                onChanged: (v) => setState(() => _selectedCategory = v ?? 'Custom'),
+                onChanged: (v) =>
+                    setState(() => _selectedCategory = v ?? 'Custom'),
               ),
               AppSpacing.verticalXl,
               AppButton(label: 'Create Project', onPressed: _onCreate),

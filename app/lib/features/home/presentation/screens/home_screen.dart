@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../../routing/route_names.dart';
 import '../../../../theme/app_spacing.dart';
 import '../widgets/project_summary_card.dart';
@@ -16,7 +17,8 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authProvider);
     final theme = Theme.of(context);
-    final userName = auth.user?.userMetadata?['full_name'] as String? ?? 'there';
+    final userName =
+        auth.user?.userMetadata?['full_name'] as String? ?? 'there';
 
     return Scaffold(
       appBar: AppBar(
@@ -24,9 +26,12 @@ class HomeScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Hello, $userName', style: theme.textTheme.titleLarge),
-            Text('Welcome to Nexloza', style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            )),
+            Text(
+              'Welcome to Nexloza',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
           ],
         ),
         actions: [

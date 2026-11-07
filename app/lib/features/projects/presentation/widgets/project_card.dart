@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../../theme/app_spacing.dart';
 import '../../domain/entities/project_entity.dart';
 
@@ -21,7 +22,10 @@ class ProjectCard extends StatelessWidget {
             children: [
               CircleAvatar(
                 backgroundColor: theme.colorScheme.primaryContainer,
-                child: Icon(Icons.folder, color: theme.colorScheme.onPrimaryContainer),
+                child: Icon(
+                  Icons.folder,
+                  color: theme.colorScheme.onPrimaryContainer,
+                ),
               ),
               AppSpacing.horizontalMd,
               Expanded(

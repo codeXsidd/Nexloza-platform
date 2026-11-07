@@ -8,14 +8,14 @@ enum ActionType {
   aiRecommendation;
 
   String get displayName => switch (this) {
-        deviceCommand => 'Device Command',
-        notification => 'Send Notification',
-        email => 'Send Email',
-        webhook => 'Call Webhook',
-        runScene => 'Run Scene',
-        runAutomation => 'Run Automation',
-        aiRecommendation => 'AI Recommendation',
-      };
+    deviceCommand => 'Device Command',
+    notification => 'Send Notification',
+    email => 'Send Email',
+    webhook => 'Call Webhook',
+    runScene => 'Run Scene',
+    runAutomation => 'Run Automation',
+    aiRecommendation => 'AI Recommendation',
+  };
 }
 
 class AutomationAction {

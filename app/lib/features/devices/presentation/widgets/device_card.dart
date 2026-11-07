@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../../shared/widgets/status_badge.dart';
 import '../../../../theme/app_spacing.dart';
 import '../../domain/entities/device_entity.dart';
@@ -22,7 +23,10 @@ class DeviceCard extends StatelessWidget {
             children: [
               CircleAvatar(
                 backgroundColor: theme.colorScheme.primaryContainer,
-                child: Icon(Icons.memory, color: theme.colorScheme.onPrimaryContainer),
+                child: Icon(
+                  Icons.memory,
+                  color: theme.colorScheme.onPrimaryContainer,
+                ),
               ),
               AppSpacing.horizontalMd,
               Expanded(
@@ -30,7 +34,10 @@ class DeviceCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(device.name, style: theme.textTheme.titleMedium),
-                    Text(device.hardwarePlatform.displayName, style: theme.textTheme.bodySmall),
+                    Text(
+                      device.hardwarePlatform.displayName,
+                      style: theme.textTheme.bodySmall,
+                    ),
                   ],
                 ),
               ),

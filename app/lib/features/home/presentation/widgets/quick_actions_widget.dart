@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../../routing/route_names.dart';
 import '../../../../theme/app_spacing.dart';
 
@@ -55,7 +56,11 @@ class _ActionChip extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
-  const _ActionChip({required this.icon, required this.label, required this.onTap});
+  const _ActionChip({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {

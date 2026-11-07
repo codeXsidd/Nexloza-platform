@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../../theme/app_spacing.dart';
 
 class AiSuggestionCard extends StatelessWidget {
@@ -26,7 +27,10 @@ class AiSuggestionCard extends StatelessWidget {
               onPressed: () => onSuggestionTap(s),
               style: OutlinedButton.styleFrom(
                 alignment: Alignment.centerLeft,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
               ),
               child: Text(s, style: theme.textTheme.bodyMedium),
             ),

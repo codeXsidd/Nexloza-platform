@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/app_text_field.dart';
@@ -41,7 +42,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       return;
     }
     if (_formKey.currentState!.validate()) {
-      ref.read(authProvider.notifier).signUp(
+      ref
+          .read(authProvider.notifier)
+          .signUp(
             email: _emailController.text.trim(),
             password: _passwordController.text,
             fullName: _nameController.text.trim(),
@@ -57,7 +60,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     ref.listen<AuthState>(authProvider, (_, state) {
       if (state.errorMessage != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(state.errorMessage!), backgroundColor: theme.colorScheme.error),
+          SnackBar(
+            content: Text(state.errorMessage!),
+            backgroundColor: theme.colorScheme.error,
+          ),
         );
       }
       if (state.status == AuthStatus.authenticated) {
@@ -122,9 +128,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       prefixIcon: const Icon(Icons.lock_outlined),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                          _obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
                         ),
-                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                        onPressed: () => setState(
+                          () => _obscurePassword = !_obscurePassword,
+                        ),
                       ),
                       validator: Validators.password,
                     ),
@@ -135,13 +145,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       obscureText: true,
                       textInputAction: TextInputAction.done,
                       prefixIcon: const Icon(Icons.lock_outlined),
-                      validator: (v) => Validators.confirmPassword(v, _passwordController.text),
+                      validator: (v) => Validators.confirmPassword(
+                        v,
+                        _passwordController.text,
+                      ),
                     ),
                     AppSpacing.verticalMd,
                     CheckboxListTile(
                       value: _agreedToTerms,
-                      onChanged: (v) => setState(() => _agreedToTerms = v ?? false),
-                      title: Text(AppStrings.agreeToTerms, style: theme.textTheme.bodySmall),
+                      onChanged: (v) =>
+                          setState(() => _agreedToTerms = v ?? false),
+                      title: Text(
+                        AppStrings.agreeToTerms,
+                        style: theme.textTheme.bodySmall,
+                      ),
                       controlAffinity: ListTileControlAffinity.leading,
                       contentPadding: EdgeInsets.zero,
                     ),
@@ -155,7 +172,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(AppStrings.alreadyHaveAccount, style: theme.textTheme.bodyMedium),
+                        Text(
+                          AppStrings.alreadyHaveAccount,
+                          style: theme.textTheme.bodyMedium,
+                        ),
                         TextButton(
                           onPressed: () => context.pop(),
                           child: const Text(AppStrings.signIn),

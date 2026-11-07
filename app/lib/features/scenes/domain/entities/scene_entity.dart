@@ -30,7 +30,11 @@ class Scene {
   }
 
   static const List<String> presets = [
-    'Night Mode', 'Away Mode', 'Morning Mode',
-    'Security Mode', 'Energy Saving', 'Custom',
+    'Night Mode',
+    'Away Mode',
+    'Morning Mode',
+    'Security Mode',
+    'Energy Saving',
+    'Custom',
   ];
 }

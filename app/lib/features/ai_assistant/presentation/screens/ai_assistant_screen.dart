@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../../core/constants/app_strings.dart';
 import '../../../../theme/app_spacing.dart';
 import '../widgets/chat_bubble.dart';
@@ -29,11 +30,14 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
     if (text.isEmpty) return;
     setState(() {
       _messages.add(_ChatMessage(text: text, isUser: true));
-      _messages.add(_ChatMessage(
-        text: 'AI Assistant requires AWS Bedrock configuration. '
-            'Set up your Bedrock credentials in the backend to enable this feature.',
-        isUser: false,
-      ));
+      _messages.add(
+        _ChatMessage(
+          text:
+              'AI Assistant requires AWS Bedrock configuration. '
+              'Set up your Bedrock credentials in the backend to enable this feature.',
+          isUser: false,
+        ),
+      );
     });
     _messageController.clear();
     Future.delayed(const Duration(milliseconds: 100), () {
@@ -55,7 +59,10 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
         title: const Text(AppStrings.aiAssistant),
         actions: [
           IconButton(icon: const Icon(Icons.history), onPressed: () {}),
-          IconButton(icon: const Icon(Icons.add), onPressed: () => setState(() => _messages.clear())),
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () => setState(() => _messages.clear()),
+          ),
         ],
       ),
       body: Column(
@@ -77,7 +84,13 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: theme.colorScheme.surface,
-              boxShadow: [BoxShadow(color: Colors.black.withAlpha(10), blurRadius: 8, offset: const Offset(0, -2))],
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withAlpha(10),
+                  blurRadius: 8,
+                  offset: const Offset(0, -2),
+                ),
+              ],
             ),
             child: SafeArea(
               top: false,
@@ -93,7 +106,10 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
                           borderSide: BorderSide.none,
                         ),
                         filled: true,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
                       ),
                       textInputAction: TextInputAction.send,
                       onSubmitted: (_) => _sendMessage(),
@@ -122,7 +138,11 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
           children: [
             Icon(Icons.smart_toy, size: 80, color: theme.colorScheme.primary),
             AppSpacing.verticalMd,
-            Text(AppStrings.aiWelcome, style: theme.textTheme.titleLarge, textAlign: TextAlign.center),
+            Text(
+              AppStrings.aiWelcome,
+              style: theme.textTheme.titleLarge,
+              textAlign: TextAlign.center,
+            ),
             AppSpacing.verticalLg,
             AiSuggestionCard(
               suggestions: const [

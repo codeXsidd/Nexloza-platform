@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   analyze:
-    name: Analyze & Lint
+    name: Analyze & Format
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -121,3 +121,104 @@ jobs:
         with:
           name: android-apk
           path: app/build/app/outputs/flutter-apk/app-release.apk
+
+  validate-backend:
+    name: Validate Backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate SQL migrations exist
+        run: |
+          count=$(ls -1 backend/supabase/migrations/*.sql 2>/dev/null | wc -l)
+          echo "Found $count migration files"
+          if [ "$count" -lt 1 ]; then
+            echo "ERROR: No migration files found"
+            exit 1
+          fi
+
+      - name: Check SQL syntax (basic)
+        run: |
+          for f in backend/supabase/migrations/*.sql; do
+            echo "Checking $f..."
+            # Verify files are non-empty and contain SQL
+            if [ ! -s "$f" ]; then
+              echo "ERROR: Empty migration: $f"
+              exit 1
+            fi
+            # Check for common SQL keywords
+            if ! grep -qiE '(CREATE|ALTER|INSERT|DROP|ENABLE)' "$f"; then
+              echo "WARNING: $f may not contain valid SQL"
+            fi
+          done
+          echo "All migrations validated"
+
+      - name: Validate Edge Functions exist
+        run: |
+          for fn in device-auth telemetry-ingest device-command ai-assistant automation-engine webhook-handler; do
+            if [ ! -f "backend/supabase/functions/$fn/index.ts" ]; then
+              echo "ERROR: Missing edge function: $fn"
+              exit 1
+            fi
+          done
+          echo "All edge functions present"
+
+  validate-firmware:
+    name: Validate Firmware SDK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate SDK structure
+        run: |
+          required_files=(
+            "firmware/nexloza-sdk/src/NexlozaClient.h"
+            "firmware/nexloza-sdk/src/NexlozaClient.cpp"
+            "firmware/nexloza-sdk/src/NexlozaWiFi.h"
+            "firmware/nexloza-sdk/src/NexlozaWiFi.cpp"
+            "firmware/nexloza-sdk/library.json"
+            "firmware/nexloza-sdk/library.properties"
+          )
+          for f in "${required_files[@]}"; do
+            if [ ! -f "$f" ]; then
+              echo "ERROR: Missing SDK file: $f"
+              exit 1
+            fi
+          done
+          echo "SDK structure validated"
+
+      - name: Validate examples exist
+        run: |
+          examples=(
+            "esp32-relay-light"
+            "esp32-relay-fan"
+            "esp32-dht22"
+            "esp32-soil-moisture"
+            "esp32-pir-motion"
+            "esp32-multi-sensor"
+            "esp32-led"
+            "esp8266-relay"
+            "esp8266-led"
+          )
+          for ex in "${examples[@]}"; do
+            if [ ! -f "firmware/examples/$ex/src/main.cpp" ]; then
+              echo "ERROR: Missing example: $ex"
+              exit 1
+            fi
+            if [ ! -f "firmware/examples/$ex/platformio.ini" ]; then
+              echo "ERROR: Missing platformio.ini for: $ex"
+              exit 1
+            fi
+          done
+          echo "All examples validated"
+
+      # Note: Actual compilation requires PlatformIO CLI and board support
+      # packages, which are heavy for CI. Add this when firmware compilation
+      # CI is prioritized:
+      # - name: Install PlatformIO
+      #   run: pip install platformio
+      # - name: Compile ESP32 examples
+      #   run: |
+      #     for ex in firmware/examples/esp32-*/; do
+      #       pio run -d "$ex"
+      #     done

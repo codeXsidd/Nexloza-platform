@@ -1,4 +1,5 @@
 enum NotificationCategory { device, automation, security, system, alert }
+
 enum NotificationSeverity { info, warning, critical }
 
 class AppNotification {

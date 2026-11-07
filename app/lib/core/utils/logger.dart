@@ -5,7 +5,12 @@ abstract final class AppLogger {
     dev.log(message, name: tag ?? 'Nexloza');
   }
 
-  static void error(String message, {Object? error, StackTrace? stackTrace, String? tag}) {
+  static void error(
+    String message, {
+    Object? error,
+    StackTrace? stackTrace,
+    String? tag,
+  }) {
     dev.log(
       message,
       name: tag ?? 'Nexloza',

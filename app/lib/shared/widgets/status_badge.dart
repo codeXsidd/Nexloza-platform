@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../theme/app_colors.dart';
 
 class StatusBadge extends StatelessWidget {
@@ -11,8 +12,14 @@ class StatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final (color, bgColor) = switch (type) {
       StatusType.online => (AppColors.online, AppColors.online.withAlpha(25)),
-      StatusType.offline => (AppColors.offline, AppColors.offline.withAlpha(25)),
-      StatusType.warning => (AppColors.warning, AppColors.warning.withAlpha(25)),
+      StatusType.offline => (
+        AppColors.offline,
+        AppColors.offline.withAlpha(25),
+      ),
+      StatusType.warning => (
+        AppColors.warning,
+        AppColors.warning.withAlpha(25),
+      ),
       StatusType.error => (AppColors.error, AppColors.error.withAlpha(25)),
       StatusType.info => (AppColors.info, AppColors.info.withAlpha(25)),
     };
@@ -34,7 +41,11 @@ class StatusBadge extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             label,
-            style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),

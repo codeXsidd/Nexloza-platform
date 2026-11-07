@@ -1,4 +1,5 @@
 abstract final class RouteNames {
+  static const String splash = 'splash';
   static const String login = 'login';
   static const String register = 'register';
   static const String forgotPassword = 'forgotPassword';
@@ -7,6 +8,7 @@ abstract final class RouteNames {
   static const String projects = 'projects';
   static const String projectDetail = 'projectDetail';
   static const String createProject = 'createProject';
+  static const String editProject = 'editProject';
   static const String devices = 'devices';
   static const String deviceDetail = 'deviceDetail';
   static const String addDevice = 'addDevice';

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../../theme/app_spacing.dart';
 
 class RecentActivityWidget extends StatelessWidget {
@@ -20,7 +21,11 @@ class RecentActivityWidget extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 24),
                 child: Column(
                   children: [
-                    Icon(Icons.history, size: 48, color: theme.colorScheme.outline),
+                    Icon(
+                      Icons.history,
+                      size: 48,
+                      color: theme.colorScheme.outline,
+                    ),
                     AppSpacing.verticalSm,
                     Text(
                       'No recent activity',

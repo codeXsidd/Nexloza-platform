@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../../theme/app_spacing.dart';
 
 class ProjectDetailScreen extends ConsumerWidget {
@@ -34,14 +35,29 @@ class ProjectDetailScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Project ID: $projectId', style: theme.textTheme.bodySmall),
+                  Text(
+                    'Project ID: $projectId',
+                    style: theme.textTheme.bodySmall,
+                  ),
                   AppSpacing.verticalMd,
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _InfoTile(icon: Icons.devices, label: 'Devices', value: '0'),
-                      _InfoTile(icon: Icons.sensors, label: 'Sensors', value: '0'),
-                      _InfoTile(icon: Icons.auto_awesome, label: 'Automations', value: '0'),
+                      _InfoTile(
+                        icon: Icons.devices,
+                        label: 'Devices',
+                        value: '0',
+                      ),
+                      _InfoTile(
+                        icon: Icons.sensors,
+                        label: 'Sensors',
+                        value: '0',
+                      ),
+                      _InfoTile(
+                        icon: Icons.auto_awesome,
+                        label: 'Automations',
+                        value: '0',
+                      ),
                     ],
                   ),
                 ],
@@ -66,9 +82,7 @@ class ProjectDetailScreen extends ConsumerWidget {
           const Card(
             child: Padding(
               padding: AppSpacing.cardPadding,
-              child: Center(
-                child: Text('No telemetry data yet'),
-              ),
+              child: Center(child: Text('No telemetry data yet')),
             ),
           ),
         ],
@@ -82,7 +96,11 @@ class _InfoTile extends StatelessWidget {
   final String label;
   final String value;
 
-  const _InfoTile({required this.icon, required this.label, required this.value});
+  const _InfoTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -32,7 +32,8 @@ abstract final class AppStrings {
       'A verification email has been sent. Please check your inbox.';
   static const String resetPasswordSent =
       'Password reset instructions have been sent to your email.';
-  static const String agreeToTerms = 'I agree to the Terms of Service and Privacy Policy';
+  static const String agreeToTerms =
+      'I agree to the Terms of Service and Privacy Policy';
 
   // Navigation
   static const String home = 'Home';
@@ -50,20 +51,23 @@ abstract final class AppStrings {
   static const String projectDescription = 'Description';
   static const String projectCategory = 'Category';
   static const String noProjects = 'No projects yet';
-  static const String noProjectsHint = 'Create your first IoT project to get started.';
+  static const String noProjectsHint =
+      'Create your first IoT project to get started.';
 
   // Devices
   static const String addDevice = 'Add Device';
   static const String pairDevice = 'Pair Device';
   static const String noDevices = 'No devices yet';
-  static const String noDevicesHint = 'Add a device to start monitoring and controlling.';
+  static const String noDevicesHint =
+      'Add a device to start monitoring and controlling.';
   static const String online = 'Online';
   static const String offline = 'Offline';
 
   // Automations
   static const String newAutomation = 'New Automation';
   static const String noAutomations = 'No automations yet';
-  static const String noAutomationsHint = 'Create automations to control your devices automatically.';
+  static const String noAutomationsHint =
+      'Create automations to control your devices automatically.';
 
   // AI
   static const String askAi = 'Ask Nexloza AI...';

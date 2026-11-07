@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/app_text_field.dart';
@@ -12,7 +13,8 @@ class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
 
   @override
-  ConsumerState<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+  ConsumerState<ForgotPasswordScreen> createState() =>
+      _ForgotPasswordScreenState();
 }
 
 class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
@@ -28,7 +30,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
   void _onSubmit() async {
     if (_formKey.currentState!.validate()) {
-      await ref.read(authProvider.notifier).resetPassword(_emailController.text.trim());
+      await ref
+          .read(authProvider.notifier)
+          .resetPassword(_emailController.text.trim());
       if (mounted) setState(() => _sent = true);
     }
   }
@@ -55,10 +59,17 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   ? Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.mark_email_read, size: 80, color: theme.colorScheme.primary),
+                        Icon(
+                          Icons.mark_email_read,
+                          size: 80,
+                          color: theme.colorScheme.primary,
+                        ),
                         AppSpacing.verticalLg,
-                        Text(AppStrings.resetPasswordSent,
-                            style: theme.textTheme.bodyLarge, textAlign: TextAlign.center),
+                        Text(
+                          AppStrings.resetPasswordSent,
+                          style: theme.textTheme.bodyLarge,
+                          textAlign: TextAlign.center,
+                        ),
                         AppSpacing.verticalXl,
                         AppButton(
                           label: 'Back to Login',
@@ -71,10 +82,17 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Icon(Icons.lock_reset, size: 72, color: theme.colorScheme.primary),
+                          Icon(
+                            Icons.lock_reset,
+                            size: 72,
+                            color: theme.colorScheme.primary,
+                          ),
                           AppSpacing.verticalLg,
-                          Text(AppStrings.resetPassword, style: theme.textTheme.headlineMedium,
-                              textAlign: TextAlign.center),
+                          Text(
+                            AppStrings.resetPassword,
+                            style: theme.textTheme.headlineMedium,
+                            textAlign: TextAlign.center,
+                          ),
                           AppSpacing.verticalSm,
                           Text(
                             'Enter your email and we\'ll send you a link to reset your password.',

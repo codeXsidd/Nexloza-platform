@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../../shared/widgets/app_text_field.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../theme/app_spacing.dart';
@@ -49,7 +50,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   radius: 50,
                   backgroundColor: theme.colorScheme.primaryContainer,
                   child: Text(
-                    (auth.user?.userMetadata?['full_name'] as String? ?? 'U')[0].toUpperCase(),
+                    (auth.user?.userMetadata?['full_name'] as String? ?? 'U')[0]
+                        .toUpperCase(),
                     style: theme.textTheme.headlineLarge?.copyWith(
                       color: theme.colorScheme.onPrimaryContainer,
                     ),
@@ -103,7 +105,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             label: 'Save Changes',
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Profile update requires Supabase connection')),
+                const SnackBar(
+                  content: Text('Profile update requires Supabase connection'),
+                ),
               );
             },
           ),

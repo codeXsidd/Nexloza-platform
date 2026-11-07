@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../../core/constants/app_strings.dart';
 import '../../../../routing/route_names.dart';
 import '../../../../shared/widgets/empty_state_widget.dart';
@@ -17,7 +18,10 @@ class DevicesScreen extends ConsumerWidget {
           IconButton(icon: const Icon(Icons.search), onPressed: () {}),
           PopupMenuButton<String>(
             itemBuilder: (context) => [
-              const PopupMenuItem(value: 'filter', child: Text('Filter by status')),
+              const PopupMenuItem(
+                value: 'filter',
+                child: Text('Filter by status'),
+              ),
               const PopupMenuItem(value: 'sort', child: Text('Sort by name')),
             ],
           ),

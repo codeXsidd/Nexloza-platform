@@ -54,8 +54,16 @@ class ActuatorDefinition {
   }
 
   static const List<String> actuatorTypes = [
-    'relay', 'light', 'fan', 'pump', 'motor', 'servo',
-    'buzzer', 'switch', 'smart_plug', 'custom',
+    'relay',
+    'light',
+    'fan',
+    'pump',
+    'motor',
+    'servo',
+    'buzzer',
+    'switch',
+    'smart_plug',
+    'custom',
   ];
 }
 
@@ -67,10 +75,10 @@ enum ControlType {
   color;
 
   String get displayName => switch (this) {
-        toggle => 'ON/OFF Toggle',
-        slider => 'Slider',
-        numeric => 'Numeric Input',
-        multiLevel => 'Multi-Level',
-        color => 'Color Picker',
-      };
+    toggle => 'ON/OFF Toggle',
+    slider => 'Slider',
+    numeric => 'Numeric Input',
+    multiLevel => 'Multi-Level',
+    color => 'Color Picker',
+  };
 }

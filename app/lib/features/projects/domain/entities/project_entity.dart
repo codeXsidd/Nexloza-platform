@@ -46,14 +46,14 @@ class Project {
   }
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'description': description,
-        'category': category,
-        'icon': icon,
-        'organization_id': organizationId,
-        'settings': settings,
-        'is_active': isActive,
-      };
+    'name': name,
+    'description': description,
+    'category': category,
+    'icon': icon,
+    'organization_id': organizationId,
+    'settings': settings,
+    'is_active': isActive,
+  };
 
   static const List<String> categories = [
     'Smart Home',
@@ -67,5 +67,4 @@ class Project {
     'Security',
     'Custom',
   ];
-
 }

@@ -1,12 +1,59 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../../../core/storage/preferences_service.dart';
 import '../../../../routing/route_names.dart';
 import '../../../../shared/widgets/confirmation_dialog.dart';
 import '../../../../theme/app_spacing.dart';
 import '../../../authentication/presentation/providers/auth_provider.dart';
 
-final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.system);
+final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>((
+  ref,
+) {
+  final prefs = ref.watch(preferencesServiceProvider);
+  return ThemeModeNotifier(prefs);
+});
+
+class ThemeModeNotifier extends StateNotifier<ThemeMode> {
+  final PreferencesService _prefs;
+
+  ThemeModeNotifier(this._prefs) : super(_prefs.themeMode);
+
+  void setThemeMode(ThemeMode mode) {
+    state = mode;
+    _prefs.setThemeMode(mode);
+  }
+}
+
+final pushNotificationsProvider =
+    StateNotifierProvider<_BoolPrefNotifier, bool>((ref) {
+      final prefs = ref.watch(preferencesServiceProvider);
+      return _BoolPrefNotifier(
+        prefs.notificationsEnabled,
+        prefs.setNotificationsEnabled,
+      );
+    });
+
+final emailNotificationsProvider =
+    StateNotifierProvider<_BoolPrefNotifier, bool>((ref) {
+      final prefs = ref.watch(preferencesServiceProvider);
+      return _BoolPrefNotifier(
+        prefs.emailNotificationsEnabled,
+        prefs.setEmailNotificationsEnabled,
+      );
+    });
+
+class _BoolPrefNotifier extends StateNotifier<bool> {
+  final Future<void> Function(bool) _persist;
+
+  _BoolPrefNotifier(super.initial, this._persist);
+
+  void toggle(bool value) {
+    state = value;
+    _persist(value);
+  }
+}
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -15,6 +62,8 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final themeMode = ref.watch(themeModeProvider);
+    final pushEnabled = ref.watch(pushNotificationsProvider);
+    final emailEnabled = ref.watch(emailNotificationsProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
@@ -49,12 +98,22 @@ class SettingsScreen extends ConsumerWidget {
             title: const Text('Theme'),
             trailing: SegmentedButton<ThemeMode>(
               segments: const [
-                ButtonSegment(value: ThemeMode.light, icon: Icon(Icons.light_mode, size: 18)),
-                ButtonSegment(value: ThemeMode.system, icon: Icon(Icons.settings_brightness, size: 18)),
-                ButtonSegment(value: ThemeMode.dark, icon: Icon(Icons.dark_mode, size: 18)),
+                ButtonSegment(
+                  value: ThemeMode.light,
+                  icon: Icon(Icons.light_mode, size: 18),
+                ),
+                ButtonSegment(
+                  value: ThemeMode.system,
+                  icon: Icon(Icons.settings_brightness, size: 18),
+                ),
+                ButtonSegment(
+                  value: ThemeMode.dark,
+                  icon: Icon(Icons.dark_mode, size: 18),
+                ),
               ],
               selected: {themeMode},
-              onSelectionChanged: (s) => ref.read(themeModeProvider.notifier).state = s.first,
+              onSelectionChanged: (s) =>
+                  ref.read(themeModeProvider.notifier).setThemeMode(s.first),
             ),
           ),
           const Divider(),
@@ -62,26 +121,51 @@ class SettingsScreen extends ConsumerWidget {
           SwitchListTile(
             secondary: const Icon(Icons.notifications_outlined),
             title: const Text('Push Notifications'),
-            value: true,
-            onChanged: (v) {},
+            value: pushEnabled,
+            onChanged: (v) =>
+                ref.read(pushNotificationsProvider.notifier).toggle(v),
           ),
           SwitchListTile(
             secondary: const Icon(Icons.email_outlined),
             title: const Text('Email Notifications'),
-            value: false,
-            onChanged: (v) {},
+            value: emailEnabled,
+            onChanged: (v) =>
+                ref.read(emailNotificationsProvider.notifier).toggle(v),
+          ),
+          const Divider(),
+          _SectionHeader('Backend'),
+          ListTile(
+            leading: const Icon(Icons.cloud_outlined),
+            title: const Text('Supabase'),
+            subtitle: const Text('Requires configuration in .env'),
+            trailing: const Icon(Icons.info_outline, size: 20),
+          ),
+          ListTile(
+            leading: const Icon(Icons.router_outlined),
+            title: const Text('MQTT Broker'),
+            subtitle: const Text('Requires configuration in .env'),
+            trailing: const Icon(Icons.info_outline, size: 20),
           ),
           const Divider(),
           _SectionHeader('About'),
           ListTile(
             leading: const Icon(Icons.info_outlined),
-            title: const Text('Version'),
-            subtitle: const Text('0.1.0'),
+            title: const Text('About Nexloza'),
+            subtitle: const Text('Version 0.1.0'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.shield_outlined),
+            title: const Text('Privacy Policy'),
+            onTap: () {},
           ),
           ListTile(
             leading: const Icon(Icons.description_outlined),
             title: const Text('Licenses'),
-            onTap: () => showLicensePage(context: context, applicationName: 'Nexloza'),
+            onTap: () => showLicensePage(
+              context: context,
+              applicationName: 'Nexloza',
+              applicationVersion: '0.1.0',
+            ),
           ),
           const Divider(),
           AppSpacing.verticalSm,
@@ -124,9 +208,8 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
       child: Text(
         title,
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
-            ),
+        style: Theme.of(context).textTheme.titleSmall
+            ?.copyWith(color: Theme.of(context).colorScheme.primary),
       ),
     );
   }

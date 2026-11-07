@@ -60,7 +60,10 @@ pio device monitor
 | [esp32-soil-moisture](examples/esp32-soil-moisture/) | ESP32 | Capacitive soil moisture |
 | [esp32-pir-motion](examples/esp32-pir-motion/) | ESP32 | HC-SR501 PIR motion detector |
 | [esp32-multi-sensor](examples/esp32-multi-sensor/) | ESP32 | DHT22 + BMP280 + LDR |
+| [esp32-led](examples/esp32-led/) | ESP32 | Built-in LED (GPIO2) |
+| [esp8266-led](examples/esp8266-led/) | ESP8266 | Built-in LED (GPIO2, active-LOW) |
 | [esp8266-relay](examples/esp8266-relay/) | ESP8266 | Relay switch (NodeMCU) |
+| [arduino-uno](examples/arduino-uno/) | Arduino Uno | Gateway approach (see README) |
 
 ## MQTT Topic Structure
 

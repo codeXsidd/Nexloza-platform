@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../../../../shared/providers/supabase_provider.dart';
 import '../../../../core/utils/logger.dart';
 
@@ -35,14 +36,20 @@ class AuthNotifier extends StateNotifier<AuthState> {
   void _init() {
     final session = _auth.currentSession;
     if (session != null) {
-      state = AuthState(status: AuthStatus.authenticated, user: _auth.currentUser);
+      state = AuthState(
+        status: AuthStatus.authenticated,
+        user: _auth.currentUser,
+      );
     } else {
       state = const AuthState(status: AuthStatus.unauthenticated);
     }
 
     _auth.onAuthStateChange.listen((data) {
       if (data.session != null) {
-        state = AuthState(status: AuthStatus.authenticated, user: _auth.currentUser);
+        state = AuthState(
+          status: AuthStatus.authenticated,
+          user: _auth.currentUser,
+        );
       } else {
         state = const AuthState(status: AuthStatus.unauthenticated);
       }
@@ -57,7 +64,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(status: AuthStatus.error, errorMessage: e.message);
     } catch (e) {
       AppLogger.error('Sign in failed', error: e);
-      state = state.copyWith(status: AuthStatus.error, errorMessage: 'Sign in failed. Please try again.');
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: 'Sign in failed. Please try again.',
+      );
     }
   }
 
@@ -77,7 +87,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(status: AuthStatus.error, errorMessage: e.message);
     } catch (e) {
       AppLogger.error('Sign up failed', error: e);
-      state = state.copyWith(status: AuthStatus.error, errorMessage: 'Sign up failed. Please try again.');
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: 'Sign up failed. Please try again.',
+      );
     }
   }
 
@@ -90,7 +103,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(status: AuthStatus.error, errorMessage: e.message);
     } catch (e) {
       AppLogger.error('Password reset failed', error: e);
-      state = state.copyWith(status: AuthStatus.error, errorMessage: 'Password reset failed.');
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: 'Password reset failed.',
+      );
     }
   }
 

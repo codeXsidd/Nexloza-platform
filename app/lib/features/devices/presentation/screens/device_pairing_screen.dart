@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../../theme/app_spacing.dart';
 
 class DevicePairingScreen extends StatelessWidget {
@@ -15,7 +16,11 @@ class DevicePairingScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.qr_code_scanner, size: 120, color: theme.colorScheme.primary),
+              Icon(
+                Icons.qr_code_scanner,
+                size: 120,
+                color: theme.colorScheme.primary,
+              ),
               AppSpacing.verticalLg,
               Text('Scan QR Code', style: theme.textTheme.headlineSmall),
               AppSpacing.verticalSm,

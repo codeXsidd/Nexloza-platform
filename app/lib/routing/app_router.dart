@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../features/authentication/presentation/providers/auth_provider.dart';
+import '../features/authentication/presentation/screens/splash_screen.dart';
 import '../features/authentication/presentation/screens/login_screen.dart';
 import '../features/authentication/presentation/screens/register_screen.dart';
 import '../features/authentication/presentation/screens/forgot_password_screen.dart';
+import '../features/authentication/presentation/screens/email_verification_screen.dart';
 import '../features/home/presentation/screens/home_screen.dart';
 import '../features/projects/presentation/screens/projects_screen.dart';
 import '../features/projects/presentation/screens/project_detail_screen.dart';
@@ -19,26 +22,47 @@ import '../features/notifications/presentation/screens/notifications_screen.dart
 import '../features/settings/presentation/screens/settings_screen.dart';
 import '../features/settings/presentation/screens/profile_screen.dart';
 import '../shared/widgets/app_scaffold.dart';
+import '../shared/widgets/not_found_screen.dart';
 import 'route_names.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
+
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authProvider);
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: '/home',
+    initialLocation: '/splash',
+    errorBuilder: (context, state) => const NotFoundScreen(),
     redirect: (context, state) {
-      final isAuthenticated = authState.status == AuthStatus.authenticated;
-      final isAuthRoute = state.matchedLocation == '/login' ||
-          state.matchedLocation == '/register' ||
-          state.matchedLocation == '/forgot-password';
+      final status = authState.status;
+      final location = state.matchedLocation;
 
-      if (!isAuthenticated && !isAuthRoute) return '/login';
-      if (isAuthenticated && isAuthRoute) return '/home';
+      const authRoutes = [
+        '/login',
+        '/register',
+        '/forgot-password',
+        '/email-verification',
+      ];
+      final isAuthRoute = authRoutes.contains(location);
+      final isSplash = location == '/splash';
+
+      if (status == AuthStatus.initial) {
+        return isSplash ? null : '/splash';
+      }
+
+      final isAuthenticated = status == AuthStatus.authenticated;
+
+      if (!isAuthenticated && !isAuthRoute && !isSplash) return '/login';
+      if (isAuthenticated && (isAuthRoute || isSplash)) return '/home';
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/splash',
+        name: RouteNames.splash,
+        builder: (context, state) => const SplashScreen(),
+      ),
       GoRoute(
         path: '/login',
         name: RouteNames.login,
@@ -53,6 +77,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/forgot-password',
         name: RouteNames.forgotPassword,
         builder: (context, state) => const ForgotPasswordScreen(),
+      ),
+      GoRoute(
+        path: '/email-verification',
+        name: RouteNames.emailVerification,
+        builder: (context, state) => const EmailVerificationScreen(),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>

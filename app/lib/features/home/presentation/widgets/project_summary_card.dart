@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../../theme/app_spacing.dart';
 
 class ProjectSummaryCard extends StatelessWidget {
@@ -76,7 +77,10 @@ class _StatTile extends StatelessWidget {
         children: [
           Icon(icon, color: color, size: 20),
           const SizedBox(height: 8),
-          Text(value, style: theme.textTheme.headlineSmall?.copyWith(color: color)),
+          Text(
+            value,
+            style: theme.textTheme.headlineSmall?.copyWith(color: color),
+          ),
           Text(label, style: theme.textTheme.bodySmall),
         ],
       ),

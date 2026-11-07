@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/app_text_field.dart';
 import '../../../../shared/widgets/app_button.dart';
@@ -12,10 +13,12 @@ class CreateAutomationScreen extends ConsumerStatefulWidget {
   const CreateAutomationScreen({super.key});
 
   @override
-  ConsumerState<CreateAutomationScreen> createState() => _CreateAutomationScreenState();
+  ConsumerState<CreateAutomationScreen> createState() =>
+      _CreateAutomationScreenState();
 }
 
-class _CreateAutomationScreenState extends ConsumerState<CreateAutomationScreen> {
+class _CreateAutomationScreenState
+    extends ConsumerState<CreateAutomationScreen> {
   final _nameController = TextEditingController();
   TriggerType _selectedTrigger = TriggerType.sensorThreshold;
   ActionType _selectedAction = ActionType.deviceCommand;
@@ -55,9 +58,16 @@ class _CreateAutomationScreenState extends ConsumerState<CreateAutomationScreen>
                       prefixIcon: Icon(Icons.bolt),
                     ),
                     items: TriggerType.values
-                        .map((t) => DropdownMenuItem(value: t, child: Text(t.displayName)))
+                        .map(
+                          (t) => DropdownMenuItem(
+                            value: t,
+                            child: Text(t.displayName),
+                          ),
+                        )
                         .toList(),
-                    onChanged: (v) => setState(() => _selectedTrigger = v ?? TriggerType.sensorThreshold),
+                    onChanged: (v) => setState(
+                      () => _selectedTrigger = v ?? TriggerType.sensorThreshold,
+                    ),
                   ),
                 ],
               ),
@@ -78,9 +88,16 @@ class _CreateAutomationScreenState extends ConsumerState<CreateAutomationScreen>
                       prefixIcon: Icon(Icons.play_arrow),
                     ),
                     items: ActionType.values
-                        .map((a) => DropdownMenuItem(value: a, child: Text(a.displayName)))
+                        .map(
+                          (a) => DropdownMenuItem(
+                            value: a,
+                            child: Text(a.displayName),
+                          ),
+                        )
                         .toList(),
-                    onChanged: (v) => setState(() => _selectedAction = v ?? ActionType.deviceCommand),
+                    onChanged: (v) => setState(
+                      () => _selectedAction = v ?? ActionType.deviceCommand,
+                    ),
                   ),
                 ],
               ),
@@ -91,7 +108,11 @@ class _CreateAutomationScreenState extends ConsumerState<CreateAutomationScreen>
             label: 'Create Automation',
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Automation creation requires Supabase connection')),
+                const SnackBar(
+                  content: Text(
+                    'Automation creation requires Supabase connection',
+                  ),
+                ),
               );
             },
           ),

@@ -2,9 +2,11 @@ abstract final class MqttConstants {
   static const int defaultPort = 1883;
   static const int defaultTlsPort = 8883;
   static const int defaultWsPort = 8083;
-  static const int keepAlivePeriodSeconds = 30;
+  static const int keepAliveSeconds = 30;
   static const int reconnectDelaySeconds = 5;
   static const int maxReconnectAttempts = 10;
+
+  static const String topicPrefix = 'nexloza';
 
   static const int qosAtMostOnce = 0;
   static const int qosAtLeastOnce = 1;
@@ -25,6 +27,5 @@ abstract final class MqttConstants {
   static String heartbeatTopic(String deviceId) =>
       'nexloza/devices/$deviceId/heartbeat';
 
-  static String otaTopic(String deviceId) =>
-      'nexloza/devices/$deviceId/ota';
+  static String otaTopic(String deviceId) => 'nexloza/devices/$deviceId/ota';
 }

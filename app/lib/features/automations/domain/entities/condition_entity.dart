@@ -6,12 +6,12 @@ enum ConditionType {
   compoundOr;
 
   String get displayName => switch (this) {
-        valueComparison => 'Value Comparison',
-        timeWindow => 'Time Window',
-        deviceStatus => 'Device Status',
-        compoundAnd => 'All conditions (AND)',
-        compoundOr => 'Any condition (OR)',
-      };
+    valueComparison => 'Value Comparison',
+    timeWindow => 'Time Window',
+    deviceStatus => 'Device Status',
+    compoundAnd => 'All conditions (AND)',
+    compoundOr => 'Any condition (OR)',
+  };
 }
 
 class AutomationCondition {
