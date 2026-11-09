@@ -24,7 +24,7 @@ void NexlozaClient::begin(NexlozaConfig& config) {
   _setupTopics();
 
   if (_config.useTLS) {
-    _wifiSecureClient.setInsecure();
+    _wifiSecureClient.setInsecure(); // TODO: Add CA certificate provisioning
     _mqttClient.setClient(_wifiSecureClient);
   } else {
     _mqttClient.setClient(_wifiClient);
@@ -36,13 +36,17 @@ void NexlozaClient::begin(NexlozaConfig& config) {
 }
 
 void NexlozaClient::_setupTopics() {
-  String prefix = String("nexloza/") + _config.projectId + "/" + _config.deviceId;
+  // Canonical topic format: nexloza/v1/{org_id}/{project_id}/{device_id}/{channel}
+  String prefix = String("nexloza/v1/") +
+                  _config.organizationId + "/" +
+                  _config.projectId + "/" +
+                  _config.deviceId;
   _telemetryTopic = prefix + "/telemetry";
-  _commandTopic = prefix + "/commands";
+  _commandTopic = prefix + "/command";
+  _commandAckTopic = prefix + "/command-ack";
   _stateTopic = prefix + "/state";
-  _heartbeatTopic = prefix + "/heartbeat";
-  _otaTopic = prefix + "/ota";
-  _commandResultTopic = prefix + "/commands/response";
+  _statusTopic = prefix + "/status";
+  _configTopic = prefix + "/config";
 }
 
 bool NexlozaClient::connect() {
@@ -61,7 +65,6 @@ bool NexlozaClient::connect() {
 
   String clientId = String("nexloza-") + _config.deviceId;
 
-  // Build LWT (Last Will and Testament) payload
   JsonDocument lwt;
   lwt["device_id"] = _config.deviceId;
   lwt["status"] = "offline";
@@ -73,7 +76,7 @@ bool NexlozaClient::connect() {
       clientId.c_str(),
       _mqttUser.c_str(),
       _mqttPass.c_str(),
-      _heartbeatTopic.c_str(),
+      _statusTopic.c_str(),
       1,    // QoS 1
       true, // retain
       lwtBuf);
@@ -81,11 +84,12 @@ bool NexlozaClient::connect() {
   if (connected) {
     Serial.println("[Nexloza] MQTT connected");
     _mqttClient.subscribe(_commandTopic.c_str(), 1);
+    _mqttClient.subscribe(_configTopic.c_str(), 1);
     if (_otaEnabled) {
-      _mqttClient.subscribe(_otaTopic.c_str(), 1);
+      _mqttClient.subscribe((_statusTopic + "/ota").c_str(), 1);
     }
     _reconnectCount = 0;
-    _sendHeartbeat();
+    heartbeat();
 
     if (!_wasConnected && _connectionCallback) {
       _connectionCallback(true);
@@ -107,7 +111,7 @@ void NexlozaClient::disconnect() {
     doc["timestamp"] = millis();
     char buf[128];
     size_t len = serializeJson(doc, buf, sizeof(buf));
-    _mqttClient.publish(_heartbeatTopic.c_str(), buf, len, true);
+    _mqttClient.publish(_statusTopic.c_str(), buf, len, true);
     _mqttClient.disconnect();
   }
   _wasConnected = false;
@@ -132,7 +136,7 @@ void NexlozaClient::loop() {
 
   unsigned long now = millis();
   if (now - _lastHeartbeat >= _config.heartbeatIntervalMs) {
-    _sendHeartbeat();
+    heartbeat();
     _lastHeartbeat = now;
   }
 }
@@ -203,7 +207,61 @@ bool NexlozaClient::reportDeviceInfo(const char* firmwareVersion, uint32_t freeH
 
   char buf[256];
   size_t len = serializeJson(doc, buf, sizeof(buf));
-  return _mqttClient.publish(_heartbeatTopic.c_str(), buf, len, true);
+  return _mqttClient.publish(_statusTopic.c_str(), buf, len, true);
+}
+
+bool NexlozaClient::registerSensor(const char* sensorKey, const char* sensorType, const char* unit) {
+  if (!_mqttClient.connected()) return false;
+
+  JsonDocument doc;
+  doc["device_id"] = _config.deviceId;
+  doc["action"] = "register_sensor";
+  doc["sensor_key"] = sensorKey;
+  doc["sensor_type"] = sensorType;
+  doc["unit"] = unit;
+  doc["timestamp"] = millis();
+
+  char buf[256];
+  size_t len = serializeJson(doc, buf, sizeof(buf));
+  return _mqttClient.publish(_stateTopic.c_str(), buf, len);
+}
+
+bool NexlozaClient::registerActuator(const char* actuatorKey, const char* actuatorType) {
+  if (!_mqttClient.connected()) return false;
+
+  JsonDocument doc;
+  doc["device_id"] = _config.deviceId;
+  doc["action"] = "register_actuator";
+  doc["actuator_key"] = actuatorKey;
+  doc["actuator_type"] = actuatorType;
+  doc["timestamp"] = millis();
+
+  char buf[256];
+  size_t len = serializeJson(doc, buf, sizeof(buf));
+  return _mqttClient.publish(_stateTopic.c_str(), buf, len);
+}
+
+bool NexlozaClient::sendCommand(const char* targetDeviceId, const char* commandType, JsonDocument& payload) {
+  if (!_mqttClient.connected()) return false;
+
+  String targetTopic = String("nexloza/v1/") +
+                       _config.organizationId + "/" +
+                       _config.projectId + "/" +
+                       targetDeviceId + "/command";
+
+  JsonDocument doc;
+  doc["command_type"] = commandType;
+  doc["payload"] = payload;
+  doc["source_device"] = _config.deviceId;
+  doc["timestamp"] = millis();
+
+  char buf[512];
+  size_t len = serializeJson(doc, buf, sizeof(buf));
+  return _mqttClient.publish(targetTopic.c_str(), buf, len);
+}
+
+void NexlozaClient::setDeviceMetadata(const char* key, const char* value) {
+  _metadata[key] = value;
 }
 
 void NexlozaClient::onCommand(CommandCallback callback) {
@@ -226,16 +284,43 @@ bool NexlozaClient::acknowledgeCommand(const char* commandId, bool success, cons
 
   char buf[256];
   size_t len = serializeJson(doc, buf, sizeof(buf));
-  return _mqttClient.publish(_commandResultTopic.c_str(), buf, len);
+  return _mqttClient.publish(_commandAckTopic.c_str(), buf, len);
+}
+
+void NexlozaClient::heartbeat() {
+  if (!_mqttClient.connected()) return;
+
+  JsonDocument doc;
+  doc["device_id"] = _config.deviceId;
+  doc["status"] = "online";
+  doc["uptime_ms"] = millis();
+  doc["free_heap"] = ESP.getFreeHeap();
+  doc["rssi"] = WiFi.RSSI();
+  doc["timestamp"] = millis();
+
+  if (_metadata.size() > 0) {
+    doc["metadata"] = _metadata;
+  }
+
+  char buf[512];
+  size_t len = serializeJson(doc, buf, sizeof(buf));
+  _mqttClient.publish(_statusTopic.c_str(), buf, len, true);
+}
+
+bool NexlozaClient::reconnect() {
+  if (_mqttClient.connected()) return true;
+  _reconnectCount = 0;
+  return connect();
 }
 
 void NexlozaClient::enableOTA(bool enable) {
   _otaEnabled = enable;
   if (_mqttClient.connected()) {
+    String otaTopic = _statusTopic + "/ota";
     if (enable) {
-      _mqttClient.subscribe(_otaTopic.c_str(), 1);
+      _mqttClient.subscribe(otaTopic.c_str(), 1);
     } else {
-      _mqttClient.unsubscribe(_otaTopic.c_str());
+      _mqttClient.unsubscribe(otaTopic.c_str());
     }
   }
 }
@@ -248,9 +333,10 @@ void NexlozaClient::checkForUpdate() {
   doc["action"] = "check_update";
   doc["timestamp"] = millis();
 
+  String otaTopic = _statusTopic + "/ota";
   char buf[128];
   size_t len = serializeJson(doc, buf, sizeof(buf));
-  _mqttClient.publish(_otaTopic.c_str(), buf, len);
+  _mqttClient.publish(otaTopic.c_str(), buf, len);
 }
 
 bool NexlozaClient::_authenticate() {
@@ -285,20 +371,6 @@ bool NexlozaClient::_authenticate() {
   Serial.printf("[Nexloza] Auth HTTP %d\n", httpCode);
   http.end();
   return false;
-}
-
-void NexlozaClient::_sendHeartbeat() {
-  JsonDocument doc;
-  doc["device_id"] = _config.deviceId;
-  doc["status"] = "online";
-  doc["uptime_ms"] = millis();
-  doc["free_heap"] = ESP.getFreeHeap();
-  doc["rssi"] = WiFi.RSSI();
-  doc["timestamp"] = millis();
-
-  char buf[256];
-  size_t len = serializeJson(doc, buf, sizeof(buf));
-  _mqttClient.publish(_heartbeatTopic.c_str(), buf, len, true);
 }
 
 void NexlozaClient::_handleReconnect() {
@@ -350,14 +422,15 @@ void NexlozaClient::_mqttCallback(char* topic, byte* payload, unsigned int lengt
 
   if (topicStr == _commandTopic && _commandCallback) {
     const char* commandType = doc["command_type"] | "unknown";
-    JsonObject payload = doc["payload"].as<JsonObject>();
-    _commandCallback(commandType, payload);
+    JsonObject cmdPayload = doc["payload"].as<JsonObject>();
+    _commandCallback(commandType, cmdPayload);
 
     if (doc["command_id"]) {
       acknowledgeCommand(doc["command_id"], true);
     }
-  } else if (topicStr == _otaTopic && _otaEnabled) {
+  } else if (topicStr == _configTopic) {
+    Serial.println("[Nexloza] Configuration update received");
+  } else if (_otaEnabled && topicStr.endsWith("/ota")) {
     Serial.println("[Nexloza] OTA update notification received");
-    // OTA handling would trigger HTTP download from a URL in the payload
   }
 }

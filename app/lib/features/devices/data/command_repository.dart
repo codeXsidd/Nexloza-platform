@@ -7,7 +7,6 @@ import '../../../shared/providers/supabase_provider.dart';
 import '../../../shared/models/result.dart';
 import '../../../core/errors/failures.dart';
 import '../../../core/services/mqtt_service.dart';
-import '../../../core/constants/mqtt_constants.dart';
 import '../domain/entities/device_command_entity.dart';
 
 class CommandRepository {
@@ -43,7 +42,10 @@ class CommandRepository {
         data['command'] as Map<String, dynamic>,
       );
 
-      _publishCommandToMqtt(deviceId, command);
+      final mqttTopic = data['mqtt']?['topic'] as String?;
+      if (mqttTopic != null) {
+        _publishCommandToMqtt(mqttTopic, command);
+      }
 
       return Result.success(command);
     } on FunctionException catch (e) {
@@ -55,10 +57,9 @@ class CommandRepository {
     }
   }
 
-  void _publishCommandToMqtt(String deviceId, DeviceCommand command) {
+  void _publishCommandToMqtt(String topic, DeviceCommand command) {
     if (_mqtt.status != MqttConnectionStatus.connected) return;
 
-    final topic = MqttConstants.commandTopic(deviceId);
     final payload = jsonEncode({
       'command_id': command.id,
       'command_type': command.commandType,

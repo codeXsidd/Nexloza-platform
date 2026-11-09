@@ -6,26 +6,46 @@ abstract final class MqttConstants {
   static const int reconnectDelaySeconds = 5;
   static const int maxReconnectAttempts = 10;
 
-  static const String topicPrefix = 'nexloza';
+  static const String topicVersion = 'v1';
+  static const String topicPrefix = 'nexloza/$topicVersion';
 
-  static const int qosAtMostOnce = 0;
-  static const int qosAtLeastOnce = 1;
-  static const int qosExactlyOnce = 2;
+  static const int qosTelemetry = 0;
+  static const int qosCommand = 1;
+  static const int qosCommandAck = 1;
+  static const int qosState = 1;
+  static const int qosStatus = 1;
 
-  static String telemetryTopic(String deviceId) =>
-      'nexloza/devices/$deviceId/telemetry';
+  static String _base(String orgId, String projectId, String deviceId) =>
+      '$topicPrefix/$orgId/$projectId/$deviceId';
 
-  static String commandTopic(String deviceId) =>
-      'nexloza/devices/$deviceId/commands';
+  static String telemetryTopic(
+          String orgId, String projectId, String deviceId) =>
+      '${_base(orgId, projectId, deviceId)}/telemetry';
 
-  static String commandResponseTopic(String deviceId) =>
-      'nexloza/devices/$deviceId/commands/response';
+  static String commandTopic(
+          String orgId, String projectId, String deviceId) =>
+      '${_base(orgId, projectId, deviceId)}/command';
 
-  static String statusTopic(String deviceId) =>
-      'nexloza/devices/$deviceId/status';
+  static String commandAckTopic(
+          String orgId, String projectId, String deviceId) =>
+      '${_base(orgId, projectId, deviceId)}/command-ack';
 
-  static String heartbeatTopic(String deviceId) =>
-      'nexloza/devices/$deviceId/heartbeat';
+  static String stateTopic(
+          String orgId, String projectId, String deviceId) =>
+      '${_base(orgId, projectId, deviceId)}/state';
 
-  static String otaTopic(String deviceId) => 'nexloza/devices/$deviceId/ota';
+  static String statusTopic(
+          String orgId, String projectId, String deviceId) =>
+      '${_base(orgId, projectId, deviceId)}/status';
+
+  static String configTopic(
+          String orgId, String projectId, String deviceId) =>
+      '${_base(orgId, projectId, deviceId)}/config';
+
+  static String deviceWildcard(
+          String orgId, String projectId, String deviceId) =>
+      '${_base(orgId, projectId, deviceId)}/#';
+
+  static String projectWildcard(String orgId, String projectId) =>
+      '$topicPrefix/$orgId/$projectId/#';
 }

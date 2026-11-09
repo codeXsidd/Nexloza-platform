@@ -29,7 +29,7 @@ serve(async (req) => {
 
     const { data: cred, error } = await supabase
       .from("device_credentials")
-      .select("*, devices(*)")
+      .select("*, devices(*, projects(organization_id))")
       .eq("api_key", apiKey)
       .eq("is_active", true)
       .single();
@@ -41,7 +41,6 @@ serve(async (req) => {
       });
     }
 
-    // Verify secret hash (in production, use bcrypt or argon2)
     const encoder = new TextEncoder();
     const data = encoder.encode(apiSecret);
     const hashBuffer = await crypto.subtle.digest("SHA-256", data);
@@ -49,7 +48,6 @@ serve(async (req) => {
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("");
 
-    // Constant-time comparison to prevent timing attacks
     const expected = cred.secret_hash;
     let mismatch = hashHex.length !== expected.length ? 1 : 0;
     for (let i = 0; i < hashHex.length; i++) {
@@ -62,26 +60,30 @@ serve(async (req) => {
       });
     }
 
-    // Update device last_seen
     await supabase
       .from("devices")
       .update({ last_seen_at: new Date().toISOString(), is_online: true })
       .eq("id", cred.device_id);
 
     const device = cred.devices;
+    const orgId = device.projects?.organization_id ?? "default";
+    const topicBase = `nexloza/v1/${orgId}/${device.project_id}/${device.id}`;
 
     return new Response(
       JSON.stringify({
         device_id: device.id,
         project_id: device.project_id,
+        organization_id: orgId,
         mqtt: {
           client_id: `nexloza_${device.id}`,
           username: device.id,
           topics: {
-            telemetry: `nexloza/${device.project_id}/${device.id}/telemetry`,
-            commands: `nexloza/${device.project_id}/${device.id}/commands`,
-            state: `nexloza/${device.project_id}/${device.id}/state`,
-            heartbeat: `nexloza/${device.project_id}/${device.id}/heartbeat`,
+            telemetry: `${topicBase}/telemetry`,
+            command: `${topicBase}/command`,
+            command_ack: `${topicBase}/command-ack`,
+            state: `${topicBase}/state`,
+            status: `${topicBase}/status`,
+            config: `${topicBase}/config`,
           },
         },
       }),

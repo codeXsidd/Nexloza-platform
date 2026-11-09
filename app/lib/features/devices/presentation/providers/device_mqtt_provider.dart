@@ -16,9 +16,13 @@ class DeviceMqttController {
 
   bool get isConnected => _mqtt.status == MqttConnectionStatus.connected;
 
-  Future<bool> connectForDevice(String deviceId) async {
+  Future<bool> connectForDevice({
+    required String organizationId,
+    required String projectId,
+    required String deviceId,
+  }) async {
     if (isConnected) {
-      _subscribeToDevice(deviceId);
+      _subscribeToDevice(organizationId, projectId, deviceId);
       return true;
     }
 
@@ -29,21 +33,30 @@ class DeviceMqttController {
     );
 
     if (connected) {
-      _subscribeToDevice(deviceId);
-      _listenForAcknowledgements(deviceId);
+      _subscribeToDevice(organizationId, projectId, deviceId);
+      _listenForAcknowledgements(organizationId, projectId, deviceId);
     }
     return connected;
   }
 
-  void _subscribeToDevice(String deviceId) {
-    _mqtt.subscribe(MqttConstants.telemetryTopic(deviceId));
-    _mqtt.subscribe(MqttConstants.statusTopic(deviceId));
-    _mqtt.subscribe(MqttConstants.commandResponseTopic(deviceId));
+  void _subscribeToDevice(
+      String orgId, String projectId, String deviceId) {
+    _mqtt.subscribe(
+        MqttConstants.telemetryTopic(orgId, projectId, deviceId));
+    _mqtt.subscribe(
+        MqttConstants.statusTopic(orgId, projectId, deviceId));
+    _mqtt.subscribe(
+        MqttConstants.commandAckTopic(orgId, projectId, deviceId));
+    _mqtt.subscribe(
+        MqttConstants.stateTopic(orgId, projectId, deviceId));
   }
 
-  void _listenForAcknowledgements(String deviceId) {
+  void _listenForAcknowledgements(
+      String orgId, String projectId, String deviceId) {
+    final ackTopic =
+        MqttConstants.commandAckTopic(orgId, projectId, deviceId);
     _mqtt.messageStream.listen((msg) {
-      if (msg.topic == MqttConstants.commandResponseTopic(deviceId)) {
+      if (msg.topic == ackTopic) {
         try {
           final data = jsonDecode(msg.payload) as Map<String, dynamic>;
           final commandId = data['command_id'] as String?;
@@ -60,10 +73,19 @@ class DeviceMqttController {
     });
   }
 
-  void disconnectFromDevice(String deviceId) {
-    _mqtt.unsubscribe(MqttConstants.telemetryTopic(deviceId));
-    _mqtt.unsubscribe(MqttConstants.statusTopic(deviceId));
-    _mqtt.unsubscribe(MqttConstants.commandResponseTopic(deviceId));
+  void disconnectFromDevice({
+    required String organizationId,
+    required String projectId,
+    required String deviceId,
+  }) {
+    _mqtt.unsubscribe(
+        MqttConstants.telemetryTopic(organizationId, projectId, deviceId));
+    _mqtt.unsubscribe(
+        MqttConstants.statusTopic(organizationId, projectId, deviceId));
+    _mqtt.unsubscribe(
+        MqttConstants.commandAckTopic(organizationId, projectId, deviceId));
+    _mqtt.unsubscribe(
+        MqttConstants.stateTopic(organizationId, projectId, deviceId));
   }
 }
 

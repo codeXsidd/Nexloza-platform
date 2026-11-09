@@ -186,23 +186,47 @@ services:
       - "${INBUCKET_POP3_PORT:-1100}:1100"
 
   # ──────────────────────────────────────────────
-  # EMQX — MQTT Broker
+  # NanoMQ — Primary MQTT Broker (MIT-licensed)
+  # ──────────────────────────────────────────────
+  nanomq:
+    image: emqx/nanomq:0.22.6-slim
+    container_name: nexloza-nanomq
+    restart: unless-stopped
+    ports:
+      - "${MQTT_PORT:-1883}:1883"
+      - "${MQTT_WS_PORT:-8083}:8083"
+      - "${NANOMQ_HTTP_PORT:-8081}:8081"
+    volumes:
+      - ./infra/nanomq/config/nanomq.conf:/etc/nanomq/nanomq.conf:ro
+      - ./infra/nanomq/config/pw.conf:/etc/nanomq/pw.conf:ro
+      - ./infra/nanomq/config/acl.conf:/etc/nanomq/acl.conf:ro
+    environment:
+      NANOMQ_ADMIN_PASSWORD: ${NANOMQ_ADMIN_PASSWORD:-change_me_in_production}
+      NANOMQ_APP_PASSWORD: ${NANOMQ_APP_PASSWORD:-change_me_in_production}
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8081/api/v4"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ──────────────────────────────────────────────
+  # EMQX — Alternative MQTT Broker (optional, disable in production)
   # ──────────────────────────────────────────────
   emqx:
     image: emqx/emqx:5.8.3
     container_name: nexloza-emqx
     restart: unless-stopped
+    profiles: ["emqx"]
     ports:
-      - "${MQTT_PORT:-1883}:1883"           # MQTT
-      - "${MQTT_TLS_PORT:-8883}:8883"       # MQTT over TLS
-      - "${MQTT_WS_PORT:-8083}:8083"        # MQTT WebSocket
-      - "${MQTT_WSS_PORT:-8084}:8084"       # MQTT WebSocket TLS
-      - "${EMQX_DASHBOARD_PORT:-18083}:18083" # EMQX Dashboard
+      - "${EMQX_MQTT_PORT:-11883}:1883"
+      - "${EMQX_TLS_PORT:-18883}:8883"
+      - "${EMQX_WS_PORT:-18083}:8083"
+      - "${EMQX_DASHBOARD_PORT:-28083}:18083"
     environment:
       EMQX_NAME: nexloza-emqx
       EMQX_HOST: 0.0.0.0
       EMQX_DASHBOARD__DEFAULT_USERNAME: ${MQTT_ADMIN_USERNAME:-admin}
-      EMQX_DASHBOARD__DEFAULT_PASSWORD: ${MQTT_ADMIN_PASSWORD:-nexloza_mqtt_2024}
+      EMQX_DASHBOARD__DEFAULT_PASSWORD: ${MQTT_ADMIN_PASSWORD}
       EMQX_LOADED_PLUGINS: "emqx_dashboard,emqx_management,emqx_auth_mnesia"
     volumes:
       - nexloza-emqx-data:/opt/emqx/data

@@ -72,16 +72,19 @@ abstract final class CodeGenerator {
     }
     buf.writeln();
 
-    // MQTT topics
-    buf.writeln('// ---- MQTT Topics ----');
+    // MQTT topics (canonical v1 format)
+    buf.writeln('// ---- MQTT Topics (nexloza/v1/{org}/{project}/{device}/{channel}) ----');
     buf.writeln(
-      'String telemetryTopic = String("nexloza/devices/") + DEVICE_ID + "/telemetry";',
+      'String topicBase = String("nexloza/v1/") + ORG_ID + "/" + PROJECT_ID + "/" + DEVICE_ID;',
     );
     buf.writeln(
-      'String commandTopic = String("nexloza/devices/") + DEVICE_ID + "/commands";',
+      'String telemetryTopic = topicBase + "/telemetry";',
     );
     buf.writeln(
-      'String statusTopic = String("nexloza/devices/") + DEVICE_ID + "/status";',
+      'String commandTopic = topicBase + "/command";',
+    );
+    buf.writeln(
+      'String statusTopic = topicBase + "/status";',
     );
     buf.writeln();
 

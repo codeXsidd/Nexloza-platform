@@ -1,238 +1,217 @@
-# NEXLOZA Project Audit
+# NEXLOZA Project Audit — Phase 0
 
 **Audit date:** 2026-11-09
 **Branch:** main
-**Latest commit:** 481cba0
+**Latest commit:** 637623e
+**Previous audit commit:** 481cba0
 **Auditor:** Claude Opus 4.6 (automated + manual inspection)
 
 ---
 
 ## 1. Repository Overview
 
-| Metric | Value |
-|---|---|
-| Total commits | 8 |
-| Flutter Dart files | 91 |
-| SQL migration files | 15 |
-| Edge Functions | 6 |
-| Firmware SDK files | 6 (.h/.cpp) |
-| Firmware examples | 9 (+ 1 Arduino README) |
-| CI workflows | 1 (5 jobs) |
-| Test files | 1 Flutter + 1 SQL |
-| Documentation files | 18 |
-
-## 2. Uncommitted Changes
-
-5 modified files with real functionality (not stubs):
-- `app/lib/features/automations/data/automation_repository.dart` — toggle, delete
-- `app/lib/features/projects/presentation/screens/create_project_screen.dart` — form improvements
-- `app/lib/features/projects/presentation/screens/project_detail_screen.dart` — device list, stats
-- `app/lib/features/projects/presentation/screens/projects_screen.dart` — search, filtering
-- `backend/supabase/functions/ai-assistant/index.ts` — project context, conversation history
-
-7 untracked directories with new files:
-- `app/lib/features/ai_assistant/data/` — AiRepository
-- `app/lib/features/ai_assistant/presentation/providers/` — AiChatNotifier
-- `app/lib/features/automations/presentation/providers/` — AutomationsNotifier
-- `app/lib/features/device_studio/` — Board definitions, code generator, DeviceStudio screen
-- `app/lib/features/devices/presentation/providers/` — DevicesNotifier
-- `app/lib/features/projects/presentation/providers/` — ProjectsNotifier
-
-**Assessment:** These are real, functional additions. They must be committed before proceeding.
-
-## 3. Test Baseline
-
-### Flutter Tests
-- **53 / 53 passed** (0 failed, 0 skipped)
-- Coverage: constants, validators, extensions, entities (Project, Device, Automation, Notification, Scene), Result type, Exceptions, Theme, Routes
-- **No widget tests** (no screen rendering tests)
-- **No integration tests** (no Supabase interaction tests)
-
-### Static Analysis
-- **0 errors, 0 warnings, 2 infos** (deprecated `value` parameter on DropdownButtonFormField)
-
-### Formatting
-- **11 files** need reformatting (uncommitted changes not yet formatted)
-
-### SQL RLS Tests
-- `backend/supabase/tests/rls_integration_test.sql` — 12 tests defined
-- **Not runnable without a live Supabase/Postgres instance**
-- Tests cover: org creation trigger, user isolation, project ownership, device assignment, telemetry isolation, notification isolation, AI conversation isolation, sensor project consistency, rate limiting, telemetry retention, command isolation, audit logs
-
-## 4. Database Schema Audit
-
-### Tables (28 total across 15 migrations)
-
-| Migration | Tables | Status |
+| Metric | Previous (481cba0) | Current (637623e) |
 |---|---|---|
-| 00001_profiles | profiles | IMPLEMENTED |
-| 00002_organizations | organizations, organization_members | IMPLEMENTED |
-| 00003_projects | projects, project_members | IMPLEMENTED |
-| 00004_devices | devices, device_credentials, device_groups, device_group_members | IMPLEMENTED |
-| 00005_sensors_actuators | sensor_definitions, actuator_definitions | IMPLEMENTED |
-| 00006_telemetry | telemetry, device_commands, command_results | IMPLEMENTED |
-| 00007_dashboards | dashboards, dashboard_widgets | IMPLEMENTED |
-| 00008_automations | automations, automation_triggers, automation_conditions, automation_actions, automation_executions | IMPLEMENTED |
-| 00009_scenes | scenes, scene_actions | IMPLEMENTED |
-| 00010_notifications | notifications, notification_preferences | IMPLEMENTED |
-| 00011_integrations | integrations, integration_events | IMPLEMENTED |
-| 00012_ai | ai_conversations, ai_messages | IMPLEMENTED |
-| 00013_audit | audit_logs | IMPLEMENTED |
-| 00014_firmware | firmware_versions, ota_deployments | IMPLEMENTED |
-| 00015_validation_fixes | (fixes + functions) | IMPLEMENTED |
+| Total commits | 8 | 10 |
+| Flutter Dart files | 91 | 148 |
+| SQL migration files | 15 | 16 |
+| Edge Functions | 6 | 6 |
+| Firmware SDK files | 6 (.h/.cpp) | 6 (.h/.cpp) |
+| Firmware examples | 9 (+ 1 Arduino README) | 10 (+ 1 Arduino README) |
+| CI workflows | 1 (5 jobs) | 1 (6 jobs) |
+| Test files | 1 Flutter + 1 SQL | 5 Flutter + 1 SQL |
+| Tests passing | 53 | 223 |
+| Routes defined | 30 | 36 |
+| Routes wired | 22 | 36 |
+| Feature modules | 12 | 18 |
 
-### RLS Coverage
-- All 28 tables have RLS enabled
-- Helper functions: `is_org_member`, `is_org_admin`, `is_project_member`, `can_modify_project`
-- Validation triggers: sensor/actuator project_id consistency
-- Utility functions: `cleanup_old_telemetry`, `cleanup_old_audit_logs`, `check_telemetry_rate_limit`
+## 2. Git State
 
-### Missing Tables (from requirements)
-- `api_keys` (user-level API keys for external access)
-- `usage_records` (AI token tracking, quota management)
-- `device_events` (separate from telemetry — connection, error events)
+- **Branch:** main
+- **Working tree:** Clean (no uncommitted changes)
+- **Remote:** Up to date with origin/main
+- **Supabase linked:** gwxaansxqdxkofrplfqx (Nexloza-platform, ap-southeast-1)
+- **Supabase status:** ACTIVE_HEALTHY, 16 migrations applied, 6 Edge Functions deployed
 
-## 5. Edge Functions Audit
+## 3. Flutter App Inventory
 
-| Function | Auth | DB Integration | External API | Gap |
-|---|---|---|---|---|
-| ai-assistant | JWT (user) | Conversations, messages, project context | Bedrock, Grok | No streaming, no tool calling |
-| automation-engine | None (internal) | Triggers, executions, cooldown, rate limit | None | **Actions logged but NOT dispatched** — no MQTT publish, no notification send |
-| device-auth | API key + SHA-256 | Device credentials, last_seen | None | Uses SHA-256 not bcrypt/argon2 |
-| device-command | JWT (user) | Commands table | None | **Command NOT published to MQTT** — only stored in DB |
-| telemetry-ingest | API key + SHA-256 | Telemetry, rate limit | None | Working as designed |
-| webhook-handler | HMAC signature | Integration events, automation triggers | None | Working as designed |
+### Feature Modules (18 total, 148 Dart files)
 
-### Critical Backend Gaps
-1. **automation-engine** records execution but does not actually run actions (no MQTT command publish, no notification dispatch, no webhook call)
-2. **device-command** inserts commands into DB but has no MQTT bridge to deliver them to devices
-3. No **MQTT-to-Supabase bridge** exists — telemetry from MQTT must go through the Edge Function HTTP endpoint, not directly from the broker
+| Feature | Files | Screens | Data Layer | Provider | Status |
+|---|---|---|---|---|---|
+| authentication | 8 | Login, Register, ForgotPassword, EmailVerification, Splash | Supabase Auth | AuthNotifier | **IMPLEMENTED** |
+| home | 5 | HomeScreen + 4 widgets | Real providers | — | **IMPLEMENTED** |
+| projects | 9 | Projects, Create, Detail, Edit | ProjectRepository | ProjectsNotifier | **IMPLEMENTED** |
+| devices | 26 | Devices, Add, Detail, Edit, Pairing, ManageSensors, ManageActuators | DeviceRepo, SensorRepo, ActuatorRepo, TelemetryRepo, CommandRepo | Device/Sensor/Actuator/Telemetry/Command providers | **IMPLEMENTED** |
+| automations | 9 | Automations, Create, Detail | AutomationRepository | AutomationsNotifier | **PARTIALLY IMPLEMENTED** |
+| dashboards | 12 | Dashboards, Create, Editor + 5 widget cards | DashboardRepository | DashboardsNotifier | **IMPLEMENTED** |
+| ai_assistant | 7 | AiAssistant + ChatBubble, SuggestionCard | AiRepository | AiChatNotifier | **IMPLEMENTED** |
+| organizations | 6 | Organizations, Create, Detail | OrganizationRepository | OrganizationNotifier | **IMPLEMENTED** |
+| invitations | 4 | Invitations | InvitationRepository | InvitationNotifier | **IMPLEMENTED** |
+| scenes | 5 | Scenes, Create | SceneRepository | ScenesNotifier | **PARTIALLY IMPLEMENTED** |
+| integrations | 4 | Integrations | IntegrationRepository | IntegrationNotifier | **PARTIALLY IMPLEMENTED** |
+| notifications | 3 | Notifications | NotificationRepository | — | **PARTIALLY IMPLEMENTED** |
+| analytics | 1 | Analytics dashboard | Uses other providers | — | **IMPLEMENTED** |
+| settings | 3 | Settings, Profile, ApiKeys | ProfileRepo | ProfileNotifier | **IMPLEMENTED** |
+| device_studio | 3 | DeviceStudio | BoardDefinitions, CodeGenerator | — | **PARTIALLY IMPLEMENTED** |
+| profiles | 2 | — | ProfileRepository | ProfileProvider | **IMPLEMENTED** |
+| sensors | 1 | — | (entity only) | — | **ENTITY ONLY** |
+| actuators | 1 | — | (entity only) | — | **ENTITY ONLY** |
 
-## 6. Flutter App Audit
+### Routing
+- **36 route names** defined in route_names.dart
+- **36 routes** wired in app_router.dart (1:1 match)
+- Auth redirect guard on all protected routes
+- StatefulShellRoute with 5 bottom nav branches (Home, Projects, Devices, Automations, AI)
 
-### Architecture
-- Feature-first folder structure (clean architecture pattern)
-- Riverpod state management (StateNotifier + AsyncNotifier)
-- GoRouter with auth redirect guard
-- Material 3 theme (light + dark) with custom design tokens
-- Supabase client initialized from environment variables
+### Shared Infrastructure
+- `Result<T>` sealed type (Success/ResultFailure)
+- Supabase client provider
+- MQTT service (connect, subscribe, publish, reconnect)
+- Offline sync service
+- Connectivity provider
+- Preferences service
+- Network info
+- Validators, Logger, Debouncer
+- 9 reusable widgets (AppButton, AppTextField, AppScaffold, etc.)
+- Material 3 theme with light/dark, custom colors, typography, spacing
 
-### Feature Coverage
+### Dependencies (pubspec.yaml)
+Core: flutter_riverpod, go_router, supabase_flutter, mqtt_client, shared_preferences, connectivity_plus, intl, uuid, crypto, url_launcher, path_provider
 
-| Feature | Screens | Data Layer | Provider | Status |
-|---|---|---|---|---|
-| Authentication | Login, Register, ForgotPassword, EmailVerification, Splash | Supabase Auth | AuthNotifier | **IMPLEMENTED** |
-| Home | HomeScreen | — | — | **PARTIALLY IMPLEMENTED** (static widgets) |
-| Projects | ProjectsScreen, CreateProject, ProjectDetail | ProjectRepository (CRUD) | ProjectsNotifier | **IMPLEMENTED** |
-| Devices | DevicesScreen, AddDevice, DeviceDetail, DevicePairing | DeviceRepository (CRUD + stream) | DevicesNotifier | **PARTIALLY IMPLEMENTED** |
-| Automations | AutomationsScreen, CreateAutomation | AutomationRepository (CRUD) | AutomationsNotifier | **PARTIALLY IMPLEMENTED** |
-| AI Assistant | AiAssistantScreen | AiRepository (send, conversations, messages) | AiChatNotifier | **IMPLEMENTED** |
-| Notifications | NotificationsScreen | NotificationRepository (CRUD) | — | **PARTIALLY IMPLEMENTED** (no provider) |
-| Settings | SettingsScreen, ProfileScreen | — | — | **PARTIALLY IMPLEMENTED** (UI only) |
-| Device Studio | DeviceStudioScreen | BoardDefinitions, CodeGenerator | — | **PARTIALLY IMPLEMENTED** |
-| Dashboards | — | — | — | **MISSING** |
-| Sensors/Actuators | — | — | — | **MISSING** |
-| Organizations | — | — | — | **MISSING** (DB exists) |
-| Integrations | — | — | — | **MISSING** |
+## 4. Database Schema
 
-### Missing Flutter Components
-- **No dashboard editor** (DB schema exists, no Flutter UI)
-- **No sensor/actuator management screens** (DB schema exists)
-- **No organization management** (DB + RLS exist, no Flutter screens)
-- **No integration management** (DB exists, no Flutter screens)
-- No push notification setup (FCM)
-- No MQTT connection UI (service exists but not wired to screens)
-- No real-time data display (Supabase Realtime not used)
-- No data export
-- No search/filter across most screens
-- No pagination beyond initial page load
+### Tables (33 total across 16 migrations, ALL with RLS)
 
-## 7. Firmware SDK Audit
-
-### NexlozaClient Library
-- **IMPLEMENTED**: begin, connect, disconnect, loop, isConnected
-- **IMPLEMENTED**: publishTelemetry (3 overloads), reportState, reportDeviceInfo
-- **IMPLEMENTED**: onCommand, onConnectionChange, acknowledgeCommand
-- **IMPLEMENTED**: enableOTA, checkForUpdate (request only, no download)
-- **IMPLEMENTED**: LWT, heartbeat, exponential backoff reconnection
-- **PARTIALLY IMPLEMENTED**: NexlozaWiFi (header exists, implementation needs verification)
-- **PARTIALLY IMPLEMENTED**: NexlozaProvisioning (captive portal — header exists)
-
-### Firmware Examples (9 + 1 README)
-All ESP32/ESP8266 examples have platformio.ini and main.cpp. Not compile-tested in CI (PlatformIO not installed in GitHub Actions).
-
-## 8. Integrations Audit
-
-| Integration | Status | What Exists |
+| Migration | Tables | RLS Policies |
 |---|---|---|
-| Alexa | **PLACEHOLDER** | skill.json manifest only, no Lambda handler |
-| Google Home | **PLACEHOLDER** | README only |
-| Home Assistant | **PLACEHOLDER** | README only |
-| Matter | **PLACEHOLDER** | README only |
-| Node-RED | **PLACEHOLDER** | README only |
-| Webhooks | **IMPLEMENTED** | Edge Function + DB + HMAC |
+| 00001 profiles | profiles | 3 |
+| 00002 organizations | organizations, organization_members | 8 |
+| 00003 projects | projects, project_members | 9 |
+| 00004 devices | devices, device_credentials, device_groups, device_group_members | 12 |
+| 00005 sensors | sensor_definitions, actuator_definitions | 8 |
+| 00006 telemetry | telemetry, device_commands, command_results | 6 |
+| 00007 dashboards | dashboards, dashboard_widgets | 8 |
+| 00008 automations | automations, automation_triggers, automation_conditions, automation_actions, automation_executions | 11 |
+| 00009 scenes | scenes, scene_actions | 6 |
+| 00010 notifications | notifications, notification_preferences | 4 |
+| 00011 integrations | integrations, integration_events | 2 (replaced in 00015) |
+| 00012 ai | ai_conversations, ai_messages | 2 |
+| 00013 audit | audit_logs | 1 (replaced in 00015) |
+| 00014 firmware | firmware_versions, ota_deployments | 3 (replaced in 00015) |
+| 00015 validation | Fixes + indexes + functions | 15 new policies |
+| 00016 invitations | invitations | 4 + 2 RPC functions |
 
-## 9. CI/CD Audit
+**Totals:** 33 tables, ~99 RLS policies, ~53 indexes, 14 helper functions
 
-**ci.yml** has 5 jobs: analyze, test, build-web, build-android, validate-backend, validate-firmware.
+### Tables with Dart repositories (19/33)
+actuator_definitions, ai_conversations, ai_messages, automations, dashboard_widgets, dashboards, device_commands, device_credentials, devices, integrations, invitations, notifications, organization_members, organizations, profiles, projects, scenes, sensor_definitions, telemetry
 
-| Job | Status |
+### Tables without Dart repositories (14/33)
+audit_logs, automation_actions, automation_conditions, automation_executions, automation_triggers, command_results, device_group_members, device_groups, firmware_versions, integration_events, notification_preferences, ota_deployments, project_members, scene_actions
+
+### Missing tables (from master prompt)
+- `usage_records` — AI token tracking, quota management
+- `device_events` — connection/error event log
+- `api_keys` (user-level) — only device_credentials exists
+
+## 5. Edge Functions (6 deployed)
+
+| Function | Auth | Status | Bugs |
+|---|---|---|---|
+| ai-assistant | JWT | IMPLEMENTED | Bedrock SigV4 missing (Grok works) |
+| automation-engine | JWT | PARTIALLY IMPLEMENTED | notification user_id null constraint violation |
+| device-auth | API key | IMPLEMENTED | None |
+| device-command | JWT | IMPLEMENTED | None |
+| telemetry-ingest | API key | IMPLEMENTED | None |
+| webhook-handler | HMAC | PARTIALLY IMPLEMENTED | Executions never marked completed |
+
+### Missing Edge Functions
+- alexa-handler (Alexa Smart Home Skill)
+- google-home-handler (Google Home Cloud-to-Cloud)
+- scene-activate (dedicated scene execution)
+- ota-deploy (firmware OTA management)
+- voice-command (voice intent processing)
+
+## 6. Firmware SDK
+
+### NexlozaClient API Coverage
+
+| Method | Status |
 |---|---|
-| Flutter format check | IMPLEMENTED |
-| Flutter analyze | IMPLEMENTED |
-| Flutter test | IMPLEMENTED |
-| Web build | IMPLEMENTED |
-| Android APK build | IMPLEMENTED (main only) |
-| SQL migration validation | IMPLEMENTED (existence check) |
-| Edge Function validation | IMPLEMENTED (existence check) |
-| Firmware SDK validation | IMPLEMENTED (existence check) |
-| PlatformIO compilation | **MISSING** (commented out) |
-| Secret scanning | **MISSING** |
-| Dependency auditing | **MISSING** |
-| RLS test execution | **MISSING** |
-| Edge Function type checking | **MISSING** |
+| begin() | IMPLEMENTED |
+| connect() | IMPLEMENTED |
+| disconnect() | IMPLEMENTED |
+| publishTelemetry() | IMPLEMENTED (3 overloads) |
+| reportState() | IMPLEMENTED |
+| onCommand() / subscribeCommand() | IMPLEMENTED |
+| acknowledgeCommand() | IMPLEMENTED |
+| enableOTA() / checkForUpdate() | IMPLEMENTED |
+| loop() / heartbeat | IMPLEMENTED (auto) |
+| reconnect() | IMPLEMENTED (auto, exponential backoff) |
+| registerSensor() | **MISSING** |
+| registerActuator() | **MISSING** |
+| sendCommand() | **MISSING** |
+| setDeviceMetadata() | **MISSING** |
 
-## 10. Documentation Audit
+### Firmware Examples
 
-### Complete
-- ARCHITECTURE.md (system architecture, data flows)
-- docs/architecture/database.md (full schema docs)
-- docs/architecture/security.md (comprehensive security model)
-- docs/api/mqtt-protocol.md (topic structure, payload schemas)
-- docs/setup/local-development.md (dev setup guide)
-- docs/VALIDATION_REPORT.md (DB validation audit)
-- SECURITY.md, CODE_OF_CONDUCT.md, CONTRIBUTING.md
+| Example | Board | Status |
+|---|---|---|
+| esp32-led | ESP32 | IMPLEMENTED |
+| esp32-relay-light | ESP32 | IMPLEMENTED |
+| esp32-relay-fan | ESP32 | IMPLEMENTED |
+| esp32-dht22 | ESP32 | IMPLEMENTED |
+| esp32-soil-moisture | ESP32 | IMPLEMENTED |
+| esp32-pir-motion | ESP32 | IMPLEMENTED |
+| esp32-multi-sensor | ESP32 | IMPLEMENTED |
+| esp32-universal | ESP32 | IMPLEMENTED |
+| esp8266-led | ESP8266 | IMPLEMENTED |
+| esp8266-relay | ESP8266 | IMPLEMENTED |
+| arduino-uno | Arduino | README ONLY |
+| raspberry-pi | RPi | IMPLEMENTED (Python) |
+| esp32-ultrasonic | ESP32 | **MISSING** |
+| esp32-water-level | ESP32 | **MISSING** |
 
-### Stubs / Index-Only
-- docs/getting-started/README.md
-- docs/backend/README.md
-- docs/firmware/README.md
-- docs/integrations/README.md
-- docs/security/README.md
+## 7. MQTT Infrastructure
 
-### Missing (required by spec)
-- THIRD_PARTY_NOTICES.md
-- docs/INSTALLATION.md
-- docs/API.md
-- docs/ARDUINO_GUIDE.md
-- docs/ESP32_GUIDE.md
-- docs/ESP8266_GUIDE.md
-- docs/ALEXA_SETUP.md
-- docs/GOOGLE_HOME_SETUP.md
-- docs/AI_SETUP.md
-- docs/DEPLOYMENT.md
-- docs/TROUBLESHOOTING.md
+| Component | Status | Detail |
+|---|---|---|
+| Broker | EMQX 5.8.3 | Docker container, ports 1883/8883/8083/8084/18083 |
+| NanoMQ | **NOT CONFIGURED** | Master prompt requires NanoMQ as primary |
+| Flutter MQTT service | IMPLEMENTED | mqtt_client package, auto-reconnect, TLS support |
+| MQTT providers | IMPLEMENTED | mqttServiceProvider, mqttStatusProvider, mqttMessagesProvider |
+| Topic structure | INCONSISTENT | Flutter: `nexloza/{orgId}/{projectId}/{deviceId}/{ch}`, Firmware: `nexloza/{projectId}/{deviceId}/{ch}`, Required: `nexloza/v1/{tenant}/{project}/{device}/{ch}` |
 
-### Known Issues
-- **License inconsistency:** LICENSE file is Apache 2.0, but README.md and CONTRIBUTING.md reference MIT
-- **CHANGELOG stale:** Only one entry, does not reflect 8 commits of real work
-- **Logo missing:** README references `docs/assets/nexloza-logo.png` which does not exist
+## 8. Integrations
+
+| Integration | Status |
+|---|---|
+| Alexa Smart Home | PLACEHOLDER (skill.json only) |
+| Google Home | PLACEHOLDER (README only) |
+| Webhooks | IMPLEMENTED (Edge Function + HMAC) |
+| Voice control | **NOT IMPLEMENTED** |
+| Virtual device simulator | **NOT IMPLEMENTED** |
+
+## 9. CI/CD
+
+5 jobs in ci.yml: analyze, test, build-web, build-android, validate-backend, validate-firmware
+
+**Missing:** RLS tests, integration tests, Edge Function tests, secret scanning, dependency audit, PlatformIO compilation
+
+## 10. Documentation
+
+**Existing:** PROJECT_AUDIT.md, FEATURE_MATRIX.md, IMPLEMENTATION_ROADMAP.md, VALIDATION_REPORT.md, architecture/overview.md, architecture/database.md, architecture/security.md, api/mqtt-protocol.md, setup/local-development.md, CHANGELOG.md
+
+**Missing (16 files):** INSTALLATION.md, API.md, ARDUINO_GUIDE.md, ESP32_GUIDE.md, ESP8266_GUIDE.md, VIRTUAL_DEVICE_GUIDE.md, GROK_SETUP.md, ALEXA_SETUP.md, GOOGLE_HOME_SETUP.md, DEPLOYMENT.md, TROUBLESHOOTING.md, SELF_HOSTING.md, TECHNICAL_DEBT.md, TEST_BASELINE.md, THIRD_PARTY_NOTICES.md, SCALABILITY_REPORT.md
 
 ## 11. Security Findings
 
-1. **No secrets detected** in committed code — env vars used correctly
-2. Device credential hashing uses SHA-256 (should upgrade to bcrypt/argon2 for production)
-3. CORS headers use `*` wildcard in all Edge Functions (acceptable for dev, restrict for production)
-4. Bedrock auth endpoint in firmware SDK uses HTTP basic approach (acceptable for internal API)
-5. EMQX ACL is deny-by-default with device-scoped topics — good
-6. No rate limiting on user-facing Edge Functions (only telemetry-ingest has rate limiting)
+1. No secrets in committed code — env vars used correctly
+2. `.env.example` uses placeholder values only
+3. `.gitignore` covers .env, keystores, service accounts, google-services.json
+4. Device credentials use SHA-256 hashing (acceptable, bcrypt/argon2 recommended for production)
+5. CORS `*` in Edge Functions (restrict for production)
+6. Firmware SDK uses `setInsecure()` for TLS — no cert verification
+7. Firmware SDK license says MIT but project is Apache 2.0
+8. EMQX default dashboard password `nexloza_mqtt_2024` in docker-compose defaults

@@ -51,25 +51,46 @@ void main() {
       expect(MqttConstants.keepAliveSeconds, greaterThan(0));
     });
 
-    test('topic prefix is nexloza', () {
-      expect(MqttConstants.topicPrefix, 'nexloza');
+    test('topic prefix includes version', () {
+      expect(MqttConstants.topicPrefix, 'nexloza/v1');
     });
 
-    test('topic builders produce correct paths', () {
+    test('canonical topic builders produce correct v1 paths', () {
       expect(
-        MqttConstants.telemetryTopic('dev1'),
-        'nexloza/devices/dev1/telemetry',
+        MqttConstants.telemetryTopic('org1', 'proj1', 'dev1'),
+        'nexloza/v1/org1/proj1/dev1/telemetry',
       );
       expect(
-        MqttConstants.commandTopic('dev1'),
-        'nexloza/devices/dev1/commands',
+        MqttConstants.commandTopic('org1', 'proj1', 'dev1'),
+        'nexloza/v1/org1/proj1/dev1/command',
       );
-      expect(MqttConstants.statusTopic('dev1'), 'nexloza/devices/dev1/status');
       expect(
-        MqttConstants.heartbeatTopic('dev1'),
-        'nexloza/devices/dev1/heartbeat',
+        MqttConstants.commandAckTopic('org1', 'proj1', 'dev1'),
+        'nexloza/v1/org1/proj1/dev1/command-ack',
       );
-      expect(MqttConstants.otaTopic('dev1'), 'nexloza/devices/dev1/ota');
+      expect(
+        MqttConstants.stateTopic('org1', 'proj1', 'dev1'),
+        'nexloza/v1/org1/proj1/dev1/state',
+      );
+      expect(
+        MqttConstants.statusTopic('org1', 'proj1', 'dev1'),
+        'nexloza/v1/org1/proj1/dev1/status',
+      );
+      expect(
+        MqttConstants.configTopic('org1', 'proj1', 'dev1'),
+        'nexloza/v1/org1/proj1/dev1/config',
+      );
+    });
+
+    test('wildcard topics work correctly', () {
+      expect(
+        MqttConstants.deviceWildcard('org1', 'proj1', 'dev1'),
+        'nexloza/v1/org1/proj1/dev1/#',
+      );
+      expect(
+        MqttConstants.projectWildcard('org1', 'proj1'),
+        'nexloza/v1/org1/proj1/#',
+      );
     });
   });
 

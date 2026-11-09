@@ -43,10 +43,9 @@ serve(async (req) => {
       );
     }
 
-    // Verify user has access to this device's project
     const { data: device } = await supabase
       .from("devices")
-      .select("id, project_id")
+      .select("id, project_id, projects(organization_id)")
       .eq("id", device_id)
       .single();
 
@@ -57,7 +56,6 @@ serve(async (req) => {
       });
     }
 
-    // Insert command
     const serviceClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
@@ -82,7 +80,8 @@ serve(async (req) => {
       });
     }
 
-    const mqttTopic = `nexloza/${device.project_id}/${device_id}/commands`;
+    const orgId = (device as any).projects?.organization_id ?? "default";
+    const mqttTopic = `nexloza/v1/${orgId}/${device.project_id}/${device_id}/command`;
 
     return new Response(
       JSON.stringify({

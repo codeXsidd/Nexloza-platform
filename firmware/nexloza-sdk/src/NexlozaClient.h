@@ -25,6 +25,7 @@ struct NexlozaConfig {
   const char* deviceId;
   const char* apiKey;
   const char* apiSecret;
+  const char* organizationId;
   const char* projectId;
   bool useTLS;
   uint32_t heartbeatIntervalMs;
@@ -50,9 +51,17 @@ public:
   bool reportState(const char* actuatorKey, JsonDocument& state);
   bool reportDeviceInfo(const char* firmwareVersion, uint32_t freeHeap, int8_t rssi);
 
+  bool registerSensor(const char* sensorKey, const char* sensorType, const char* unit);
+  bool registerActuator(const char* actuatorKey, const char* actuatorType);
+  bool sendCommand(const char* targetDeviceId, const char* commandType, JsonDocument& payload);
+  void setDeviceMetadata(const char* key, const char* value);
+
   void onCommand(CommandCallback callback);
   void onConnectionChange(ConnectionCallback callback);
   bool acknowledgeCommand(const char* commandId, bool success, const char* message = nullptr);
+
+  void heartbeat();
+  bool reconnect();
 
   void enableOTA(bool enable);
   void checkForUpdate();
@@ -76,15 +85,16 @@ private:
 
   String _telemetryTopic;
   String _commandTopic;
+  String _commandAckTopic;
   String _stateTopic;
-  String _heartbeatTopic;
-  String _otaTopic;
-  String _commandResultTopic;
+  String _statusTopic;
+  String _configTopic;
+
+  JsonDocument _metadata;
 
   void _setupTopics();
   void _mqttCallback(char* topic, byte* payload, unsigned int length);
   bool _authenticate();
-  void _sendHeartbeat();
   void _handleReconnect();
 
   static NexlozaClient* _instance;

@@ -57,18 +57,16 @@ class MqttService {
       _client!.secure = true;
     }
 
-    _client!.connectionMessage = MqttConnectMessage()
+    final connMsg = MqttConnectMessage()
         .withClientIdentifier(clientId)
         .startClean()
         .withWillQos(MqttQos.atLeastOnce);
 
     if (username != null && password != null) {
-      _client!.connectionMessage = MqttConnectMessage()
-          .withClientIdentifier(clientId)
-          .authenticateAs(username, password)
-          .startClean()
-          .withWillQos(MqttQos.atLeastOnce);
+      connMsg.authenticateAs(username, password);
     }
+
+    _client!.connectionMessage = connMsg;
 
     try {
       await _client!.connect(username, password);
@@ -123,15 +121,6 @@ class MqttService {
     disconnect();
     _statusController.close();
     _messageController.close();
-  }
-
-  String buildTopic({
-    required String organizationId,
-    required String projectId,
-    required String deviceId,
-    required String channel,
-  }) {
-    return '${MqttConstants.topicPrefix}/$organizationId/$projectId/$deviceId/$channel';
   }
 
   void _setupMessageListener() {

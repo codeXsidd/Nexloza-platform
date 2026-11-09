@@ -12,7 +12,7 @@
       "name": "NexLoza Contributors"
     }
   ],
-  "license": "MIT",
+  "license": "Apache-2.0",
   "homepage": "https://github.com/codeXsidd/nexioza-platform",
   "frameworks": ["arduino"],
   "platforms": ["espressif32", "espressif8266"],
