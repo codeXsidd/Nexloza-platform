@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../shared/widgets/app_text_field.dart';
 import '../../../../shared/widgets/confirmation_dialog.dart';
-import '../../../../theme/app_spacing.dart';
+import '../../../../shared/widgets/empty_state_widget.dart';
+import '../../../../shared/widgets/error_widget.dart';
+import '../../../../shared/widgets/loading_indicator.dart';
 import '../../data/actuator_repository.dart';
 import '../../domain/entities/actuator_entity.dart';
 import '../providers/actuator_provider.dart';
-import '../providers/device_provider.dart';
 
 class ManageActuatorsScreen extends ConsumerWidget {
   final String deviceId;
@@ -20,63 +20,80 @@ class ManageActuatorsScreen extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Manage Actuators'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => ref.invalidate(deviceActuatorsProvider(deviceId)),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddActuatorDialog(context, ref),
-        child: const Icon(Icons.add),
+      appBar: AppBar(title: const Text('Manage Actuators')),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showAddDialog(context, ref),
+        icon: const Icon(Icons.add),
+        label: const Text('Add Actuator'),
       ),
       body: actuatorsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        loading: () => const LoadingIndicator(),
+        error: (e, _) => AppErrorWidget(
+          message: e.toString(),
+          onRetry: () => ref.invalidate(deviceActuatorsProvider(deviceId)),
+        ),
         data: (actuators) {
           if (actuators.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.settings_input_component_outlined,
-                    size: 64,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                  AppSpacing.verticalMd,
-                  Text(
-                    'No actuators registered',
-                    style: theme.textTheme.bodyLarge,
-                  ),
-                  AppSpacing.verticalSm,
-                  Text(
-                    'Tap + to add an actuator definition',
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                ],
-              ),
+            return EmptyStateWidget(
+              icon: Icons.settings_input_component_outlined,
+              title: 'No Actuators',
+              subtitle: 'Add actuators to control your device',
+              actionLabel: 'Add Actuator',
+              onAction: () => _showAddDialog(context, ref),
             );
           }
           return ListView.builder(
-            padding: AppSpacing.screenPadding,
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
             itemCount: actuators.length,
-            itemBuilder: (context, index) =>
-                _ActuatorTile(actuator: actuators[index], deviceId: deviceId),
+            itemBuilder: (context, index) {
+              final actuator = actuators[index];
+              return Card(
+                margin: const EdgeInsets.only(bottom: 8),
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: theme.colorScheme.secondaryContainer,
+                    child: Icon(
+                      Icons.settings_input_component,
+                      color: theme.colorScheme.secondary,
+                    ),
+                  ),
+                  title: Text(actuator.name),
+                  subtitle: Text(
+                    '${actuator.actuatorType.displayName} · ${actuator.controlType.displayName}'
+                    ' · ${actuator.commandKey}',
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit_outlined, size: 20),
+                        onPressed: () =>
+                            _showEditDialog(context, ref, actuator),
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          Icons.delete_outline,
+                          size: 20,
+                          color: theme.colorScheme.error,
+                        ),
+                        onPressed: () => _confirmDelete(context, ref, actuator),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
           );
         },
       ),
     );
   }
 
-  void _showAddActuatorDialog(BuildContext context, WidgetRef ref) {
-    final nameCtrl = TextEditingController();
-    final keyCtrl = TextEditingController();
-    ActuatorType selectedType = ActuatorType.relay;
-    ControlType selectedControl = ControlType.toggle;
+  void _showAddDialog(BuildContext context, WidgetRef ref) {
+    final nameCtl = TextEditingController();
+    final cmdKeyCtl = TextEditingController();
+    var selectedType = ActuatorType.relay;
+    var selectedControl = ControlType.toggle;
 
     showDialog(
       context: context,
@@ -87,13 +104,19 @@ class ManageActuatorsScreen extends ConsumerWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                AppTextField(controller: nameCtrl, label: 'Actuator Name'),
-                AppSpacing.verticalSm,
-                AppTextField(
-                  controller: keyCtrl,
-                  label: 'Command Key (e.g., relay_1)',
+                TextField(
+                  controller: nameCtl,
+                  decoration: const InputDecoration(labelText: 'Name'),
                 ),
-                AppSpacing.verticalSm,
+                const SizedBox(height: 12),
+                TextField(
+                  controller: cmdKeyCtl,
+                  decoration: const InputDecoration(
+                    labelText: 'Command Key',
+                    hintText: 'e.g. relay_1',
+                  ),
+                ),
+                const SizedBox(height: 12),
                 DropdownButtonFormField<ActuatorType>(
                   initialValue: selectedType,
                   decoration: const InputDecoration(labelText: 'Actuator Type'),
@@ -108,7 +131,7 @@ class ManageActuatorsScreen extends ConsumerWidget {
                   onChanged: (v) =>
                       setDialogState(() => selectedType = v ?? selectedType),
                 ),
-                AppSpacing.verticalSm,
+                const SizedBox(height: 12),
                 DropdownButtonFormField<ControlType>(
                   initialValue: selectedControl,
                   decoration: const InputDecoration(labelText: 'Control Type'),
@@ -134,23 +157,20 @@ class ManageActuatorsScreen extends ConsumerWidget {
             ),
             FilledButton(
               onPressed: () async {
-                if (nameCtrl.text.trim().isEmpty ||
-                    keyCtrl.text.trim().isEmpty) {
+                if (nameCtl.text.trim().isEmpty ||
+                    cmdKeyCtl.text.trim().isEmpty) {
                   return;
                 }
-                final device = await ref.read(
-                  deviceDetailProvider(deviceId).future,
-                );
-                if (device == null) return;
-                final repo = ref.read(actuatorRepositoryProvider);
-                await repo.createActuator(
-                  deviceId: deviceId,
-                  projectId: device.projectId,
-                  name: nameCtrl.text.trim(),
-                  actuatorType: selectedType.dbValue,
-                  controlType: selectedControl.dbValue,
-                  commandKey: keyCtrl.text.trim(),
-                );
+                await ref
+                    .read(actuatorRepositoryProvider)
+                    .createActuator(
+                      deviceId: deviceId,
+                      projectId: '',
+                      name: nameCtl.text.trim(),
+                      actuatorType: selectedType.dbValue,
+                      controlType: selectedControl.dbValue,
+                      commandKey: cmdKeyCtl.text.trim(),
+                    );
                 ref.invalidate(deviceActuatorsProvider(deviceId));
                 if (context.mounted) Navigator.pop(context);
               },
@@ -161,50 +181,123 @@ class ManageActuatorsScreen extends ConsumerWidget {
       ),
     );
   }
-}
 
-class _ActuatorTile extends ConsumerWidget {
-  final ActuatorDefinition actuator;
-  final String deviceId;
+  void _showEditDialog(
+    BuildContext context,
+    WidgetRef ref,
+    ActuatorDefinition actuator,
+  ) {
+    final nameCtl = TextEditingController(text: actuator.name);
+    final telKeyCtl = TextEditingController(text: actuator.telemetryKey ?? '');
+    final minCtl = TextEditingController(text: actuator.minValue.toString());
+    final maxCtl = TextEditingController(text: actuator.maxValue.toString());
+    final stepCtl = TextEditingController(text: actuator.step.toString());
 
-  const _ActuatorTile({required this.actuator, required this.deviceId});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: theme.colorScheme.secondaryContainer,
-          child: Icon(
-            Icons.settings_input_component,
-            color: theme.colorScheme.secondary,
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Edit ${actuator.name}'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameCtl,
+                decoration: const InputDecoration(labelText: 'Name'),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                enabled: false,
+                decoration: InputDecoration(
+                  labelText: 'Command Key',
+                  hintText: actuator.commandKey,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: telKeyCtl,
+                decoration: const InputDecoration(
+                  labelText: 'Telemetry Key (optional)',
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: minCtl,
+                      decoration: const InputDecoration(labelText: 'Min'),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: maxCtl,
+                      decoration: const InputDecoration(labelText: 'Max'),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: stepCtl,
+                decoration: const InputDecoration(labelText: 'Step'),
+                keyboardType: TextInputType.number,
+              ),
+            ],
           ),
         ),
-        title: Text(actuator.name),
-        subtitle: Text(
-          '${actuator.actuatorType.displayName} • ${actuator.controlType.displayName}'
-          ' • Key: ${actuator.commandKey}',
-        ),
-        trailing: IconButton(
-          icon: const Icon(Icons.delete_outline),
-          onPressed: () async {
-            final confirmed = await showConfirmationDialog(
-              context,
-              title: 'Delete Actuator',
-              message: 'Remove "${actuator.name}" from this device?',
-              isDestructive: true,
-            );
-            if (confirmed) {
-              final repo = ref.read(actuatorRepositoryProvider);
-              await repo.deleteActuator(actuator.id);
-              ref.invalidate(deviceActuatorsProvider(deviceId));
-            }
-          },
-        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final updates = <String, dynamic>{};
+              if (nameCtl.text.trim().isNotEmpty) {
+                updates['name'] = nameCtl.text.trim();
+              }
+              if (telKeyCtl.text.trim().isNotEmpty) {
+                updates['telemetry_key'] = telKeyCtl.text.trim();
+              }
+              final min = double.tryParse(minCtl.text);
+              if (min != null) updates['min_value'] = min;
+              final max = double.tryParse(maxCtl.text);
+              if (max != null) updates['max_value'] = max;
+              final step = double.tryParse(stepCtl.text);
+              if (step != null) updates['step'] = step;
+              if (updates.isNotEmpty) {
+                await ref
+                    .read(actuatorRepositoryProvider)
+                    .updateActuator(actuator.id, updates);
+                ref.invalidate(deviceActuatorsProvider(deviceId));
+              }
+              if (context.mounted) Navigator.pop(context);
+            },
+            child: const Text('Save'),
+          ),
+        ],
       ),
     );
+  }
+
+  void _confirmDelete(
+    BuildContext context,
+    WidgetRef ref,
+    ActuatorDefinition actuator,
+  ) async {
+    final confirmed = await showConfirmationDialog(
+      context,
+      title: 'Delete Actuator',
+      message: 'Remove "${actuator.name}" from this device?',
+      isDestructive: true,
+    );
+    if (confirmed) {
+      await ref.read(actuatorRepositoryProvider).deleteActuator(actuator.id);
+      ref.invalidate(deviceActuatorsProvider(deviceId));
+    }
   }
 }

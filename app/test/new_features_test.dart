@@ -225,7 +225,7 @@ void main() {
     test('categories include IoT types', () {
       expect(Project.categories, contains('Smart Home'));
       expect(Project.categories, contains('Smart Agriculture'));
-      expect(Project.categories, contains('Industrial Monitoring'));
+      expect(Project.categories, contains('Industrial IoT'));
       expect(Project.categories, contains('Custom'));
       expect(Project.categories.length, greaterThanOrEqualTo(8));
     });

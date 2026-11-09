@@ -6,7 +6,10 @@ import '../../../../routing/route_names.dart';
 import '../../../../shared/widgets/confirmation_dialog.dart';
 import '../../../../shared/widgets/error_widget.dart';
 import '../../../../shared/widgets/loading_indicator.dart';
+import '../../../../shared/widgets/status_badge.dart';
 import '../../../../theme/app_spacing.dart';
+import '../../../devices/presentation/providers/device_provider.dart';
+import '../../domain/entities/project_entity.dart';
 import '../providers/project_provider.dart';
 
 class ProjectDetailScreen extends ConsumerWidget {
@@ -17,6 +20,7 @@ class ProjectDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final detailAsync = ref.watch(projectDetailProvider(projectId));
+    final devicesAsync = ref.watch(projectDevicesProvider(projectId));
     final theme = Theme.of(context);
 
     return detailAsync.when(
@@ -37,6 +41,9 @@ class ProjectDetailScreen extends ConsumerWidget {
           );
         }
 
+        final devices = devicesAsync.valueOrNull ?? [];
+        final onlineCount = devices.where((d) => d.isOnline).length;
+
         return Scaffold(
           appBar: AppBar(
             title: Text(project.name),
@@ -51,7 +58,25 @@ class ProjectDetailScreen extends ConsumerWidget {
               ),
               PopupMenuButton<String>(
                 onSelected: (value) async {
-                  if (value == 'delete') {
+                  if (value == 'archive') {
+                    final success = await ref
+                        .read(projectsProvider.notifier)
+                        .updateProject(project.id, {
+                          'is_active': !project.isActive,
+                        });
+                    if (success && context.mounted) {
+                      ref.invalidate(projectDetailProvider(projectId));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            project.isActive
+                                ? 'Project archived'
+                                : 'Project restored',
+                          ),
+                        ),
+                      );
+                    }
+                  } else if (value == 'delete') {
                     final confirmed = await showConfirmationDialog(
                       context,
                       title: 'Delete Project',
@@ -79,14 +104,38 @@ class ProjectDetailScreen extends ConsumerWidget {
                   }
                 },
                 itemBuilder: (context) => [
-                  const PopupMenuItem(value: 'delete', child: Text('Delete')),
+                  PopupMenuItem(
+                    value: 'archive',
+                    child: ListTile(
+                      leading: Icon(
+                        project.isActive
+                            ? Icons.archive_outlined
+                            : Icons.unarchive_outlined,
+                      ),
+                      title: Text(project.isActive ? 'Archive' : 'Restore'),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: ListTile(
+                      leading: Icon(Icons.delete_outline, color: Colors.red),
+                      title: Text(
+                        'Delete',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
                 ],
               ),
             ],
           ),
           body: RefreshIndicator(
-            onRefresh: () async =>
-                ref.invalidate(projectDetailProvider(projectId)),
+            onRefresh: () async {
+              ref.invalidate(projectDetailProvider(projectId));
+              ref.invalidate(projectDevicesProvider(projectId));
+            },
             child: ListView(
               padding: AppSpacing.screenPadding,
               children: [
@@ -103,7 +152,7 @@ class ProjectDetailScreen extends ConsumerWidget {
                                   theme.colorScheme.primaryContainer,
                               radius: 28,
                               child: Icon(
-                                Icons.folder,
+                                Project.categoryIcon(project.category),
                                 size: 28,
                                 color: theme.colorScheme.primary,
                               ),
@@ -130,13 +179,11 @@ class ProjectDetailScreen extends ConsumerWidget {
                                 ],
                               ),
                             ),
-                            Chip(
-                              label: Text(
-                                project.isActive ? 'Active' : 'Inactive',
-                              ),
-                              backgroundColor: project.isActive
-                                  ? Colors.green.withAlpha(30)
-                                  : Colors.grey.withAlpha(30),
+                            StatusBadge(
+                              label: project.isActive ? 'Active' : 'Archived',
+                              type: project.isActive
+                                  ? StatusType.online
+                                  : StatusType.offline,
                             ),
                           ],
                         ),
@@ -150,6 +197,39 @@ class ProjectDetailScreen extends ConsumerWidget {
                       ],
                     ),
                   ),
+                ),
+                AppSpacing.verticalMd,
+                Row(
+                  children: [
+                    Expanded(
+                      child: _StatCard(
+                        icon: Icons.devices_other,
+                        label: 'Devices',
+                        value: '${devices.length}',
+                        theme: theme,
+                      ),
+                    ),
+                    AppSpacing.horizontalSm,
+                    Expanded(
+                      child: _StatCard(
+                        icon: Icons.wifi,
+                        label: 'Online',
+                        value: '$onlineCount',
+                        color: const Color(0xFF4CAF50),
+                        theme: theme,
+                      ),
+                    ),
+                    AppSpacing.horizontalSm,
+                    Expanded(
+                      child: _StatCard(
+                        icon: Icons.wifi_off,
+                        label: 'Offline',
+                        value: '${devices.length - onlineCount}',
+                        color: Colors.grey,
+                        theme: theme,
+                      ),
+                    ),
+                  ],
                 ),
                 AppSpacing.verticalMd,
                 Card(
@@ -166,22 +246,68 @@ class ProjectDetailScreen extends ConsumerWidget {
                               '${project.createdAt.day}/${project.createdAt.month}/${project.createdAt.year}',
                         ),
                         _DetailRow(
-                          label: 'Devices',
-                          value: '${project.deviceCount}',
+                          label: 'Updated',
+                          value:
+                              '${project.updatedAt.day}/${project.updatedAt.month}/${project.updatedAt.year}',
                         ),
                         _DetailRow(
                           label: 'Status',
-                          value: project.isActive ? 'Active' : 'Inactive',
+                          value: project.isActive ? 'Active' : 'Archived',
                         ),
                       ],
                     ),
                   ),
+                ),
+                AppSpacing.verticalMd,
+                FilledButton.icon(
+                  onPressed: () => context.pushNamed(RouteNames.devices),
+                  icon: const Icon(Icons.devices_other),
+                  label: const Text('View Devices'),
+                ),
+                AppSpacing.verticalSm,
+                OutlinedButton.icon(
+                  onPressed: () => context.pushNamed(RouteNames.addDevice),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add Device'),
                 ),
               ],
             ),
           ),
         );
       },
+    );
+  }
+}
+
+class _StatCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color? color;
+  final ThemeData theme;
+
+  const _StatCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.color,
+    required this.theme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            Icon(icon, color: color ?? theme.colorScheme.primary, size: 24),
+            AppSpacing.verticalXs,
+            Text(value, style: theme.textTheme.headlineSmall),
+            Text(label, style: theme.textTheme.labelSmall),
+          ],
+        ),
+      ),
     );
   }
 }

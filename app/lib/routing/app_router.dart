@@ -19,6 +19,7 @@ import '../features/devices/presentation/screens/add_device_screen.dart';
 import '../features/devices/presentation/screens/edit_device_screen.dart';
 import '../features/devices/presentation/screens/manage_sensors_screen.dart';
 import '../features/devices/presentation/screens/manage_actuators_screen.dart';
+import '../features/devices/presentation/screens/device_pairing_screen.dart';
 import '../features/automations/presentation/screens/automations_screen.dart';
 import '../features/automations/presentation/screens/create_automation_screen.dart';
 import '../features/automations/presentation/screens/automation_detail_screen.dart';
@@ -161,6 +162,12 @@ final routerProvider = Provider<GoRouter>((ref) {
                     name: RouteNames.addDevice,
                     parentNavigatorKey: _rootNavigatorKey,
                     builder: (context, state) => const AddDeviceScreen(),
+                  ),
+                  GoRoute(
+                    path: 'pair',
+                    name: RouteNames.pairDevice,
+                    parentNavigatorKey: _rootNavigatorKey,
+                    builder: (context, state) => const DevicePairingScreen(),
                   ),
                   GoRoute(
                     path: ':id',

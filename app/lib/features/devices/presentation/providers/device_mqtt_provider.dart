@@ -39,22 +39,19 @@ class DeviceMqttController {
     return connected;
   }
 
-  void _subscribeToDevice(
-      String orgId, String projectId, String deviceId) {
-    _mqtt.subscribe(
-        MqttConstants.telemetryTopic(orgId, projectId, deviceId));
-    _mqtt.subscribe(
-        MqttConstants.statusTopic(orgId, projectId, deviceId));
-    _mqtt.subscribe(
-        MqttConstants.commandAckTopic(orgId, projectId, deviceId));
-    _mqtt.subscribe(
-        MqttConstants.stateTopic(orgId, projectId, deviceId));
+  void _subscribeToDevice(String orgId, String projectId, String deviceId) {
+    _mqtt.subscribe(MqttConstants.telemetryTopic(orgId, projectId, deviceId));
+    _mqtt.subscribe(MqttConstants.statusTopic(orgId, projectId, deviceId));
+    _mqtt.subscribe(MqttConstants.commandAckTopic(orgId, projectId, deviceId));
+    _mqtt.subscribe(MqttConstants.stateTopic(orgId, projectId, deviceId));
   }
 
   void _listenForAcknowledgements(
-      String orgId, String projectId, String deviceId) {
-    final ackTopic =
-        MqttConstants.commandAckTopic(orgId, projectId, deviceId);
+    String orgId,
+    String projectId,
+    String deviceId,
+  ) {
+    final ackTopic = MqttConstants.commandAckTopic(orgId, projectId, deviceId);
     _mqtt.messageStream.listen((msg) {
       if (msg.topic == ackTopic) {
         try {
@@ -79,13 +76,17 @@ class DeviceMqttController {
     required String deviceId,
   }) {
     _mqtt.unsubscribe(
-        MqttConstants.telemetryTopic(organizationId, projectId, deviceId));
+      MqttConstants.telemetryTopic(organizationId, projectId, deviceId),
+    );
     _mqtt.unsubscribe(
-        MqttConstants.statusTopic(organizationId, projectId, deviceId));
+      MqttConstants.statusTopic(organizationId, projectId, deviceId),
+    );
     _mqtt.unsubscribe(
-        MqttConstants.commandAckTopic(organizationId, projectId, deviceId));
+      MqttConstants.commandAckTopic(organizationId, projectId, deviceId),
+    );
     _mqtt.unsubscribe(
-        MqttConstants.stateTopic(organizationId, projectId, deviceId));
+      MqttConstants.stateTopic(organizationId, projectId, deviceId),
+    );
   }
 }
 

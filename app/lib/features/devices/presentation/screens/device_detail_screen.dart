@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
+import '../../../../core/services/mqtt_service.dart';
 import '../../../../shared/widgets/confirmation_dialog.dart';
 import '../../../../shared/widgets/error_widget.dart';
 import '../../../../shared/widgets/loading_indicator.dart';
@@ -13,8 +15,6 @@ import '../../../../theme/app_spacing.dart';
 import '../../data/command_repository.dart';
 import '../../domain/entities/actuator_entity.dart';
 import '../../domain/entities/device_command_entity.dart';
-import '../../domain/entities/sensor_entity.dart';
-import '../../domain/entities/telemetry_entity.dart';
 import '../providers/actuator_provider.dart';
 import '../providers/command_provider.dart';
 import '../providers/device_provider.dart';
@@ -29,132 +29,136 @@ class DeviceDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final deviceAsync = ref.watch(deviceDetailProvider(deviceId));
-    final sensorsAsync = ref.watch(deviceSensorsProvider(deviceId));
-    final actuatorsAsync = ref.watch(deviceActuatorsProvider(deviceId));
-    final telemetryAsync = ref.watch(latestTelemetryProvider(deviceId));
-    final theme = Theme.of(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: deviceAsync.when(
-          data: (d) => Text(d?.name ?? 'Device'),
-          loading: () => const Text('Device'),
-          error: (_, __) => const Text('Device'),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: () => context.push('/devices/$deviceId/edit'),
-          ),
-          PopupMenuButton<String>(
-            onSelected: (value) async {
-              if (value == 'credentials') {
-                _showCredentials(context, ref);
-              } else if (value == 'sensors') {
-                context.push('/devices/$deviceId/sensors');
-              } else if (value == 'actuators') {
-                context.push('/devices/$deviceId/actuators');
-              } else if (value == 'delete') {
-                final confirmed = await showConfirmationDialog(
-                  context,
-                  title: 'Delete Device',
-                  message: 'This will permanently delete this device and all its data.',
-                  isDestructive: true,
-                );
-                if (confirmed && context.mounted) {
-                  await ref
-                      .read(devicesProvider.notifier)
-                      .deleteDevice(deviceId);
-                  if (context.mounted) context.pop();
-                }
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'credentials',
-                child: ListTile(
-                  leading: Icon(Icons.key),
-                  title: Text('Credentials'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'sensors',
-                child: ListTile(
-                  leading: Icon(Icons.sensors),
-                  title: Text('Manage Sensors'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'actuators',
-                child: ListTile(
-                  leading: Icon(Icons.settings_input_component),
-                  title: Text('Manage Actuators'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'delete',
-                child: ListTile(
-                  leading: Icon(Icons.delete_outline, color: Colors.red),
-                  title: Text('Delete', style: TextStyle(color: Colors.red)),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-      body: deviceAsync.when(
-        loading: () => const LoadingIndicator(),
-        error: (error, _) => AppErrorWidget(
+    return deviceAsync.when(
+      loading: () => const Scaffold(body: LoadingIndicator()),
+      error: (error, _) => Scaffold(
+        appBar: AppBar(title: const Text('Device')),
+        body: AppErrorWidget(
           message: error.toString(),
           onRetry: () => ref.invalidate(deviceDetailProvider(deviceId)),
         ),
-        data: (device) {
-          if (device == null) {
-            return const Center(child: Text('Device not found'));
-          }
-          return RefreshIndicator(
-            onRefresh: () async {
-              ref.invalidate(deviceDetailProvider(deviceId));
-              ref.invalidate(latestTelemetryProvider(deviceId));
-              ref.invalidate(deviceSensorsProvider(deviceId));
-              ref.invalidate(deviceActuatorsProvider(deviceId));
-            },
-            child: ListView(
-              padding: AppSpacing.screenPadding,
-              children: [
-                _DeviceInfoCard(device: device, theme: theme),
-                AppSpacing.verticalMd,
-                _TelemetrySection(telemetryAsync: telemetryAsync, theme: theme),
-                AppSpacing.verticalMd,
-                _SensorsSection(
-                  sensorsAsync: sensorsAsync,
-                  telemetryAsync: telemetryAsync,
-                  theme: theme,
+      ),
+      data: (device) {
+        if (device == null) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Device')),
+            body: const Center(child: Text('Device not found')),
+          );
+        }
+        return _DeviceDetailBody(device: device, deviceId: deviceId);
+      },
+    );
+  }
+}
+
+class _DeviceDetailBody extends ConsumerWidget {
+  final dynamic device;
+  final String deviceId;
+
+  const _DeviceDetailBody({required this.device, required this.deviceId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final mqttStatus = ref.watch(mqttStatusProvider);
+
+    return DefaultTabController(
+      length: 4,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(device.name),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.edit),
+              onPressed: () => context.push('/devices/$deviceId/edit'),
+            ),
+            PopupMenuButton<String>(
+              onSelected: (value) async {
+                if (value == 'credentials') {
+                  _showCredentials(context, ref);
+                } else if (value == 'sensors') {
+                  context.push('/devices/$deviceId/sensors');
+                } else if (value == 'actuators') {
+                  context.push('/devices/$deviceId/actuators');
+                } else if (value == 'delete') {
+                  final confirmed = await showConfirmationDialog(
+                    context,
+                    title: 'Delete Device',
+                    message: 'This will permanently delete this device and all its data.',
+                    isDestructive: true,
+                  );
+                  if (confirmed && context.mounted) {
+                    await ref
+                        .read(devicesProvider.notifier)
+                        .deleteDevice(deviceId);
+                    if (context.mounted) context.pop();
+                  }
+                }
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'credentials',
+                  child: ListTile(
+                    leading: Icon(Icons.key),
+                    title: Text('Credentials'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
                 ),
-                AppSpacing.verticalMd,
-                _ActuatorsSection(
-                  actuatorsAsync: actuatorsAsync,
-                  deviceId: deviceId,
-                  theme: theme,
+                const PopupMenuItem(
+                  value: 'sensors',
+                  child: ListTile(
+                    leading: Icon(Icons.sensors),
+                    title: Text('Manage Sensors'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
                 ),
-                AppSpacing.verticalMd,
-                _CommandSection(deviceId: deviceId, theme: theme),
-                AppSpacing.verticalXl,
+                const PopupMenuItem(
+                  value: 'actuators',
+                  child: ListTile(
+                    leading: Icon(Icons.settings_input_component),
+                    title: Text('Manage Actuators'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: ListTile(
+                    leading: Icon(Icons.delete_outline, color: Colors.red),
+                    title: Text('Delete', style: TextStyle(color: Colors.red)),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
               ],
             ),
-          );
-        },
+          ],
+          bottom: const TabBar(
+            isScrollable: true,
+            tabs: [
+              Tab(text: 'Overview'),
+              Tab(text: 'Sensors'),
+              Tab(text: 'Actuators'),
+              Tab(text: 'Commands'),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            _OverviewTab(
+              device: device,
+              deviceId: deviceId,
+              mqttStatus: mqttStatus,
+            ),
+            _SensorsTab(deviceId: deviceId),
+            _ActuatorsTab(deviceId: deviceId),
+            _CommandsTab(deviceId: deviceId),
+          ],
+        ),
       ),
     );
   }
 
   void _showCredentials(BuildContext context, WidgetRef ref) async {
     final creds = await ref.read(deviceCredentialsProvider(deviceId).future);
-
     if (!context.mounted) return;
 
     showDialog(
@@ -169,9 +173,15 @@ class DeviceDetailScreen extends ConsumerWidget {
             else
               ...creds.map(
                 (c) => ListTile(
-                  title: Text(c.apiKey, style: const TextStyle(fontSize: 12)),
+                  title: Text(
+                    c.apiKey,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
                   subtitle: Text(
-                    'Active: ${c.isActive} • Created: ${c.createdAt.toLocal().toString().substring(0, 16)}',
+                    'Active: ${c.isActive} · Created: ${c.createdAt.toLocal().toString().substring(0, 16)}',
                   ),
                   trailing: IconButton(
                     icon: const Icon(Icons.copy, size: 18),
@@ -196,7 +206,7 @@ class DeviceDetailScreen extends ConsumerWidget {
                 }
               },
               icon: const Icon(Icons.add),
-              label: const Text('Generate New Credentials'),
+              label: const Text('Generate New'),
             ),
           ],
         ),
@@ -218,21 +228,27 @@ class DeviceDetailScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('New Credentials Generated'),
+        title: const Text('New Credentials'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Save these credentials now. The secret will not be shown again.',
+              'Save these now. The secret will not be shown again.',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             const Text('API Key:'),
-            SelectableText(apiKey, style: const TextStyle(fontSize: 12)),
+            SelectableText(
+              apiKey,
+              style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
+            ),
             const SizedBox(height: 8),
             const Text('API Secret:'),
-            SelectableText(apiSecret, style: const TextStyle(fontSize: 12)),
+            SelectableText(
+              apiSecret,
+              style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
+            ),
           ],
         ),
         actions: [
@@ -257,300 +273,399 @@ class DeviceDetailScreen extends ConsumerWidget {
   }
 }
 
-class _DeviceInfoCard extends StatelessWidget {
+class _OverviewTab extends ConsumerWidget {
   final dynamic device;
-  final ThemeData theme;
+  final String deviceId;
+  final AsyncValue<MqttConnectionStatus> mqttStatus;
 
-  const _DeviceInfoCard({required this.device, required this.theme});
+  const _OverviewTab({
+    required this.device,
+    required this.deviceId,
+    required this.mqttStatus,
+  });
 
   @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: AppSpacing.cardPadding,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: theme.colorScheme.primaryContainer,
-                  radius: 28,
-                  child: Icon(
-                    Icons.memory,
-                    size: 28,
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-                AppSpacing.horizontalMd,
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+  Widget build(BuildContext context, WidgetRef ref) {
+    final telemetryAsync = ref.watch(latestTelemetryProvider(deviceId));
+    final theme = Theme.of(context);
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        ref.invalidate(deviceDetailProvider(deviceId));
+        ref.invalidate(latestTelemetryProvider(deviceId));
+      },
+      child: ListView(
+        padding: AppSpacing.screenPadding,
+        children: [
+          Card(
+            child: Padding(
+              padding: AppSpacing.cardPadding,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     children: [
-                      Text(device.name, style: theme.textTheme.titleLarge),
-                      AppSpacing.verticalXs,
-                      StatusBadge(
-                        label: device.isOnline ? 'Online' : 'Offline',
-                        type: device.isOnline
-                            ? StatusType.online
-                            : StatusType.offline,
+                      CircleAvatar(
+                        backgroundColor: theme.colorScheme.primaryContainer,
+                        radius: 28,
+                        child: Icon(
+                          Icons.memory,
+                          size: 28,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                      AppSpacing.horizontalMd,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              device.name,
+                              style: theme.textTheme.titleLarge,
+                            ),
+                            AppSpacing.verticalXs,
+                            Row(
+                              children: [
+                                StatusBadge(
+                                  label: device.isOnline ? 'Online' : 'Offline',
+                                  type: device.isOnline
+                                      ? StatusType.online
+                                      : StatusType.offline,
+                                ),
+                                AppSpacing.horizontalSm,
+                                mqttStatus.when(
+                                  data: (s) => _MqttBadge(status: s),
+                                  loading: () => const SizedBox.shrink(),
+                                  error: (_, __) => const SizedBox.shrink(),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
-                ),
-              ],
-            ),
-            AppSpacing.verticalMd,
-            _InfoRow('Platform', device.hardwarePlatform.displayName),
-            _InfoRow('Type', device.deviceType),
-            if (device.firmwareVersion != null)
-              _InfoRow('Firmware', device.firmwareVersion!),
-            if (device.macAddress != null) _InfoRow('MAC', device.macAddress!),
-            if (device.lastSeenAt != null)
-              _InfoRow(
-                'Last seen',
-                device.lastSeenAt!.toLocal().toString().substring(0, 19),
+                  AppSpacing.verticalMd,
+                  _InfoRow('Platform', device.hardwarePlatform.displayName),
+                  _InfoRow('Type', device.deviceType),
+                  if (device.firmwareVersion != null)
+                    _InfoRow('Firmware', 'v${device.firmwareVersion}'),
+                  if (device.macAddress != null)
+                    _InfoRow('MAC', device.macAddress!),
+                  if (device.lastSeenAt != null)
+                    _InfoRow(
+                      'Last seen',
+                      device.isOnline
+                          ? 'Now'
+                          : timeago.format(device.lastSeenAt!),
+                    ),
+                  _InfoRow('Device ID', device.id),
+                ],
               ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _InfoRow(this.label, this.value);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 100,
-            child: Text(label, style: Theme.of(context).textTheme.bodySmall),
+            ),
           ),
-          Expanded(child: Text(value)),
+          if (!device.isOnline && device.lastSeenAt != null) ...[
+            AppSpacing.verticalSm,
+            Card(
+              color: theme.colorScheme.errorContainer.withValues(alpha: 0.3),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    Icon(Icons.warning_amber, color: theme.colorScheme.error),
+                    AppSpacing.horizontalSm,
+                    Expanded(
+                      child: Text(
+                        'Device is offline. Data shown may be stale.',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.error,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+          AppSpacing.verticalMd,
+          Text('Latest Telemetry', style: theme.textTheme.titleMedium),
+          AppSpacing.verticalSm,
+          telemetryAsync.when(
+            loading: () => const Card(
+              child: Padding(
+                padding: EdgeInsets.all(AppSpacing.md),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            ),
+            error: (e, _) => Card(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Text('Error: $e'),
+              ),
+            ),
+            data: (readings) {
+              if (readings.isEmpty) {
+                return Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: Center(
+                      child: Text(
+                        'No telemetry data yet',
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                    ),
+                  ),
+                );
+              }
+              return Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: readings.entries.map((entry) {
+                  return SizedBox(
+                    width: 150,
+                    child: Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppSpacing.sm),
+                        child: Column(
+                          children: [
+                            Text(entry.key, style: theme.textTheme.bodySmall),
+                            AppSpacing.verticalXs,
+                            Text(
+                              entry.value.displayValue,
+                              style: theme.textTheme.headlineSmall,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              );
+            },
+          ),
+          AppSpacing.verticalXl,
         ],
       ),
     );
   }
 }
 
-class _TelemetrySection extends StatelessWidget {
-  final AsyncValue<Map<String, TelemetryReading>> telemetryAsync;
-  final ThemeData theme;
+class _SensorsTab extends ConsumerWidget {
+  final String deviceId;
 
-  const _TelemetrySection({required this.telemetryAsync, required this.theme});
+  const _SensorsTab({required this.deviceId});
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Live Telemetry', style: theme.textTheme.titleMedium),
-        AppSpacing.verticalSm,
-        telemetryAsync.when(
-          loading: () => const Card(
-            child: Padding(
-              padding: EdgeInsets.all(AppSpacing.md),
-              child: Center(child: CircularProgressIndicator()),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sensorsAsync = ref.watch(deviceSensorsProvider(deviceId));
+    final telemetryAsync = ref.watch(latestTelemetryProvider(deviceId));
+    final theme = Theme.of(context);
+
+    return sensorsAsync.when(
+      loading: () => const LoadingIndicator(),
+      error: (e, _) => AppErrorWidget(message: e.toString()),
+      data: (sensors) {
+        if (sensors.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.sensors_off,
+                  size: 48,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                AppSpacing.verticalMd,
+                Text('No sensors configured', style: theme.textTheme.bodyLarge),
+                AppSpacing.verticalSm,
+                FilledButton.tonal(
+                  onPressed: () => context.push('/devices/$deviceId/sensors'),
+                  child: const Text('Add Sensors'),
+                ),
+              ],
             ),
-          ),
-          error: (e, _) => Card(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Text('Error: $e'),
-            ),
-          ),
-          data: (readings) {
-            if (readings.isEmpty) {
-              return Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  child: Center(
-                    child: Text(
-                      'No telemetry data yet',
-                      style: theme.textTheme.bodyMedium,
-                    ),
-                  ),
+          );
+        }
+        final readings = telemetryAsync.valueOrNull ?? {};
+        return ListView.builder(
+          padding: AppSpacing.screenPadding,
+          itemCount: sensors.length + 1,
+          itemBuilder: (context, index) {
+            if (index == sensors.length) {
+              return Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: OutlinedButton.icon(
+                  onPressed: () => context.push('/devices/$deviceId/sensors'),
+                  icon: const Icon(Icons.settings),
+                  label: const Text('Manage Sensors'),
                 ),
               );
             }
-            return Wrap(
-              spacing: AppSpacing.sm,
-              runSpacing: AppSpacing.sm,
-              children: readings.entries.map((entry) {
-                return SizedBox(
-                  width: 150,
-                  child: Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(AppSpacing.sm),
+            final sensor = sensors[index];
+            final reading = readings[sensor.telemetryKey];
+            return Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: theme.colorScheme.primaryContainer,
+                      child: Icon(
+                        Icons.sensors,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    AppSpacing.horizontalMd,
+                    Expanded(
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(entry.key, style: theme.textTheme.bodySmall),
-                          AppSpacing.verticalXs,
+                          Text(sensor.name, style: theme.textTheme.titleSmall),
                           Text(
-                            entry.value.displayValue,
-                            style: theme.textTheme.headlineSmall,
+                            '${sensor.sensorType.displayName} · ${sensor.telemetryKey}',
+                            style: theme.textTheme.bodySmall,
+                          ),
+                          if (sensor.unit != null)
+                            Text(
+                              'Unit: ${sensor.unit}',
+                              style: theme.textTheme.labelSmall,
+                            ),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          reading != null
+                              ? '${reading.displayValue}${sensor.unit != null ? ' ${sensor.unit}' : ''}'
+                              : '--',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                        StatusBadge(
+                          label: sensor.isActive ? 'Active' : 'Inactive',
+                          type: sensor.isActive
+                              ? StatusType.online
+                              : StatusType.offline,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class _ActuatorsTab extends ConsumerWidget {
+  final String deviceId;
+
+  const _ActuatorsTab({required this.deviceId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final actuatorsAsync = ref.watch(deviceActuatorsProvider(deviceId));
+    final theme = Theme.of(context);
+
+    return actuatorsAsync.when(
+      loading: () => const LoadingIndicator(),
+      error: (e, _) => AppErrorWidget(message: e.toString()),
+      data: (actuators) {
+        if (actuators.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.settings_input_component,
+                  size: 48,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                AppSpacing.verticalMd,
+                Text(
+                  'No actuators configured',
+                  style: theme.textTheme.bodyLarge,
+                ),
+                AppSpacing.verticalSm,
+                FilledButton.tonal(
+                  onPressed: () => context.push('/devices/$deviceId/actuators'),
+                  child: const Text('Add Actuators'),
+                ),
+              ],
+            ),
+          );
+        }
+        return ListView.builder(
+          padding: AppSpacing.screenPadding,
+          itemCount: actuators.length + 1,
+          itemBuilder: (context, index) {
+            if (index == actuators.length) {
+              return Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: OutlinedButton.icon(
+                  onPressed: () => context.push('/devices/$deviceId/actuators'),
+                  icon: const Icon(Icons.settings),
+                  label: const Text('Manage Actuators'),
+                ),
+              );
+            }
+            final actuator = actuators[index];
+            return Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: theme.colorScheme.secondaryContainer,
+                      child: Icon(
+                        Icons.settings_input_component,
+                        color: theme.colorScheme.secondary,
+                      ),
+                    ),
+                    AppSpacing.horizontalMd,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            actuator.name,
+                            style: theme.textTheme.titleSmall,
+                          ),
+                          Text(
+                            '${actuator.actuatorType.displayName} · ${actuator.controlType.displayName}',
+                            style: theme.textTheme.bodySmall,
                           ),
                         ],
                       ),
                     ),
-                  ),
-                );
-              }).toList(),
-            );
-          },
-        ),
-      ],
-    );
-  }
-}
-
-class _SensorsSection extends StatelessWidget {
-  final AsyncValue<List<SensorDefinition>> sensorsAsync;
-  final AsyncValue<Map<String, TelemetryReading>> telemetryAsync;
-  final ThemeData theme;
-
-  const _SensorsSection({
-    required this.sensorsAsync,
-    required this.telemetryAsync,
-    required this.theme,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Sensors', style: theme.textTheme.titleMedium),
-        AppSpacing.verticalSm,
-        sensorsAsync.when(
-          loading: () => const Card(
-            child: Padding(
-              padding: EdgeInsets.all(AppSpacing.md),
-              child: Center(child: CircularProgressIndicator()),
-            ),
-          ),
-          error: (e, _) => Text('Error: $e'),
-          data: (sensors) {
-            if (sensors.isEmpty) {
-              return Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  child: Center(
-                    child: Text(
-                      'No sensors configured',
-                      style: theme.textTheme.bodyMedium,
-                    ),
-                  ),
+                    _ActuatorControl(actuator: actuator, deviceId: deviceId),
+                  ],
                 ),
-              );
-            }
-            final readings = telemetryAsync.valueOrNull ?? {};
-            return Column(
-              children: sensors.map((sensor) {
-                final reading = readings[sensor.telemetryKey];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 4),
-                  child: ListTile(
-                    leading: Icon(
-                      Icons.sensors,
-                      color: theme.colorScheme.primary,
-                    ),
-                    title: Text(sensor.name),
-                    subtitle: Text(
-                      '${sensor.sensorType.displayName} • ${sensor.telemetryKey}',
-                    ),
-                    trailing: reading != null
-                        ? Text(
-                            '${reading.displayValue}${sensor.unit != null ? ' ${sensor.unit}' : ''}',
-                            style: theme.textTheme.titleMedium,
-                          )
-                        : Text('--', style: theme.textTheme.titleMedium),
-                  ),
-                );
-              }).toList(),
+              ),
             );
           },
-        ),
-      ],
+        );
+      },
     );
   }
 }
 
-class _ActuatorsSection extends ConsumerWidget {
-  final AsyncValue<List<ActuatorDefinition>> actuatorsAsync;
+class _ActuatorControl extends ConsumerWidget {
+  final ActuatorDefinition actuator;
   final String deviceId;
-  final ThemeData theme;
 
-  const _ActuatorsSection({
-    required this.actuatorsAsync,
-    required this.deviceId,
-    required this.theme,
-  });
+  const _ActuatorControl({required this.actuator, required this.deviceId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Actuators', style: theme.textTheme.titleMedium),
-        AppSpacing.verticalSm,
-        actuatorsAsync.when(
-          loading: () => const Card(
-            child: Padding(
-              padding: EdgeInsets.all(AppSpacing.md),
-              child: Center(child: CircularProgressIndicator()),
-            ),
-          ),
-          error: (e, _) => Text('Error: $e'),
-          data: (actuators) {
-            if (actuators.isEmpty) {
-              return Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  child: Center(
-                    child: Text(
-                      'No actuators configured',
-                      style: theme.textTheme.bodyMedium,
-                    ),
-                  ),
-                ),
-              );
-            }
-            return Column(
-              children: actuators.map((actuator) {
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 4),
-                  child: ListTile(
-                    leading: Icon(
-                      Icons.settings_input_component,
-                      color: theme.colorScheme.secondary,
-                    ),
-                    title: Text(actuator.name),
-                    subtitle: Text(actuator.actuatorType.displayName),
-                    trailing: _buildControl(context, ref, actuator),
-                  ),
-                );
-              }).toList(),
-            );
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildControl(
-    BuildContext context,
-    WidgetRef ref,
-    ActuatorDefinition actuator,
-  ) {
     if (actuator.controlType == ControlType.toggle) {
       return Switch(
         value: actuator.isOn,
@@ -560,22 +675,18 @@ class _ActuatorsSection extends ConsumerWidget {
               .sendCommand(
                 deviceId: deviceId,
                 commandType: actuator.commandKey,
-                payload: {'value': value},
+                payload: {'value': value, 'actuator_id': actuator.id},
               );
         },
       );
     }
     return FilledButton.tonal(
-      onPressed: () => _showCommandDialog(context, ref, actuator),
+      onPressed: () => _showCommandDialog(context, ref),
       child: const Text('Control'),
     );
   }
 
-  void _showCommandDialog(
-    BuildContext context,
-    WidgetRef ref,
-    ActuatorDefinition actuator,
-  ) {
+  void _showCommandDialog(BuildContext context, WidgetRef ref) {
     final controller = TextEditingController(
       text: actuator.currentValue.toString(),
     );
@@ -604,7 +715,7 @@ class _ActuatorsSection extends ConsumerWidget {
                     .sendCommand(
                       deviceId: deviceId,
                       commandType: actuator.commandKey,
-                      payload: {'value': value},
+                      payload: {'value': value, 'actuator_id': actuator.id},
                     );
                 Navigator.pop(context);
               }
@@ -617,81 +728,89 @@ class _ActuatorsSection extends ConsumerWidget {
   }
 }
 
-class _CommandSection extends ConsumerWidget {
+class _CommandsTab extends ConsumerWidget {
   final String deviceId;
-  final ThemeData theme;
 
-  const _CommandSection({required this.deviceId, required this.theme});
+  const _CommandsTab({required this.deviceId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final commandsAsync = ref.watch(deviceCommandsProvider(deviceId));
+    final theme = Theme.of(context);
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('Recent Commands', style: theme.textTheme.titleMedium),
-            TextButton.icon(
-              onPressed: () => _showSendCommandDialog(context, ref),
-              icon: const Icon(Icons.send, size: 18),
-              label: const Text('Send'),
-            ),
-          ],
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Command History', style: theme.textTheme.titleMedium),
+              FilledButton.tonalIcon(
+                onPressed: () => _showSendCommandDialog(context, ref),
+                icon: const Icon(Icons.send, size: 18),
+                label: const Text('Send'),
+              ),
+            ],
+          ),
         ),
-        commandsAsync.when(
-          loading: () => const SizedBox.shrink(),
-          error: (e, _) => Text('Error: $e'),
-          data: (commands) {
-            if (commands.isEmpty) {
-              return Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  child: Center(
-                    child: Text(
-                      'No commands sent',
-                      style: theme.textTheme.bodyMedium,
-                    ),
-                  ),
-                ),
-              );
-            }
-            return Column(
-              children: commands.take(5).map((cmd) {
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 4),
-                  child: ListTile(
-                    dense: true,
-                    leading: Icon(
-                      cmd.status.isTerminal
-                          ? (cmd.status == CommandStatus.executed
-                                ? Icons.check_circle
-                                : Icons.error)
-                          : Icons.schedule,
-                      color: cmd.status == CommandStatus.executed
-                          ? const Color(0xFF4CAF50)
-                          : cmd.status == CommandStatus.failed
-                          ? Colors.red
-                          : null,
-                      size: 20,
-                    ),
-                    title: Text(cmd.commandType),
-                    subtitle: Text(cmd.status.displayName),
-                    trailing: Text(
-                      cmd.createdAt.toLocal().toString().substring(11, 19),
-                      style: theme.textTheme.bodySmall,
-                    ),
+        Expanded(
+          child: commandsAsync.when(
+            loading: () => const LoadingIndicator(),
+            error: (e, _) => AppErrorWidget(message: e.toString()),
+            data: (commands) {
+              if (commands.isEmpty) {
+                return Center(
+                  child: Text(
+                    'No commands sent yet',
+                    style: theme.textTheme.bodyMedium,
                   ),
                 );
-              }).toList(),
-            );
-          },
+              }
+              return ListView.builder(
+                padding: AppSpacing.screenPadding,
+                itemCount: commands.length,
+                itemBuilder: (context, index) {
+                  final cmd = commands[index];
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 4),
+                    child: ListTile(
+                      dense: true,
+                      leading: Icon(
+                        _commandIcon(cmd.status),
+                        color: _commandColor(cmd.status),
+                        size: 20,
+                      ),
+                      title: Text(cmd.commandType),
+                      subtitle: Text(cmd.status.displayName),
+                      trailing: Text(
+                        timeago.format(cmd.createdAt),
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
         ),
       ],
     );
   }
+
+  IconData _commandIcon(CommandStatus status) => switch (status) {
+    CommandStatus.executed => Icons.check_circle,
+    CommandStatus.failed || CommandStatus.timeout => Icons.error,
+    CommandStatus.pending || CommandStatus.sent => Icons.schedule,
+    CommandStatus.acknowledged => Icons.done,
+  };
+
+  Color _commandColor(CommandStatus status) => switch (status) {
+    CommandStatus.executed => const Color(0xFF4CAF50),
+    CommandStatus.failed || CommandStatus.timeout => Colors.red,
+    CommandStatus.acknowledged => Colors.blue,
+    _ => Colors.grey,
+  };
 
   void _showSendCommandDialog(BuildContext context, WidgetRef ref) {
     final typeController = TextEditingController();
@@ -724,14 +843,12 @@ class _CommandSection extends ConsumerWidget {
             onPressed: () {
               final type = typeController.text.trim();
               if (type.isEmpty) return;
-
               Map<String, dynamic> payload = {};
               try {
                 payload = jsonDecode(
                   payloadController.text.trim(),
                 ) as Map<String, dynamic>;
               } catch (_) {}
-
               ref
                   .read(commandRepositoryProvider)
                   .sendCommand(
@@ -743,6 +860,63 @@ class _CommandSection extends ConsumerWidget {
               ref.invalidate(deviceCommandsProvider(deviceId));
             },
             child: const Text('Send'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MqttBadge extends StatelessWidget {
+  final MqttConnectionStatus status;
+
+  const _MqttBadge({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, color) = switch (status) {
+      MqttConnectionStatus.connected => ('MQTT', const Color(0xFF4CAF50)),
+      MqttConnectionStatus.connecting => ('Connecting', Colors.orange),
+      MqttConnectionStatus.disconnected => ('MQTT Off', Colors.grey),
+      MqttConnectionStatus.error => ('MQTT Error', Colors.red),
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 10,
+          color: color,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _InfoRow(this.label, this.value);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(label, style: Theme.of(context).textTheme.bodySmall),
+          ),
+          Expanded(
+            child: Text(value, style: Theme.of(context).textTheme.bodyMedium),
           ),
         ],
       ),

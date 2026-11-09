@@ -35,4 +35,5 @@ abstract final class RouteNames {
   static const String deviceStudio = 'deviceStudio';
   static const String dashboards = 'dashboards';
   static const String createDashboard = 'createDashboard';
+  static const String pairDevice = 'pairDevice';
 }

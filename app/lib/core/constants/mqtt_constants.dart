@@ -19,32 +19,34 @@ abstract final class MqttConstants {
       '$topicPrefix/$orgId/$projectId/$deviceId';
 
   static String telemetryTopic(
-          String orgId, String projectId, String deviceId) =>
-      '${_base(orgId, projectId, deviceId)}/telemetry';
+    String orgId,
+    String projectId,
+    String deviceId,
+  ) => '${_base(orgId, projectId, deviceId)}/telemetry';
 
-  static String commandTopic(
-          String orgId, String projectId, String deviceId) =>
+  static String commandTopic(String orgId, String projectId, String deviceId) =>
       '${_base(orgId, projectId, deviceId)}/command';
 
   static String commandAckTopic(
-          String orgId, String projectId, String deviceId) =>
-      '${_base(orgId, projectId, deviceId)}/command-ack';
+    String orgId,
+    String projectId,
+    String deviceId,
+  ) => '${_base(orgId, projectId, deviceId)}/command-ack';
 
-  static String stateTopic(
-          String orgId, String projectId, String deviceId) =>
+  static String stateTopic(String orgId, String projectId, String deviceId) =>
       '${_base(orgId, projectId, deviceId)}/state';
 
-  static String statusTopic(
-          String orgId, String projectId, String deviceId) =>
+  static String statusTopic(String orgId, String projectId, String deviceId) =>
       '${_base(orgId, projectId, deviceId)}/status';
 
-  static String configTopic(
-          String orgId, String projectId, String deviceId) =>
+  static String configTopic(String orgId, String projectId, String deviceId) =>
       '${_base(orgId, projectId, deviceId)}/config';
 
   static String deviceWildcard(
-          String orgId, String projectId, String deviceId) =>
-      '${_base(orgId, projectId, deviceId)}/#';
+    String orgId,
+    String projectId,
+    String deviceId,
+  ) => '${_base(orgId, projectId, deviceId)}/#';
 
   static String projectWildcard(String orgId, String projectId) =>
       '$topicPrefix/$orgId/$projectId/#';
