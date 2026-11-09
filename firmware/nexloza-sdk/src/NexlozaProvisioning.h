@@ -23,6 +23,7 @@ struct ProvisioningData {
   char deviceId[64];
   char apiKey[64];
   char apiSecret[128];
+  char organizationId[64];
   char projectId[64];
   bool valid;
 };

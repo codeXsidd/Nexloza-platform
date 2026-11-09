@@ -84,6 +84,7 @@ void setup() {
   config.deviceId             = NEXLOZA_DEVICE_ID;
   config.apiKey               = NEXLOZA_API_KEY;
   config.apiSecret            = NEXLOZA_API_SECRET;
+  config.organizationId     = NEXLOZA_ORG_ID;
   config.projectId            = NEXLOZA_PROJECT_ID;
   config.useTLS               = false;
   config.heartbeatIntervalMs  = 30000;

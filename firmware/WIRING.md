@@ -157,6 +157,126 @@ GND          ────►  GND
 
 ---
 
+## ESP32 Two-Relay (`esp32-two-relay`)
+
+```
+ESP32           Relay Module 1      Load 1 (DC)
+──────          ──────────────      ────────────
+GPIO 26  ────►  IN
+3.3V     ────►  VCC
+GND      ────►  GND
+                COM  ────►          + (via relay NO)
+                                    - ──── GND (power supply)
+
+ESP32           Relay Module 2      Load 2 (DC)
+──────          ──────────────      ────────────
+GPIO 27  ────►  IN
+3.3V     ────►  VCC
+GND      ────►  GND
+                COM  ────►          + (via relay NO)
+                                    - ──── GND (power supply)
+```
+
+**Notes:**
+- Both relays can be on a single dual-relay module
+- Use 3.3V-compatible relay modules or level shifters
+- Both default to OFF on power-up
+
+---
+
+## ESP32 Ultrasonic (`esp32-ultrasonic`)
+
+```
+ESP32           HC-SR04
+──────          ───────
+GPIO 12  ────►  TRIG
+GPIO 14  ◄────  ECHO (use voltage divider: 5V → 3.3V)
+5V (Vin) ────►  VCC
+GND      ────►  GND
+```
+
+**Notes:**
+- HC-SR04 requires 5V power — use ESP32 VIN pin
+- ECHO pin outputs 5V — use a voltage divider (1kΩ + 2kΩ) to bring to 3.3V
+- Measuring range: 2 cm to 400 cm
+- Do not point sensor at soft/angled surfaces for reliable readings
+
+---
+
+## ESP32 Water Level (`esp32-water-level`)
+
+```
+ESP32           Water Level Sensor
+──────          ──────────────────
+GPIO 34  ────►  S (signal/analog out)
+3.3V     ────►  + (VCC)
+GND      ────►  - (GND)
+```
+
+**Notes:**
+- GPIO 34 is input-only on ESP32 (ADC1_CH6)
+- Resistive water level sensors corrode over time; capacitive preferred
+- Keep electronics above water line — only the sensor PCB should be submerged
+- Calibrate dry (0%) and submerged (100%) readings for your sensor
+
+---
+
+## ESP32 Smart Home (`esp32-smart-home`)
+
+```
+ESP32           DHT22       Relay Module       HC-SR501 PIR    Built-in LED
+──────          ─────       ────────────       ────────────    ────────────
+GPIO 4   ────►  DATA
+GPIO 26  ──────────────────► IN
+GPIO 14  ──────────────────────────────────►  OUT
+GPIO 2   ──────────────────────────────────────────────────►  (on board)
+3.3V     ────►  VCC  ────►  VCC
+5V (Vin) ──────────────────────────────────►  VCC
+GND      ────►  GND  ────►  GND        ────►  GND
+
+            3.3V
+             │
+            [10kΩ]  (DHT22 pull-up)
+             │
+          DHT22 DATA
+```
+
+---
+
+## ESP8266 DHT22 (`esp8266-dht22`)
+
+```
+NodeMCU/ESP8266     DHT22
+───────────────     ─────
+D2 (GPIO 4)  ────►  DATA (pin 2)
+3.3V         ────►  VCC  (pin 1)
+GND          ────►  GND  (pin 4)
+
+            3.3V
+             │
+            [10kΩ]  (pull-up)
+             │
+          DHT22 DATA
+```
+
+---
+
+## ESP8266 Soil Moisture (`esp8266-soil-moisture`)
+
+```
+NodeMCU/ESP8266     Capacitive Soil Moisture Sensor
+───────────────     ──────────────────────────────
+A0           ────►  AOUT (analog output)
+3.3V         ────►  VCC
+GND          ────►  GND
+```
+
+**Notes:**
+- ESP8266 has only ONE analog pin (A0) with 0–1V range (10-bit)
+- NodeMCU has a built-in voltage divider for A0 (reads 0–3.3V)
+
+---
+
 ## General Tips
 
 1. **Power**: Never power motors, relays, or actuators directly from ESP32/ESP8266 GPIO pins.

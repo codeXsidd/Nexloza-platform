@@ -1,17 +1,25 @@
 #include "NexlozaClient.h"
 
+static const char* TAG = "Nexloza";
+
 NexlozaClient* NexlozaClient::_instance = nullptr;
 
 NexlozaClient::NexlozaClient()
     : _mqttClient(_wifiClient),
       _commandCallback(nullptr),
       _connectionCallback(nullptr),
+      _errorCallback(nullptr),
       _lastHeartbeat(0),
       _lastReconnectAttempt(0),
       _reconnectCount(0),
       _otaEnabled(false),
-      _wasConnected(false) {
+      _wasConnected(false),
+      _messageCounter(0),
+      _sensorCount(0),
+      _actuatorCount(0) {
   _instance = this;
+  memset(_sensors, 0, sizeof(_sensors));
+  memset(_actuators, 0, sizeof(_actuators));
 }
 
 void NexlozaClient::begin(NexlozaConfig& config) {
@@ -33,10 +41,11 @@ void NexlozaClient::begin(NexlozaConfig& config) {
   _mqttClient.setServer(_config.serverHost, _config.mqttPort);
   _mqttClient.setCallback(_staticMqttCallback);
   _mqttClient.setBufferSize(1024);
+
+  NexlozaLogger::info(TAG, "SDK initialized");
 }
 
 void NexlozaClient::_setupTopics() {
-  // Canonical topic format: nexloza/v1/{org_id}/{project_id}/{device_id}/{channel}
   String prefix = String("nexloza/v1/") +
                   _config.organizationId + "/" +
                   _config.projectId + "/" +
@@ -52,16 +61,14 @@ void NexlozaClient::_setupTopics() {
 bool NexlozaClient::connect() {
   if (_mqttClient.connected()) return true;
 
-  Serial.println("[Nexloza] Authenticating device...");
+  NexlozaLogger::info(TAG, "Authenticating device...");
   if (!_authenticate()) {
-    Serial.println("[Nexloza] Authentication failed");
+    NexlozaLogger::error(TAG, "Authentication failed");
+    _emitError(ERR_AUTH_FAILED, "Authentication failed");
     return false;
   }
 
-  Serial.print("[Nexloza] Connecting to MQTT broker at ");
-  Serial.print(_config.serverHost);
-  Serial.print(":");
-  Serial.println(_config.mqttPort);
+  NexlozaLogger::info(TAG, String("Connecting to MQTT ") + _config.serverHost + ":" + String(_config.mqttPort));
 
   String clientId = String("nexloza-") + _config.deviceId;
 
@@ -77,12 +84,12 @@ bool NexlozaClient::connect() {
       _mqttUser.c_str(),
       _mqttPass.c_str(),
       _statusTopic.c_str(),
-      1,    // QoS 1
-      true, // retain
+      1,
+      true,
       lwtBuf);
 
   if (connected) {
-    Serial.println("[Nexloza] MQTT connected");
+    NexlozaLogger::info(TAG, "MQTT connected");
     _mqttClient.subscribe(_commandTopic.c_str(), 1);
     _mqttClient.subscribe(_configTopic.c_str(), 1);
     if (_otaEnabled) {
@@ -91,6 +98,21 @@ bool NexlozaClient::connect() {
     _reconnectCount = 0;
     heartbeat();
 
+    // Register all sensors and actuators
+    for (uint8_t i = 0; i < _sensorCount; i++) {
+      if (_sensors[i]) {
+        registerSensor(_sensors[i]->config().id,
+                       _sensors[i]->config().type,
+                       _sensors[i]->config().unit);
+      }
+    }
+    for (uint8_t i = 0; i < _actuatorCount; i++) {
+      if (_actuators[i]) {
+        registerActuator(_actuators[i]->config().id,
+                         _actuators[i]->config().type);
+      }
+    }
+
     if (!_wasConnected && _connectionCallback) {
       _connectionCallback(true);
     }
@@ -98,8 +120,8 @@ bool NexlozaClient::connect() {
     return true;
   }
 
-  Serial.print("[Nexloza] MQTT connect failed, rc=");
-  Serial.println(_mqttClient.state());
+  NexlozaLogger::error(TAG, String("MQTT connect failed, rc=") + String(_mqttClient.state()));
+  _emitError(ERR_MQTT_CONNECT_FAILED, "MQTT connection failed");
   return false;
 }
 
@@ -139,53 +161,76 @@ void NexlozaClient::loop() {
     heartbeat();
     _lastHeartbeat = now;
   }
+
+  updateSensors();
 }
+
+// --- Telemetry ---
 
 bool NexlozaClient::publishTelemetry(const char* sensorKey, float value) {
   if (!_mqttClient.connected()) return false;
 
   JsonDocument doc;
+  doc["version"] = 1;
+  doc["message_id"] = _generateMessageId();
   doc["device_id"] = _config.deviceId;
-  doc["sensor_key"] = sensorKey;
+  doc["sensor_id"] = sensorKey;
   doc["value"] = value;
   doc["timestamp"] = millis();
 
   char buf[256];
   size_t len = serializeJson(doc, buf, sizeof(buf));
-  return _mqttClient.publish(_telemetryTopic.c_str(), buf, len);
+  bool ok = _mqttClient.publish(_telemetryTopic.c_str(), buf, len);
+  if (!ok) _emitError(ERR_MQTT_PUBLISH_FAILED, "Telemetry publish failed");
+  return ok;
 }
 
 bool NexlozaClient::publishTelemetry(const char* sensorKey, const char* value) {
   if (!_mqttClient.connected()) return false;
 
   JsonDocument doc;
+  doc["version"] = 1;
+  doc["message_id"] = _generateMessageId();
   doc["device_id"] = _config.deviceId;
-  doc["sensor_key"] = sensorKey;
+  doc["sensor_id"] = sensorKey;
   doc["value"] = value;
   doc["timestamp"] = millis();
 
   char buf[256];
   size_t len = serializeJson(doc, buf, sizeof(buf));
-  return _mqttClient.publish(_telemetryTopic.c_str(), buf, len);
+  bool ok = _mqttClient.publish(_telemetryTopic.c_str(), buf, len);
+  if (!ok) _emitError(ERR_MQTT_PUBLISH_FAILED, "Telemetry publish failed");
+  return ok;
 }
 
 bool NexlozaClient::publishTelemetry(JsonDocument& data) {
   if (!_mqttClient.connected()) return false;
 
+  data["version"] = 1;
+  data["message_id"] = _generateMessageId();
   data["device_id"] = _config.deviceId;
   data["timestamp"] = millis();
 
   char buf[512];
   size_t len = serializeJson(data, buf, sizeof(buf));
-  return _mqttClient.publish(_telemetryTopic.c_str(), buf, len);
+  if (len >= sizeof(buf)) {
+    _emitError(ERR_BUFFER_OVERFLOW, "Telemetry too large");
+    return false;
+  }
+  bool ok = _mqttClient.publish(_telemetryTopic.c_str(), buf, len);
+  if (!ok) _emitError(ERR_MQTT_PUBLISH_FAILED, "Telemetry publish failed");
+  return ok;
 }
+
+// --- State ---
 
 bool NexlozaClient::reportState(const char* actuatorKey, JsonDocument& state) {
   if (!_mqttClient.connected()) return false;
 
   JsonDocument doc;
+  doc["version"] = 1;
   doc["device_id"] = _config.deviceId;
-  doc["actuator_key"] = actuatorKey;
+  doc["actuator_id"] = actuatorKey;
   doc["state"] = state;
   doc["timestamp"] = millis();
 
@@ -198,6 +243,7 @@ bool NexlozaClient::reportDeviceInfo(const char* firmwareVersion, uint32_t freeH
   if (!_mqttClient.connected()) return false;
 
   JsonDocument doc;
+  doc["version"] = 1;
   doc["device_id"] = _config.deviceId;
   doc["firmware_version"] = firmwareVersion;
   doc["free_heap"] = freeHeap;
@@ -210,13 +256,46 @@ bool NexlozaClient::reportDeviceInfo(const char* firmwareVersion, uint32_t freeH
   return _mqttClient.publish(_statusTopic.c_str(), buf, len, true);
 }
 
+// --- Sensor/Actuator framework ---
+
+bool NexlozaClient::addSensor(NexlozaSensor* sensor) {
+  if (_sensorCount >= NEXLOZA_MAX_SENSORS) return false;
+  sensor->begin();
+  _sensors[_sensorCount++] = sensor;
+  NexlozaLogger::info(TAG, String("Sensor added: ") + sensor->id());
+  return true;
+}
+
+bool NexlozaClient::addActuator(NexlozaActuator* actuator) {
+  if (_actuatorCount >= NEXLOZA_MAX_ACTUATORS) return false;
+  actuator->begin();
+  _actuators[_actuatorCount++] = actuator;
+  NexlozaLogger::info(TAG, String("Actuator added: ") + actuator->id());
+  return true;
+}
+
+void NexlozaClient::updateSensors() {
+  for (uint8_t i = 0; i < _sensorCount; i++) {
+    NexlozaSensor* s = _sensors[i];
+    if (s && s->shouldRead()) {
+      float val = s->performRead();
+      if (!isnan(val) && _mqttClient.connected()) {
+        publishTelemetry(s->config().id, val);
+      } else if (isnan(val)) {
+        _emitError(ERR_SENSOR_READ, s->config().id);
+      }
+    }
+  }
+}
+
 bool NexlozaClient::registerSensor(const char* sensorKey, const char* sensorType, const char* unit) {
   if (!_mqttClient.connected()) return false;
 
   JsonDocument doc;
+  doc["version"] = 1;
   doc["device_id"] = _config.deviceId;
   doc["action"] = "register_sensor";
-  doc["sensor_key"] = sensorKey;
+  doc["sensor_id"] = sensorKey;
   doc["sensor_type"] = sensorType;
   doc["unit"] = unit;
   doc["timestamp"] = millis();
@@ -230,9 +309,10 @@ bool NexlozaClient::registerActuator(const char* actuatorKey, const char* actuat
   if (!_mqttClient.connected()) return false;
 
   JsonDocument doc;
+  doc["version"] = 1;
   doc["device_id"] = _config.deviceId;
   doc["action"] = "register_actuator";
-  doc["actuator_key"] = actuatorKey;
+  doc["actuator_id"] = actuatorKey;
   doc["actuator_type"] = actuatorType;
   doc["timestamp"] = millis();
 
@@ -240,6 +320,8 @@ bool NexlozaClient::registerActuator(const char* actuatorKey, const char* actuat
   size_t len = serializeJson(doc, buf, sizeof(buf));
   return _mqttClient.publish(_stateTopic.c_str(), buf, len);
 }
+
+// --- Commands ---
 
 bool NexlozaClient::sendCommand(const char* targetDeviceId, const char* commandType, JsonDocument& payload) {
   if (!_mqttClient.connected()) return false;
@@ -250,6 +332,8 @@ bool NexlozaClient::sendCommand(const char* targetDeviceId, const char* commandT
                        targetDeviceId + "/command";
 
   JsonDocument doc;
+  doc["version"] = 1;
+  doc["command_id"] = _generateMessageId();
   doc["command_type"] = commandType;
   doc["payload"] = payload;
   doc["source_device"] = _config.deviceId;
@@ -260,9 +344,29 @@ bool NexlozaClient::sendCommand(const char* targetDeviceId, const char* commandT
   return _mqttClient.publish(targetTopic.c_str(), buf, len);
 }
 
+bool NexlozaClient::acknowledgeCommand(const char* commandId, bool success, const char* message) {
+  if (!_mqttClient.connected()) return false;
+
+  JsonDocument doc;
+  doc["version"] = 1;
+  doc["device_id"] = _config.deviceId;
+  doc["command_id"] = commandId;
+  doc["status"] = success ? "success" : "failed";
+  if (message) doc["message"] = message;
+  doc["timestamp"] = millis();
+
+  char buf[256];
+  size_t len = serializeJson(doc, buf, sizeof(buf));
+  return _mqttClient.publish(_commandAckTopic.c_str(), buf, len);
+}
+
+// --- Metadata ---
+
 void NexlozaClient::setDeviceMetadata(const char* key, const char* value) {
   _metadata[key] = value;
 }
+
+// --- Callbacks ---
 
 void NexlozaClient::onCommand(CommandCallback callback) {
   _commandCallback = callback;
@@ -272,25 +376,17 @@ void NexlozaClient::onConnectionChange(ConnectionCallback callback) {
   _connectionCallback = callback;
 }
 
-bool NexlozaClient::acknowledgeCommand(const char* commandId, bool success, const char* message) {
-  if (!_mqttClient.connected()) return false;
-
-  JsonDocument doc;
-  doc["device_id"] = _config.deviceId;
-  doc["command_id"] = commandId;
-  doc["success"] = success;
-  if (message) doc["message"] = message;
-  doc["timestamp"] = millis();
-
-  char buf[256];
-  size_t len = serializeJson(doc, buf, sizeof(buf));
-  return _mqttClient.publish(_commandAckTopic.c_str(), buf, len);
+void NexlozaClient::onError(ErrorCallback callback) {
+  _errorCallback = callback;
 }
+
+// --- Lifecycle ---
 
 void NexlozaClient::heartbeat() {
   if (!_mqttClient.connected()) return;
 
   JsonDocument doc;
+  doc["version"] = 1;
   doc["device_id"] = _config.deviceId;
   doc["status"] = "online";
   doc["uptime_ms"] = millis();
@@ -312,6 +408,12 @@ bool NexlozaClient::reconnect() {
   _reconnectCount = 0;
   return connect();
 }
+
+void NexlozaClient::setLogLevel(NexlozaLogLevel level) {
+  NexlozaLogger::setLevel(level);
+}
+
+// --- OTA ---
 
 void NexlozaClient::enableOTA(bool enable) {
   _otaEnabled = enable;
@@ -339,6 +441,8 @@ void NexlozaClient::checkForUpdate() {
   _mqttClient.publish(otaTopic.c_str(), buf, len);
 }
 
+// --- Private ---
+
 bool NexlozaClient::_authenticate() {
   HTTPClient http;
   String url = String("http") + (_config.useTLS ? "s" : "") + "://" +
@@ -364,11 +468,15 @@ bool NexlozaClient::_authenticate() {
       _mqttUser = resDoc["mqtt"]["username"].as<String>();
       _mqttPass = _config.apiSecret;
       http.end();
+      NexlozaLogger::info(TAG, "Authentication successful");
       return true;
     }
+    _emitError(ERR_JSON_PARSE, "Auth response parse error");
+  } else {
+    NexlozaLogger::error(TAG, String("Auth HTTP ") + String(httpCode));
+    _emitError(ERR_AUTH_HTTP_ERROR, "Auth HTTP error");
   }
 
-  Serial.printf("[Nexloza] Auth HTTP %d\n", httpCode);
   http.end();
   return false;
 }
@@ -382,21 +490,51 @@ void NexlozaClient::_handleReconnect() {
   _lastReconnectAttempt = now;
 
   if (_reconnectCount >= _config.maxReconnectAttempts) {
-    Serial.println("[Nexloza] Max reconnect attempts reached, resetting counter");
+    NexlozaLogger::warn(TAG, "Max reconnect attempts reached, resetting counter");
     _reconnectCount = 0;
     return;
   }
 
-  Serial.print("[Nexloza] Reconnect attempt ");
-  Serial.print(_reconnectCount + 1);
-  Serial.print("/");
-  Serial.println(_config.maxReconnectAttempts);
+  NexlozaLogger::info(TAG, String("Reconnect attempt ") + String(_reconnectCount + 1) +
+                       "/" + String(_config.maxReconnectAttempts));
 
   if (connect()) {
     _reconnectCount = 0;
   } else {
     _reconnectCount++;
   }
+}
+
+void NexlozaClient::_emitError(int code, const char* msg) {
+  NexlozaLogger::error(TAG, String("Error ") + String(code) + ": " + msg);
+  if (_errorCallback) _errorCallback(code, msg);
+}
+
+String NexlozaClient::_generateMessageId() {
+  _messageCounter++;
+  return String(_config.deviceId) + "-" + String(millis()) + "-" + String(_messageCounter);
+}
+
+bool NexlozaClient::_isCommandExpired(JsonObject& doc) {
+  if (!doc.containsKey("expires_at")) return false;
+  // expires_at is a Unix timestamp in seconds
+  unsigned long expiresAt = doc["expires_at"].as<unsigned long>();
+  // Compare with millis/1000 as a rough check (no RTC assumed)
+  // If the command has an expires_at far in the past, skip it
+  if (expiresAt > 0 && expiresAt < 1000000000UL) {
+    // Looks like millis-based — compare to millis
+    return millis() > expiresAt;
+  }
+  return false;
+}
+
+NexlozaActuator* NexlozaClient::_findActuator(const char* id) {
+  for (uint8_t i = 0; i < _actuatorCount; i++) {
+    if (_actuators[i] && strcmp(_actuators[i]->id(), id) == 0) {
+      return _actuators[i];
+    }
+  }
+  return nullptr;
 }
 
 void NexlozaClient::_staticMqttCallback(char* topic, byte* payload, unsigned int length) {
@@ -406,6 +544,11 @@ void NexlozaClient::_staticMqttCallback(char* topic, byte* payload, unsigned int
 }
 
 void NexlozaClient::_mqttCallback(char* topic, byte* payload, unsigned int length) {
+  if (length > 1024) {
+    NexlozaLogger::warn(TAG, "Message too large, ignoring");
+    return;
+  }
+
   char message[length + 1];
   memcpy(message, payload, length);
   message[length] = '\0';
@@ -413,24 +556,62 @@ void NexlozaClient::_mqttCallback(char* topic, byte* payload, unsigned int lengt
   JsonDocument doc;
   DeserializationError err = deserializeJson(doc, message);
   if (err) {
-    Serial.print("[Nexloza] JSON parse error: ");
-    Serial.println(err.c_str());
+    NexlozaLogger::error(TAG, String("JSON parse error: ") + err.c_str());
+    _emitError(ERR_JSON_PARSE, err.c_str());
     return;
   }
 
   String topicStr(topic);
 
-  if (topicStr == _commandTopic && _commandCallback) {
-    const char* commandType = doc["command_type"] | "unknown";
-    JsonObject cmdPayload = doc["payload"].as<JsonObject>();
-    _commandCallback(commandType, cmdPayload);
+  if (topicStr == _commandTopic) {
+    JsonObject obj = doc.as<JsonObject>();
 
-    if (doc["command_id"]) {
+    // Check command expiry
+    if (_isCommandExpired(obj)) {
+      NexlozaLogger::warn(TAG, "Expired command ignored");
+      _emitError(ERR_COMMAND_EXPIRED, "Command expired");
+      if (doc["command_id"]) {
+        acknowledgeCommand(doc["command_id"], false, "Command expired");
+      }
+      return;
+    }
+
+    const char* commandType = doc["command_type"] | "unknown";
+
+    // Try framework actuators first
+    const char* actuatorId = doc["actuator_id"] | doc["payload"]["actuator_id"] | (const char*)nullptr;
+    if (actuatorId) {
+      NexlozaActuator* actuator = _findActuator(actuatorId);
+      if (actuator) {
+        JsonObject cmdPayload = doc["payload"].as<JsonObject>();
+        bool ok = actuator->execute(cmdPayload);
+        if (doc["command_id"]) {
+          acknowledgeCommand(doc["command_id"], ok, ok ? "Executed" : "Actuator error");
+        }
+        // Report actual state after execution
+        JsonDocument stateDoc;
+        actuator->getState(stateDoc);
+        reportState(actuator->id(), stateDoc);
+        return;
+      }
+    }
+
+    // Fall through to user callback
+    if (_commandCallback) {
+      JsonObject cmdPayload = doc["payload"].is<JsonObject>()
+                                  ? doc["payload"].as<JsonObject>()
+                                  : doc.as<JsonObject>();
+      _commandCallback(commandType, cmdPayload);
+    }
+
+    // Auto-acknowledge only if no user callback handled it
+    if (!_commandCallback && doc["command_id"]) {
       acknowledgeCommand(doc["command_id"], true);
     }
+
   } else if (topicStr == _configTopic) {
-    Serial.println("[Nexloza] Configuration update received");
+    NexlozaLogger::info(TAG, "Configuration update received");
   } else if (_otaEnabled && topicStr.endsWith("/ota")) {
-    Serial.println("[Nexloza] OTA update notification received");
+    NexlozaLogger::info(TAG, "OTA update notification received");
   }
 }

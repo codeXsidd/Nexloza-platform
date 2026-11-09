@@ -1,6 +1,6 @@
 {
   "name": "NexlozaSDK",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Nexloza IoT Platform device SDK for ESP32 and ESP8266",
   "keywords": "iot, mqtt, esp32, esp8266, nexloza, telemetry, device",
   "repository": {

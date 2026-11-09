@@ -13,12 +13,12 @@ Usage:
     export NEXLOZA_DEVICE_ID="rpi-001"
     export NEXLOZA_API_KEY="YOUR_API_KEY"
     export NEXLOZA_API_SECRET="YOUR_API_SECRET"
+    export NEXLOZA_ORG_ID="YOUR_ORG_ID"
     export NEXLOZA_PROJECT_ID="YOUR_PROJECT_ID"
     export NEXLOZA_AUTH_URL="https://your-project.supabase.co/functions/v1/device-auth"
     python nexloza_device.py
 """
 
-import hashlib
 import json
 import os
 import signal
@@ -43,6 +43,7 @@ MQTT_PORT = int(os.environ.get("NEXLOZA_MQTT_PORT", "1883"))
 DEVICE_ID = os.environ["NEXLOZA_DEVICE_ID"]
 API_KEY = os.environ["NEXLOZA_API_KEY"]
 API_SECRET = os.environ["NEXLOZA_API_SECRET"]
+ORG_ID = os.environ.get("NEXLOZA_ORG_ID", "default")
 PROJECT_ID = os.environ["NEXLOZA_PROJECT_ID"]
 AUTH_URL = os.environ["NEXLOZA_AUTH_URL"]
 
@@ -52,13 +53,15 @@ TELEMETRY_INTERVAL = int(os.environ.get("NEXLOZA_TELEMETRY_INTERVAL", "15"))
 LED_PIN = int(os.environ.get("LED_PIN", "17"))
 RELAY_PIN = int(os.environ.get("RELAY_PIN", "27"))
 
-# --- MQTT Topics ---
+# --- MQTT Topics (canonical v1 format) ---
 
-TOPIC_TELEMETRY = f"nexloza/{PROJECT_ID}/{DEVICE_ID}/telemetry"
-TOPIC_STATUS = f"nexloza/{PROJECT_ID}/{DEVICE_ID}/state"
-TOPIC_COMMANDS = f"nexloza/{PROJECT_ID}/{DEVICE_ID}/commands"
-TOPIC_CMD_RESPONSE = f"nexloza/{PROJECT_ID}/{DEVICE_ID}/commands/response"
-TOPIC_HEARTBEAT = f"nexloza/{PROJECT_ID}/{DEVICE_ID}/heartbeat"
+TOPIC_BASE = f"nexloza/v1/{ORG_ID}/{PROJECT_ID}/{DEVICE_ID}"
+TOPIC_TELEMETRY = f"{TOPIC_BASE}/telemetry"
+TOPIC_COMMAND = f"{TOPIC_BASE}/command"
+TOPIC_COMMAND_ACK = f"{TOPIC_BASE}/command-ack"
+TOPIC_STATE = f"{TOPIC_BASE}/state"
+TOPIC_STATUS = f"{TOPIC_BASE}/status"
+TOPIC_CONFIG = f"{TOPIC_BASE}/config"
 
 # --- State ---
 
@@ -92,6 +95,8 @@ def read_system_telemetry():
         pass
 
     return {
+        "version": 1,
+        "device_id": DEVICE_ID,
         "cpu_percent": psutil.cpu_percent(interval=0.5),
         "memory_percent": psutil.virtual_memory().percent,
         "disk_percent": psutil.disk_usage("/").percent,
@@ -103,19 +108,28 @@ def read_system_telemetry():
 
 def build_state():
     return {
+        "version": 1,
+        "device_id": DEVICE_ID,
         "relay": relay_state,
         "led": led_state,
         "uptime_s": int(time.time() - psutil.boot_time()),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
 
 def on_connect(client, userdata, flags, rc, properties=None):
     if rc == 0:
         print(f"[MQTT] Connected to {SERVER}:{MQTT_PORT}")
-        client.subscribe(TOPIC_COMMANDS)
+        client.subscribe(TOPIC_COMMAND)
+        client.subscribe(TOPIC_CONFIG)
         client.publish(
             TOPIC_STATUS,
-            json.dumps({"status": "online", "timestamp": datetime.now(timezone.utc).isoformat()}),
+            json.dumps({
+                "version": 1,
+                "device_id": DEVICE_ID,
+                "status": "online",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }),
             retain=True,
         )
     else:
@@ -157,8 +171,13 @@ def on_message(client, userdata, msg):
         elif command_type == "restart":
             print("[CMD] Restart requested")
             if command_id:
-                ack = {"command_id": command_id, "success": True, "message": "Restarting..."}
-                client.publish(TOPIC_CMD_RESPONSE, json.dumps(ack))
+                ack = {
+                    "version": 1,
+                    "command_id": command_id,
+                    "status": "success",
+                    "message": "Restarting...",
+                }
+                client.publish(TOPIC_COMMAND_ACK, json.dumps(ack))
             time.sleep(0.5)
             os.execv(sys.executable, [sys.executable] + sys.argv)
 
@@ -168,16 +187,26 @@ def on_message(client, userdata, msg):
             print(f"[CMD] Unknown: {command_type}")
 
         if command_id:
-            ack = {"command_id": command_id, "success": success, "message": message}
-            client.publish(TOPIC_CMD_RESPONSE, json.dumps(ack))
+            ack = {
+                "version": 1,
+                "command_id": command_id,
+                "status": "success" if success else "failed",
+                "message": message,
+            }
+            client.publish(TOPIC_COMMAND_ACK, json.dumps(ack))
 
-        client.publish(TOPIC_STATUS, json.dumps(build_state()))
+        client.publish(TOPIC_STATE, json.dumps(build_state()), retain=True)
 
     except Exception as e:
         print(f"[CMD] Error handling command: {e}")
         if command_id:
-            ack = {"command_id": command_id, "success": False, "message": str(e)}
-            client.publish(TOPIC_CMD_RESPONSE, json.dumps(ack))
+            ack = {
+                "version": 1,
+                "command_id": command_id,
+                "status": "failed",
+                "message": str(e),
+            }
+            client.publish(TOPIC_COMMAND_ACK, json.dumps(ack))
 
 
 def setup_gpio():
@@ -203,8 +232,8 @@ def main():
     signal.signal(signal.SIGINT, cleanup)
     signal.signal(signal.SIGTERM, cleanup)
 
-    print(f"=== Nexloza Raspberry Pi Device ===")
-    print(f"Device: {DEVICE_ID} | Project: {PROJECT_ID}")
+    print("=== Nexloza Raspberry Pi Device ===")
+    print(f"Device: {DEVICE_ID} | Org: {ORG_ID} | Project: {PROJECT_ID}")
 
     auth_data = authenticate()
     mqtt_username = auth_data.get("mqtt", {}).get("username", DEVICE_ID)
@@ -217,7 +246,12 @@ def main():
     client.username_pw_set(mqtt_username, API_SECRET)
     client.will_set(
         TOPIC_STATUS,
-        json.dumps({"status": "offline", "timestamp": datetime.now(timezone.utc).isoformat()}),
+        json.dumps({
+            "version": 1,
+            "device_id": DEVICE_ID,
+            "status": "offline",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }),
         retain=True,
     )
     client.on_connect = on_connect
@@ -243,10 +277,13 @@ def main():
                 last_telemetry = now
 
             if now - last_heartbeat >= 30:
-                client.publish(TOPIC_HEARTBEAT, json.dumps({
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                client.publish(TOPIC_STATUS, json.dumps({
+                    "version": 1,
+                    "device_id": DEVICE_ID,
+                    "status": "online",
                     "uptime_s": int(now - psutil.boot_time()),
-                }))
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                }), retain=True)
                 last_heartbeat = now
 
             time.sleep(1)
@@ -254,7 +291,12 @@ def main():
     finally:
         client.publish(
             TOPIC_STATUS,
-            json.dumps({"status": "offline", "timestamp": datetime.now(timezone.utc).isoformat()}),
+            json.dumps({
+                "version": 1,
+                "device_id": DEVICE_ID,
+                "status": "offline",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }),
             retain=True,
         )
         client.loop_stop()

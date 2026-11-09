@@ -59,6 +59,7 @@ ProvisioningData NexlozaProvisioning::loadCredentials() {
     String devId = _prefs.getString("device_id", "");
     String apiKey = _prefs.getString("api_key", "");
     String apiSec = _prefs.getString("api_secret", "");
+    String orgId = _prefs.getString("org_id", "");
     String projId = _prefs.getString("project_id", "");
 
     strlcpy(data.wifiSSID, ssid.c_str(), sizeof(data.wifiSSID));
@@ -67,6 +68,7 @@ ProvisioningData NexlozaProvisioning::loadCredentials() {
     strlcpy(data.deviceId, devId.c_str(), sizeof(data.deviceId));
     strlcpy(data.apiKey, apiKey.c_str(), sizeof(data.apiKey));
     strlcpy(data.apiSecret, apiSec.c_str(), sizeof(data.apiSecret));
+    strlcpy(data.organizationId, orgId.c_str(), sizeof(data.organizationId));
     strlcpy(data.projectId, projId.c_str(), sizeof(data.projectId));
     data.valid = ssid.length() > 0 && devId.length() > 0;
   }
@@ -96,6 +98,7 @@ void NexlozaProvisioning::saveCredentials(const ProvisioningData& data) {
   _prefs.putString("device_id", data.deviceId);
   _prefs.putString("api_key", data.apiKey);
   _prefs.putString("api_secret", data.apiSecret);
+  _prefs.putString("org_id", data.organizationId);
   _prefs.putString("project_id", data.projectId);
   _prefs.end();
 #elif defined(ESP8266)
@@ -139,6 +142,7 @@ void NexlozaProvisioning::_handleSave() {
   strlcpy(data.deviceId, _server.arg("device_id").c_str(), sizeof(data.deviceId));
   strlcpy(data.apiKey, _server.arg("api_key").c_str(), sizeof(data.apiKey));
   strlcpy(data.apiSecret, _server.arg("api_secret").c_str(), sizeof(data.apiSecret));
+  strlcpy(data.organizationId, _server.arg("org_id").c_str(), sizeof(data.organizationId));
   strlcpy(data.projectId, _server.arg("project_id").c_str(), sizeof(data.projectId));
   data.valid = true;
 
@@ -201,6 +205,8 @@ String NexlozaProvisioning::_buildPage() {
     "<input name='api_key' required>"
     "<label>API Secret</label>"
     "<input name='api_secret' type='password' required>"
+    "<label>Organization ID</label>"
+    "<input name='org_id' required>"
     "<label>Project ID</label>"
     "<input name='project_id' required>"
     "<button type='submit'>Save &amp; Connect</button>"
