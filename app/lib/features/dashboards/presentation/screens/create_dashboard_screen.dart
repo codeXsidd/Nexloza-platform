@@ -8,6 +8,7 @@ import '../../../../shared/widgets/app_text_field.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../theme/app_spacing.dart';
 import '../../../projects/presentation/providers/project_provider.dart';
+import '../../domain/entities/dashboard_entity.dart';
 import '../providers/dashboard_provider.dart';
 
 class CreateDashboardScreen extends ConsumerStatefulWidget {
@@ -23,6 +24,7 @@ class _CreateDashboardScreenState extends ConsumerState<CreateDashboardScreen> {
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   String? _selectedProjectId;
+  DashboardTemplate? _selectedTemplate;
   bool _isSubmitting = false;
 
   @override
@@ -30,6 +32,22 @@ class _CreateDashboardScreenState extends ConsumerState<CreateDashboardScreen> {
     _nameController.dispose();
     _descriptionController.dispose();
     super.dispose();
+  }
+
+  void _selectTemplate(DashboardTemplate template) {
+    setState(() {
+      _selectedTemplate = template;
+      if (_nameController.text.isEmpty ||
+          Dashboard.templates.any((t) => t.name == _nameController.text)) {
+        _nameController.text = template.name;
+      }
+      if (_descriptionController.text.isEmpty ||
+          Dashboard.templates.any(
+            (t) => t.description == _descriptionController.text,
+          )) {
+        _descriptionController.text = template.description;
+      }
+    });
   }
 
   Future<void> _submit() async {
@@ -70,6 +88,7 @@ class _CreateDashboardScreenState extends ConsumerState<CreateDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final projectsAsync = ref.watch(projectsProvider);
 
     return Scaffold(
@@ -79,6 +98,26 @@ class _CreateDashboardScreenState extends ConsumerState<CreateDashboardScreen> {
         child: ListView(
           padding: AppSpacing.screenPadding,
           children: [
+            Text('Choose a Template', style: theme.textTheme.titleMedium),
+            AppSpacing.verticalSm,
+            SizedBox(
+              height: 120,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: Dashboard.templates.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  final template = Dashboard.templates[index];
+                  final selected = _selectedTemplate == template;
+                  return _TemplateCard(
+                    template: template,
+                    selected: selected,
+                    onTap: () => _selectTemplate(template),
+                  );
+                },
+              ),
+            ),
+            AppSpacing.verticalLg,
             projectsAsync.when(
               loading: () => const LinearProgressIndicator(),
               error: (_, __) => const Text('Failed to load projects'),
@@ -131,6 +170,80 @@ class _CreateDashboardScreenState extends ConsumerState<CreateDashboardScreen> {
               onPressed: () => context.pop(),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+IconData _templateIcon(String iconName) {
+  return switch (iconName) {
+    'home' => Icons.home,
+    'grass' => Icons.grass,
+    'water_drop' => Icons.water_drop,
+    'cloud' => Icons.cloud,
+    'waves' => Icons.waves,
+    'bolt' => Icons.bolt,
+    'factory' => Icons.factory,
+    'precision_manufacturing' => Icons.precision_manufacturing,
+    'shield' => Icons.shield,
+    'dashboard_customize' => Icons.dashboard_customize,
+    _ => Icons.dashboard,
+  };
+}
+
+class _TemplateCard extends StatelessWidget {
+  final DashboardTemplate template;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _TemplateCard({
+    required this.template,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SizedBox(
+      width: 130,
+      child: Card(
+        elevation: selected ? 4 : 1,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: selected
+              ? BorderSide(color: theme.colorScheme.primary, width: 2)
+              : BorderSide.none,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(10),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  _templateIcon(template.icon),
+                  size: 28,
+                  color: selected
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  template.name,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

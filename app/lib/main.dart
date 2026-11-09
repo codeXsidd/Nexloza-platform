@@ -5,10 +5,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'config/env_config.dart';
 import 'core/storage/preferences_service.dart';
+import 'features/dashboards/presentation/widgets/renderers/widget_registrations.dart';
 import 'app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  registerAllWidgets();
 
   final prefs = await SharedPreferences.getInstance();
 

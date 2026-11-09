@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nexloza/features/dashboards/domain/entities/dashboard_entity.dart';
 import 'package:nexloza/features/dashboards/domain/entities/dashboard_widget_entity.dart';
+import 'package:nexloza/features/dashboards/domain/entities/widget_type.dart';
 import 'package:nexloza/features/automations/domain/entities/automation_entity.dart';
 import 'package:nexloza/features/automations/domain/entities/trigger_entity.dart';
 import 'package:nexloza/features/automations/domain/entities/action_entity.dart';
@@ -89,13 +90,13 @@ void main() {
       final widget = DashboardWidget.fromJson(json);
       expect(widget.id, 'w1');
       expect(widget.dashboardId, 'd1');
-      expect(widget.widgetType, DashboardWidgetType.gauge);
+      expect(widget.widgetType, NexWidgetType.gauge);
       expect(widget.title, 'Temperature');
       expect(widget.config['value'], 42.5);
       expect(widget.config['unit'], '°C');
     });
 
-    test('fromJson defaults to valueDisplay for unknown type', () {
+    test('fromJson defaults to textWidget for unknown type', () {
       final json = <String, dynamic>{
         'id': 'w2',
         'dashboard_id': 'd1',
@@ -105,11 +106,11 @@ void main() {
       };
 
       final widget = DashboardWidget.fromJson(json);
-      expect(widget.widgetType, DashboardWidgetType.valueDisplay);
+      expect(widget.widgetType, NexWidgetType.textWidget);
     });
 
     test('all widget types have display names', () {
-      for (final type in DashboardWidgetType.values) {
+      for (final type in NexWidgetType.values) {
         expect(type.displayName, isNotEmpty);
       }
     });
@@ -118,7 +119,7 @@ void main() {
       final widget = DashboardWidget(
         id: 'w1',
         dashboardId: 'd1',
-        widgetType: DashboardWidgetType.toggle,
+        widgetType: NexWidgetType.switchControl,
         title: 'Relay',
         gridX: 2,
         gridY: 0,
@@ -129,7 +130,7 @@ void main() {
 
       final json = widget.toJson();
       expect(json['dashboard_id'], 'd1');
-      expect(json['widget_type'], 'toggle');
+      expect(json['widget_type'], 'switch');
       expect(json['title'], 'Relay');
       expect(json['grid_x'], 2);
       expect(json['grid_w'], 1);
@@ -139,7 +140,7 @@ void main() {
       final original = DashboardWidget(
         id: 'w1',
         dashboardId: 'd1',
-        widgetType: DashboardWidgetType.valueDisplay,
+        widgetType: NexWidgetType.textWidget,
         title: 'Original',
       );
 
@@ -147,24 +148,25 @@ void main() {
       expect(copy.title, 'Modified');
       expect(copy.gridX, 5);
       expect(copy.id, 'w1');
-      expect(copy.widgetType, DashboardWidgetType.valueDisplay);
+      expect(copy.widgetType, NexWidgetType.textWidget);
     });
 
     test('fromJson handles missing grid values', () {
       final json = <String, dynamic>{
         'id': 'w3',
         'dashboard_id': 'd1',
-        'widget_type': 'lineChart',
+        'widget_type': 'line_chart',
         'title': 'Chart',
       };
 
       final widget = DashboardWidget.fromJson(json);
       expect(widget.gridX, 0);
       expect(widget.gridY, 0);
-      expect(widget.gridW, 2);
-      expect(widget.gridH, 2);
+      expect(widget.gridW, 1);
+      expect(widget.gridH, 1);
       expect(widget.sortOrder, 0);
       expect(widget.config, isEmpty);
+      expect(widget.widgetType, NexWidgetType.lineChart);
     });
   });
 
@@ -611,25 +613,47 @@ void main() {
     });
   });
 
-  group('DashboardWidgetType', () {
+  group('NexWidgetType', () {
     test('all types have valid display names', () {
-      for (final type in DashboardWidgetType.values) {
+      for (final type in NexWidgetType.values) {
         expect(type.displayName, isNotEmpty);
-        expect(type.icon, isNotEmpty);
+        expect(type.icon, isNotNull);
       }
     });
 
     test('gauge type properties', () {
-      expect(DashboardWidgetType.gauge.displayName, 'Gauge');
+      expect(NexWidgetType.gauge.displayName, 'Gauge');
+      expect(NexWidgetType.gauge.category, WidgetCategory.chart);
     });
 
-    test('toggle type properties', () {
-      expect(DashboardWidgetType.toggle.displayName, 'Toggle Control');
+    test('switch control type properties', () {
+      expect(NexWidgetType.switchControl.displayName, 'Switch');
+      expect(NexWidgetType.switchControl.category, WidgetCategory.control);
     });
 
     test('chart types', () {
-      expect(DashboardWidgetType.lineChart.displayName, 'Line Chart');
-      expect(DashboardWidgetType.barChart.displayName, 'Bar Chart');
+      expect(NexWidgetType.lineChart.displayName, 'Line Chart');
+      expect(NexWidgetType.barChart.displayName, 'Bar Chart');
+    });
+
+    test('fromTypeId resolves correctly', () {
+      expect(NexWidgetType.fromTypeId('gauge'), NexWidgetType.gauge);
+      expect(NexWidgetType.fromTypeId('switch'), NexWidgetType.switchControl);
+      expect(NexWidgetType.fromTypeId('unknown'), NexWidgetType.textWidget);
+    });
+
+    test('widget categories have display names', () {
+      for (final cat in WidgetCategory.values) {
+        expect(cat.displayName, isNotEmpty);
+      }
+    });
+
+    test('42 widget types defined', () {
+      expect(NexWidgetType.values.length, 42);
+    });
+
+    test('6 widget categories defined', () {
+      expect(WidgetCategory.values.length, 6);
     });
   });
 }
