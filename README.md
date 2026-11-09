@@ -133,7 +133,7 @@ We welcome contributions! Please read our [Contributing Guide](CONTRIBUTING.md) 
 
 ## License
 
-NexLoza is released under the [MIT License](LICENSE).
+NexLoza is released under the [Apache License 2.0](LICENSE).
 
 ---
 

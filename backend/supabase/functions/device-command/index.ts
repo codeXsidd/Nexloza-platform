@@ -82,10 +82,25 @@ serve(async (req) => {
       });
     }
 
-    return new Response(JSON.stringify({ command }), {
-      status: 201,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    const mqttTopic = `nexloza/${device.project_id}/${device_id}/commands`;
+
+    return new Response(
+      JSON.stringify({
+        command,
+        mqtt: {
+          topic: mqttTopic,
+          payload: {
+            command_id: command.id,
+            command_type,
+            payload: payload || {},
+          },
+        },
+      }),
+      {
+        status: 201,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
   } catch (err) {
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,

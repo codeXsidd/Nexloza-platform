@@ -1,14 +1,54 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../theme/app_colors.dart';
 import '../../../../theme/app_spacing.dart';
+import '../../../devices/presentation/providers/device_provider.dart';
 
-class DeviceStatusCard extends StatelessWidget {
+class DeviceStatusCard extends ConsumerWidget {
   const DeviceStatusCard({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final devicesAsync = ref.watch(devicesProvider);
+
+    return devicesAsync.when(
+      loading: () => Card(
+        child: Padding(
+          padding: AppSpacing.cardPadding,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.devices_other, color: theme.colorScheme.primary),
+                  AppSpacing.horizontalSm,
+                  Text('Devices', style: theme.textTheme.titleMedium),
+                ],
+              ),
+              AppSpacing.verticalMd,
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      error: (e, _) => _buildCard(theme, 0, 0, 0),
+      data: (devices) {
+        final total = devices.length;
+        final online = devices.where((d) => d.isOnline).length;
+        final offline = total - online;
+        return _buildCard(theme, total, online, offline);
+      },
+    );
+  }
+
+  Widget _buildCard(ThemeData theme, int total, int online, int offline) {
     return Card(
       child: Padding(
         padding: AppSpacing.cardPadding,
@@ -27,17 +67,17 @@ class DeviceStatusCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _DeviceCount(
-                  count: 0,
+                  count: total,
                   label: 'Total',
                   color: theme.colorScheme.primary,
                 ),
                 _DeviceCount(
-                  count: 0,
+                  count: online,
                   label: 'Online',
                   color: AppColors.online,
                 ),
                 _DeviceCount(
-                  count: 0,
+                  count: offline,
                   label: 'Offline',
                   color: AppColors.offline,
                 ),

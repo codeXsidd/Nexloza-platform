@@ -37,6 +37,30 @@ class AutomationRepository {
     }
   }
 
+  Future<Result<Automation>> createAutomation({
+    required String projectId,
+    required String name,
+    String? description,
+  }) async {
+    try {
+      final response = await _client
+          .from('automations')
+          .insert({
+            'project_id': projectId,
+            'name': name,
+            'description': description,
+            'is_enabled': true,
+          })
+          .select()
+          .single();
+      return Result.success(Automation.fromJson(response));
+    } on PostgrestException catch (e) {
+      return Result.failure(ServerFailure(e.message));
+    } catch (e) {
+      return Result.failure(ServerFailure(e.toString()));
+    }
+  }
+
   Future<Result<void>> toggleAutomation(String id, bool enabled) async {
     try {
       await _client

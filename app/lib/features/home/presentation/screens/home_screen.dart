@@ -9,6 +9,9 @@ import '../widgets/device_status_card.dart';
 import '../widgets/quick_actions_widget.dart';
 import '../widgets/recent_activity_widget.dart';
 import '../../../authentication/presentation/providers/auth_provider.dart';
+import '../../../projects/presentation/providers/project_provider.dart';
+import '../../../devices/presentation/providers/device_provider.dart';
+import '../../../notifications/presentation/screens/notifications_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -46,7 +49,11 @@ class HomeScreen extends ConsumerWidget {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () async {},
+        onRefresh: () async {
+          ref.invalidate(projectsProvider);
+          ref.invalidate(devicesProvider);
+          ref.invalidate(notificationsProvider);
+        },
         child: ListView(
           padding: AppSpacing.screenPadding,
           children: const [

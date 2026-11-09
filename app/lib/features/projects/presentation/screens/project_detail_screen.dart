@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../routing/route_names.dart';
+import '../../../../shared/widgets/confirmation_dialog.dart';
+import '../../../../shared/widgets/error_widget.dart';
+import '../../../../shared/widgets/loading_indicator.dart';
 import '../../../../theme/app_spacing.dart';
+import '../providers/project_provider.dart';
 
 class ProjectDetailScreen extends ConsumerWidget {
   final String projectId;
@@ -10,108 +16,197 @@ class ProjectDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final detailAsync = ref.watch(projectDetailProvider(projectId));
     final theme = Theme.of(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Project Details'),
-        actions: [
-          IconButton(icon: const Icon(Icons.edit), onPressed: () {}),
-          PopupMenuButton<String>(
-            itemBuilder: (context) => [
-              const PopupMenuItem(value: 'members', child: Text('Members')),
-              const PopupMenuItem(value: 'settings', child: Text('Settings')),
-              const PopupMenuItem(value: 'delete', child: Text('Delete')),
-            ],
-          ),
-        ],
+    return detailAsync.when(
+      loading: () =>
+          const Scaffold(body: LoadingIndicator(message: 'Loading project...')),
+      error: (error, _) => Scaffold(
+        appBar: AppBar(title: const Text('Project Details')),
+        body: AppErrorWidget(
+          message: error.toString(),
+          onRetry: () => ref.invalidate(projectDetailProvider(projectId)),
+        ),
       ),
-      body: ListView(
-        padding: AppSpacing.screenPadding,
-        children: [
-          Card(
-            child: Padding(
-              padding: AppSpacing.cardPadding,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Project ID: $projectId',
-                    style: theme.textTheme.bodySmall,
-                  ),
-                  AppSpacing.verticalMd,
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _InfoTile(
-                        icon: Icons.devices,
-                        label: 'Devices',
-                        value: '0',
-                      ),
-                      _InfoTile(
-                        icon: Icons.sensors,
-                        label: 'Sensors',
-                        value: '0',
-                      ),
-                      _InfoTile(
-                        icon: Icons.auto_awesome,
-                        label: 'Automations',
-                        value: '0',
-                      ),
-                    ],
-                  ),
+      data: (project) {
+        if (project == null) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Project Details')),
+            body: const AppErrorWidget(message: 'Project not found'),
+          );
+        }
+
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(project.name),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.edit_outlined),
+                tooltip: 'Edit',
+                onPressed: () => context.pushNamed(
+                  RouteNames.editProject,
+                  pathParameters: {'id': project.id},
+                ),
+              ),
+              PopupMenuButton<String>(
+                onSelected: (value) async {
+                  if (value == 'delete') {
+                    final confirmed = await showConfirmationDialog(
+                      context,
+                      title: 'Delete Project',
+                      message:
+                          'Are you sure you want to delete "${project.name}"? This will also delete all devices and data.',
+                      confirmLabel: 'Delete',
+                      isDestructive: true,
+                    );
+                    if (confirmed) {
+                      final success = await ref
+                          .read(projectsProvider.notifier)
+                          .deleteProject(project.id);
+                      if (context.mounted) {
+                        if (success) {
+                          context.pop();
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Failed to delete project'),
+                            ),
+                          );
+                        }
+                      }
+                    }
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(value: 'delete', child: Text('Delete')),
                 ],
               ),
+            ],
+          ),
+          body: RefreshIndicator(
+            onRefresh: () async =>
+                ref.invalidate(projectDetailProvider(projectId)),
+            child: ListView(
+              padding: AppSpacing.screenPadding,
+              children: [
+                Card(
+                  child: Padding(
+                    padding: AppSpacing.cardPadding,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              backgroundColor:
+                                  theme.colorScheme.primaryContainer,
+                              radius: 28,
+                              child: Icon(
+                                Icons.folder,
+                                size: 28,
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
+                            AppSpacing.horizontalMd,
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    project.name,
+                                    style: theme.textTheme.titleLarge,
+                                  ),
+                                  if (project.category != null)
+                                    Text(
+                                      project.category!,
+                                      style: theme.textTheme.bodySmall
+                                          ?.copyWith(
+                                            color: theme
+                                                .colorScheme
+                                                .onSurfaceVariant,
+                                          ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            Chip(
+                              label: Text(
+                                project.isActive ? 'Active' : 'Inactive',
+                              ),
+                              backgroundColor: project.isActive
+                                  ? Colors.green.withAlpha(30)
+                                  : Colors.grey.withAlpha(30),
+                            ),
+                          ],
+                        ),
+                        if (project.description != null) ...[
+                          AppSpacing.verticalMd,
+                          Text(
+                            project.description!,
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+                AppSpacing.verticalMd,
+                Card(
+                  child: Padding(
+                    padding: AppSpacing.cardPadding,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Details', style: theme.textTheme.titleMedium),
+                        AppSpacing.verticalMd,
+                        _DetailRow(
+                          label: 'Created',
+                          value:
+                              '${project.createdAt.day}/${project.createdAt.month}/${project.createdAt.year}',
+                        ),
+                        _DetailRow(
+                          label: 'Devices',
+                          value: '${project.deviceCount}',
+                        ),
+                        _DetailRow(
+                          label: 'Status',
+                          value: project.isActive ? 'Active' : 'Inactive',
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          AppSpacing.verticalMd,
-          Text('Dashboards', style: theme.textTheme.titleMedium),
-          AppSpacing.verticalSm,
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.dashboard),
-              title: const Text('Default Dashboard'),
-              subtitle: const Text('0 widgets'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {},
-            ),
-          ),
-          AppSpacing.verticalMd,
-          Text('Recent Telemetry', style: theme.textTheme.titleMedium),
-          AppSpacing.verticalSm,
-          const Card(
-            child: Padding(
-              padding: AppSpacing.cardPadding,
-              child: Center(child: Text('No telemetry data yet')),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
 
-class _InfoTile extends StatelessWidget {
-  final IconData icon;
+class _DetailRow extends StatelessWidget {
   final String label;
   final String value;
 
-  const _InfoTile({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
+  const _DetailRow({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      children: [
-        Icon(icon, color: theme.colorScheme.primary),
-        const SizedBox(height: 4),
-        Text(value, style: theme.textTheme.titleLarge),
-        Text(label, style: theme.textTheme.bodySmall),
-      ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: Theme.of(context).textTheme.bodyMedium),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
     );
   }
 }

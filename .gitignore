@@ -41,6 +41,11 @@ app/pubspec.lock
 **/android/key.properties
 **/android/**/*.keystore
 **/android/**/*.jks
+**/android/app/google-services.json
+
+# ---------- Service Accounts / Credentials ----------
+**/service-account*.json
+**/firebase-adminsdk*.json
 
 # ---------- iOS ----------
 **/ios/**/*.mode1v3

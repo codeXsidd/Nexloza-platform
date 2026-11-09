@@ -12,6 +12,28 @@ serve(async (req) => {
   }
 
   try {
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const userClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user } } = await userClient.auth.getUser();
+    if (!user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const body = await req.json();
     const { device_id, sensor_key, value } = body;
 
@@ -98,21 +120,21 @@ serve(async (req) => {
         const automation = trigger.automations;
 
         // Check cooldown
+        const cooldownSec = automation.cooldown_seconds ?? 60;
         const { data: recentExec } = await supabase
           .from("automation_executions")
           .select("id")
           .eq("automation_id", automation.id)
           .gte(
             "started_at",
-            new Date(
-              Date.now() - automation.cooldown_seconds * 1000
-            ).toISOString()
+            new Date(Date.now() - cooldownSec * 1000).toISOString()
           )
           .limit(1);
 
         if (recentExec && recentExec.length > 0) continue;
 
         // Check max executions per hour
+        const maxPerHour = automation.max_executions_per_hour ?? 60;
         const { count: hourlyCount } = await supabase
           .from("automation_executions")
           .select("id", { count: "exact", head: true })
@@ -122,11 +144,7 @@ serve(async (req) => {
             new Date(Date.now() - 3600000).toISOString()
           );
 
-        if (
-          hourlyCount !== null &&
-          hourlyCount >= automation.max_executions_per_hour
-        )
-          continue;
+        if (hourlyCount !== null && hourlyCount >= maxPerHour) continue;
 
         // Execute automation — load actions and mark execution
         const { data: actions } = await supabase
@@ -137,12 +155,40 @@ serve(async (req) => {
 
         const actionsExecuted = [];
         for (const action of actions || []) {
-          actionsExecuted.push({
-            action_id: action.id,
-            action_type: action.action_type,
-            status: "completed",
-            executed_at: new Date().toISOString(),
-          });
+          try {
+            if (action.action_type === "device_command" && action.config?.device_id) {
+              await supabase.from("device_commands").insert({
+                device_id: action.config.device_id,
+                command_type: action.config.command_type || "custom",
+                payload: action.config.payload || {},
+                status: "pending",
+                expires_at: new Date(Date.now() + 30000).toISOString(),
+              });
+            } else if (action.action_type === "notification" && action.config?.message) {
+              await supabase.from("notifications").insert({
+                user_id: null,
+                project_id: automation.project_id,
+                title: action.config.title || "Automation Alert",
+                body: action.config.message,
+                category: "automation",
+                severity: action.config.severity || "info",
+              });
+            }
+            actionsExecuted.push({
+              action_id: action.id,
+              action_type: action.action_type,
+              status: "completed",
+              executed_at: new Date().toISOString(),
+            });
+          } catch (actionErr) {
+            actionsExecuted.push({
+              action_id: action.id,
+              action_type: action.action_type,
+              status: "failed",
+              error: String(actionErr),
+              executed_at: new Date().toISOString(),
+            });
+          }
         }
 
         const startedAt = new Date().toISOString();

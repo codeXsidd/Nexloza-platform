@@ -12,15 +12,33 @@ import '../features/home/presentation/screens/home_screen.dart';
 import '../features/projects/presentation/screens/projects_screen.dart';
 import '../features/projects/presentation/screens/project_detail_screen.dart';
 import '../features/projects/presentation/screens/create_project_screen.dart';
+import '../features/projects/presentation/screens/edit_project_screen.dart';
 import '../features/devices/presentation/screens/devices_screen.dart';
 import '../features/devices/presentation/screens/device_detail_screen.dart';
 import '../features/devices/presentation/screens/add_device_screen.dart';
+import '../features/devices/presentation/screens/edit_device_screen.dart';
+import '../features/devices/presentation/screens/manage_sensors_screen.dart';
+import '../features/devices/presentation/screens/manage_actuators_screen.dart';
 import '../features/automations/presentation/screens/automations_screen.dart';
 import '../features/automations/presentation/screens/create_automation_screen.dart';
+import '../features/automations/presentation/screens/automation_detail_screen.dart';
 import '../features/ai_assistant/presentation/screens/ai_assistant_screen.dart';
 import '../features/notifications/presentation/screens/notifications_screen.dart';
 import '../features/settings/presentation/screens/settings_screen.dart';
 import '../features/settings/presentation/screens/profile_screen.dart';
+import '../features/settings/presentation/screens/api_keys_screen.dart';
+import '../features/organizations/presentation/screens/organizations_screen.dart';
+import '../features/organizations/presentation/screens/create_organization_screen.dart';
+import '../features/organizations/presentation/screens/organization_detail_screen.dart';
+import '../features/invitations/presentation/screens/invitations_screen.dart';
+import '../features/device_studio/presentation/screens/device_studio_screen.dart';
+import '../features/dashboards/presentation/screens/dashboards_screen.dart';
+import '../features/dashboards/presentation/screens/create_dashboard_screen.dart';
+import '../features/dashboards/presentation/screens/dashboard_editor_screen.dart';
+import '../features/scenes/presentation/screens/scenes_screen.dart';
+import '../features/scenes/presentation/screens/create_scene_screen.dart';
+import '../features/analytics/presentation/screens/analytics_screen.dart';
+import '../features/integrations/presentation/screens/integrations_screen.dart';
 import '../shared/widgets/app_scaffold.dart';
 import '../shared/widgets/not_found_screen.dart';
 import 'route_names.dart';
@@ -116,6 +134,16 @@ final routerProvider = Provider<GoRouter>((ref) {
                     builder: (context, state) => ProjectDetailScreen(
                       projectId: state.pathParameters['id']!,
                     ),
+                    routes: [
+                      GoRoute(
+                        path: 'edit',
+                        name: RouteNames.editProject,
+                        parentNavigatorKey: _rootNavigatorKey,
+                        builder: (context, state) => EditProjectScreen(
+                          projectId: state.pathParameters['id']!,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -141,6 +169,32 @@ final routerProvider = Provider<GoRouter>((ref) {
                     builder: (context, state) => DeviceDetailScreen(
                       deviceId: state.pathParameters['id']!,
                     ),
+                    routes: [
+                      GoRoute(
+                        path: 'edit',
+                        name: RouteNames.editDevice,
+                        parentNavigatorKey: _rootNavigatorKey,
+                        builder: (context, state) => EditDeviceScreen(
+                          deviceId: state.pathParameters['id']!,
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'sensors',
+                        name: RouteNames.manageSensors,
+                        parentNavigatorKey: _rootNavigatorKey,
+                        builder: (context, state) => ManageSensorsScreen(
+                          deviceId: state.pathParameters['id']!,
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'actuators',
+                        name: RouteNames.manageActuators,
+                        parentNavigatorKey: _rootNavigatorKey,
+                        builder: (context, state) => ManageActuatorsScreen(
+                          deviceId: state.pathParameters['id']!,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -158,6 +212,14 @@ final routerProvider = Provider<GoRouter>((ref) {
                     name: RouteNames.createAutomation,
                     parentNavigatorKey: _rootNavigatorKey,
                     builder: (context, state) => const CreateAutomationScreen(),
+                  ),
+                  GoRoute(
+                    path: ':id',
+                    name: RouteNames.automationDetail,
+                    parentNavigatorKey: _rootNavigatorKey,
+                    builder: (context, state) => AutomationDetailScreen(
+                      automationId: state.pathParameters['id']!,
+                    ),
                   ),
                 ],
               ),
@@ -191,6 +253,93 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.profile,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: '/api-keys',
+        name: RouteNames.apiKeys,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ApiKeysScreen(),
+      ),
+      GoRoute(
+        path: '/organizations',
+        name: RouteNames.organizations,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const OrganizationsScreen(),
+        routes: [
+          GoRoute(
+            path: 'create',
+            name: RouteNames.createOrganization,
+            parentNavigatorKey: _rootNavigatorKey,
+            builder: (context, state) => const CreateOrganizationScreen(),
+          ),
+          GoRoute(
+            path: ':id',
+            name: RouteNames.organizationDetail,
+            parentNavigatorKey: _rootNavigatorKey,
+            builder: (context, state) => OrganizationDetailScreen(
+              organizationId: state.pathParameters['id']!,
+            ),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: '/invitations',
+        name: RouteNames.invitations,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const InvitationsScreen(),
+      ),
+      GoRoute(
+        path: '/device-studio',
+        name: RouteNames.deviceStudio,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const DeviceStudioScreen(),
+      ),
+      GoRoute(
+        path: '/dashboards',
+        name: RouteNames.dashboards,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const DashboardsScreen(),
+        routes: [
+          GoRoute(
+            path: 'create',
+            name: RouteNames.createDashboard,
+            parentNavigatorKey: _rootNavigatorKey,
+            builder: (context, state) => const CreateDashboardScreen(),
+          ),
+          GoRoute(
+            path: ':id',
+            name: RouteNames.dashboardEditor,
+            parentNavigatorKey: _rootNavigatorKey,
+            builder: (context, state) =>
+                DashboardEditorScreen(dashboardId: state.pathParameters['id']!),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: '/scenes',
+        name: RouteNames.scenes,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ScenesScreen(),
+        routes: [
+          GoRoute(
+            path: 'create',
+            name: RouteNames.createScene,
+            parentNavigatorKey: _rootNavigatorKey,
+            builder: (context, state) => const CreateSceneScreen(),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: '/analytics',
+        name: RouteNames.analytics,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const AnalyticsScreen(),
+      ),
+      GoRoute(
+        path: '/integrations',
+        name: RouteNames.integrations,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const IntegrationsScreen(),
       ),
     ],
   );

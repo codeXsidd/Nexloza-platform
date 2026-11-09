@@ -42,6 +42,26 @@ class QuickActionsWidget extends StatelessWidget {
                   label: 'Ask AI',
                   onTap: () => context.goNamed(RouteNames.aiAssistant),
                 ),
+                _ActionChip(
+                  icon: Icons.dashboard,
+                  label: 'Dashboards',
+                  onTap: () => context.pushNamed(RouteNames.dashboards),
+                ),
+                _ActionChip(
+                  icon: Icons.memory,
+                  label: 'Device Studio',
+                  onTap: () => context.pushNamed(RouteNames.deviceStudio),
+                ),
+                _ActionChip(
+                  icon: Icons.theater_comedy,
+                  label: 'Scenes',
+                  onTap: () => context.pushNamed(RouteNames.scenes),
+                ),
+                _ActionChip(
+                  icon: Icons.analytics,
+                  label: 'Analytics',
+                  onTap: () => context.pushNamed(RouteNames.analytics),
+                ),
               ],
             ),
           ],

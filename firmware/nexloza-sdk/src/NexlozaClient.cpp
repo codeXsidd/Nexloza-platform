@@ -38,11 +38,11 @@ void NexlozaClient::begin(NexlozaConfig& config) {
 void NexlozaClient::_setupTopics() {
   String prefix = String("nexloza/") + _config.projectId + "/" + _config.deviceId;
   _telemetryTopic = prefix + "/telemetry";
-  _commandTopic = prefix + "/command";
+  _commandTopic = prefix + "/commands";
   _stateTopic = prefix + "/state";
   _heartbeatTopic = prefix + "/heartbeat";
   _otaTopic = prefix + "/ota";
-  _commandResultTopic = prefix + "/command/result";
+  _commandResultTopic = prefix + "/commands/response";
 }
 
 bool NexlozaClient::connect() {
@@ -256,7 +256,7 @@ void NexlozaClient::checkForUpdate() {
 bool NexlozaClient::_authenticate() {
   HTTPClient http;
   String url = String("http") + (_config.useTLS ? "s" : "") + "://" +
-               _config.serverHost + "/api/v1/devices/auth";
+               _config.serverHost + "/functions/v1/device-auth";
 
   if (_config.useTLS) {
     http.begin(_wifiSecureClient, url);
@@ -265,34 +265,26 @@ bool NexlozaClient::_authenticate() {
   }
 
   http.addHeader("Content-Type", "application/json");
+  http.addHeader("x-api-key", _config.apiKey);
+  http.addHeader("x-api-secret", _config.apiSecret);
 
-  JsonDocument doc;
-  doc["device_id"] = _config.deviceId;
-  doc["api_key"] = _config.apiKey;
-  doc["api_secret"] = _config.apiSecret;
-
-  char buf[256];
-  serializeJson(doc, buf, sizeof(buf));
-
-  int httpCode = http.POST(buf);
+  int httpCode = http.POST("{}");
 
   if (httpCode == 200) {
     String response = http.getString();
     JsonDocument resDoc;
     DeserializationError err = deserializeJson(resDoc, response);
     if (!err) {
-      _mqttUser = resDoc["mqtt_user"].as<String>();
-      _mqttPass = resDoc["mqtt_pass"].as<String>();
+      _mqttUser = resDoc["mqtt"]["username"].as<String>();
+      _mqttPass = _config.apiSecret;
       http.end();
       return true;
     }
   }
 
-  // Fallback: use api_key/api_secret directly as MQTT credentials
-  _mqttUser = _config.apiKey;
-  _mqttPass = _config.apiSecret;
+  Serial.printf("[Nexloza] Auth HTTP %d\n", httpCode);
   http.end();
-  return true;
+  return false;
 }
 
 void NexlozaClient::_sendHeartbeat() {

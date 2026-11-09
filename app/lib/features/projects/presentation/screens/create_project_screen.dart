@@ -7,6 +7,7 @@ import '../../../../shared/widgets/app_text_field.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../theme/app_spacing.dart';
 import '../../domain/entities/project_entity.dart';
+import '../providers/project_provider.dart';
 
 class CreateProjectScreen extends ConsumerStatefulWidget {
   const CreateProjectScreen({super.key});
@@ -21,6 +22,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   String _selectedCategory = 'Custom';
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -29,13 +31,31 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
     super.dispose();
   }
 
-  void _onCreate() {
-    if (_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Project creation requires Supabase connection'),
-        ),
-      );
+  Future<void> _onCreate() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isLoading = true);
+
+    final success = await ref
+        .read(projectsProvider.notifier)
+        .createProject(
+          name: _nameController.text.trim(),
+          description: _descriptionController.text.trim().isEmpty
+              ? null
+              : _descriptionController.text.trim(),
+          category: _selectedCategory.toLowerCase().replaceAll(' ', '_'),
+        );
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
+    if (success) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Project created')));
+      context.pop();
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Failed to create project')));
     }
   }
 
@@ -77,7 +97,11 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
                     setState(() => _selectedCategory = v ?? 'Custom'),
               ),
               AppSpacing.verticalXl,
-              AppButton(label: 'Create Project', onPressed: _onCreate),
+              AppButton(
+                label: 'Create Project',
+                isLoading: _isLoading,
+                onPressed: _isLoading ? null : _onCreate,
+              ),
               AppSpacing.verticalSm,
               AppButton(
                 label: 'Cancel',

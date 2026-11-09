@@ -1,51 +1,125 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../theme/app_spacing.dart';
+import '../../../projects/presentation/providers/project_provider.dart';
 
-class ProjectSummaryCard extends StatelessWidget {
+class ProjectSummaryCard extends ConsumerWidget {
   const ProjectSummaryCard({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: AppSpacing.cardPadding,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.folder, color: theme.colorScheme.primary),
-                AppSpacing.horizontalSm,
-                Text('Projects', style: theme.textTheme.titleMedium),
-              ],
-            ),
-            AppSpacing.verticalMd,
-            Row(
-              children: [
-                Expanded(
-                  child: _StatTile(
-                    label: 'Total',
-                    value: '0',
-                    icon: Icons.folder_outlined,
-                    color: theme.colorScheme.primary,
-                  ),
+    final projectsAsync = ref.watch(projectsProvider);
+
+    return projectsAsync.when(
+      loading: () => Card(
+        child: Padding(
+          padding: AppSpacing.cardPadding,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.folder, color: theme.colorScheme.primary),
+                  AppSpacing.horizontalSm,
+                  Text('Projects', style: theme.textTheme.titleMedium),
+                ],
+              ),
+              AppSpacing.verticalMd,
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: CircularProgressIndicator(strokeWidth: 2),
                 ),
-                AppSpacing.horizontalSm,
-                Expanded(
-                  child: _StatTile(
-                    label: 'Active',
-                    value: '0',
-                    icon: Icons.play_circle_outline,
-                    color: Colors.green,
-                  ),
-                ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
+      error: (e, _) => Card(
+        child: Padding(
+          padding: AppSpacing.cardPadding,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.folder, color: theme.colorScheme.primary),
+                  AppSpacing.horizontalSm,
+                  Text('Projects', style: theme.textTheme.titleMedium),
+                ],
+              ),
+              AppSpacing.verticalMd,
+              Row(
+                children: [
+                  Expanded(
+                    child: _StatTile(
+                      label: 'Total',
+                      value: '--',
+                      icon: Icons.folder_outlined,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                  AppSpacing.horizontalSm,
+                  Expanded(
+                    child: _StatTile(
+                      label: 'Active',
+                      value: '--',
+                      icon: Icons.play_circle_outline,
+                      color: Colors.green,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+      data: (projects) {
+        final total = projects.length;
+        final active = projects.where((p) => p.isActive).length;
+
+        return Card(
+          child: Padding(
+            padding: AppSpacing.cardPadding,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.folder, color: theme.colorScheme.primary),
+                    AppSpacing.horizontalSm,
+                    Text('Projects', style: theme.textTheme.titleMedium),
+                  ],
+                ),
+                AppSpacing.verticalMd,
+                Row(
+                  children: [
+                    Expanded(
+                      child: _StatTile(
+                        label: 'Total',
+                        value: '$total',
+                        icon: Icons.folder_outlined,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    AppSpacing.horizontalSm,
+                    Expanded(
+                      child: _StatTile(
+                        label: 'Active',
+                        value: '$active',
+                        icon: Icons.play_circle_outline,
+                        color: Colors.green,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

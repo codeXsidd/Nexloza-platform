@@ -62,7 +62,13 @@ serve(async (req) => {
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("");
 
-    if (hashHex !== cred.secret_hash) {
+    // Constant-time comparison to prevent timing attacks
+    const expected = cred.secret_hash;
+    let mismatch = hashHex.length !== expected.length ? 1 : 0;
+    for (let i = 0; i < hashHex.length; i++) {
+      mismatch |= hashHex.charCodeAt(i) ^ (expected.charCodeAt(i) || 0);
+    }
+    if (mismatch !== 0) {
       return new Response(
         JSON.stringify({ error: "Invalid device credentials" }),
         {

@@ -12,7 +12,9 @@ abstract final class RouteNames {
   static const String devices = 'devices';
   static const String deviceDetail = 'deviceDetail';
   static const String addDevice = 'addDevice';
-  static const String devicePairing = 'devicePairing';
+  static const String editDevice = 'editDevice';
+  static const String manageSensors = 'manageSensors';
+  static const String manageActuators = 'manageActuators';
   static const String automations = 'automations';
   static const String automationDetail = 'automationDetail';
   static const String createAutomation = 'createAutomation';
@@ -20,13 +22,17 @@ abstract final class RouteNames {
   static const String notifications = 'notifications';
   static const String settings = 'settings';
   static const String profile = 'profile';
-  static const String organization = 'organization';
+  static const String organizations = 'organizations';
+  static const String createOrganization = 'createOrganization';
+  static const String organizationDetail = 'organizationDetail';
+  static const String invitations = 'invitations';
   static const String apiKeys = 'apiKeys';
   static const String dashboardEditor = 'dashboardEditor';
-  static const String sensors = 'sensors';
-  static const String sensorDetail = 'sensorDetail';
-  static const String actuators = 'actuators';
   static const String scenes = 'scenes';
+  static const String createScene = 'createScene';
   static const String analytics = 'analytics';
   static const String integrations = 'integrations';
+  static const String deviceStudio = 'deviceStudio';
+  static const String dashboards = 'dashboards';
+  static const String createDashboard = 'createDashboard';
 }
