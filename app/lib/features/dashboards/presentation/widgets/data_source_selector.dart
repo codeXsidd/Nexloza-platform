@@ -140,7 +140,27 @@ class _DeviceDropdown extends ConsumerWidget {
                       color: d.isOnline ? Colors.green : Colors.grey,
                     ),
                     const SizedBox(width: 8),
-                    Text(d.name),
+                    Flexible(child: Text(d.name)),
+                    if (d.isVirtual) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .tertiaryContainer,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'SIM',
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(fontSize: 9),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

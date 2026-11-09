@@ -36,6 +36,10 @@ import '../features/device_studio/presentation/screens/device_studio_screen.dart
 import '../features/dashboards/presentation/screens/dashboards_screen.dart';
 import '../features/dashboards/presentation/screens/create_dashboard_screen.dart';
 import '../features/dashboards/presentation/screens/dashboard_editor_screen.dart';
+import '../features/virtual_devices/presentation/screens/virtual_devices_screen.dart';
+import '../features/virtual_devices/presentation/screens/create_virtual_device_screen.dart';
+import '../features/virtual_devices/presentation/screens/simulator_control_screen.dart';
+import '../features/virtual_devices/presentation/screens/digital_twin_screen.dart';
 import '../features/scenes/presentation/screens/scenes_screen.dart';
 import '../features/scenes/presentation/screens/create_scene_screen.dart';
 import '../features/analytics/presentation/screens/analytics_screen.dart';
@@ -347,6 +351,41 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.integrations,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const IntegrationsScreen(),
+      ),
+      GoRoute(
+        path: '/virtual-devices',
+        name: RouteNames.virtualDevices,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => VirtualDevicesScreen(
+          projectId: state.uri.queryParameters['projectId'] ?? '',
+          organizationId: state.uri.queryParameters['organizationId'] ?? '',
+        ),
+        routes: [
+          GoRoute(
+            path: 'create',
+            name: RouteNames.createVirtualDevice,
+            parentNavigatorKey: _rootNavigatorKey,
+            builder: (context, state) => const CreateVirtualDeviceScreen(),
+          ),
+          GoRoute(
+            path: ':id/simulator',
+            name: RouteNames.simulatorControl,
+            parentNavigatorKey: _rootNavigatorKey,
+            builder: (context, state) => SimulatorControlScreen(
+              deviceId: state.pathParameters['id']!,
+              projectId: state.uri.queryParameters['projectId'] ?? '',
+              organizationId: state.uri.queryParameters['organizationId'] ?? '',
+              profileType: state.uri.queryParameters['profile'] ?? 'smart_home',
+            ),
+          ),
+          GoRoute(
+            path: ':id/twin',
+            name: RouteNames.digitalTwin,
+            parentNavigatorKey: _rootNavigatorKey,
+            builder: (context, state) =>
+                DigitalTwinScreen(deviceId: state.pathParameters['id']!),
+          ),
+        ],
       ),
     ],
   );

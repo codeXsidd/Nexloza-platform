@@ -333,11 +333,34 @@ class _OverviewTab extends ConsumerWidget {
                                       : StatusType.offline,
                                 ),
                                 AppSpacing.horizontalSm,
-                                mqttStatus.when(
-                                  data: (s) => _MqttBadge(status: s),
-                                  loading: () => const SizedBox.shrink(),
-                                  error: (_, __) => const SizedBox.shrink(),
-                                ),
+                                if (device.isVirtual)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color:
+                                          theme.colorScheme.tertiaryContainer,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      'VIRTUAL',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: theme
+                                            .colorScheme
+                                            .onTertiaryContainer,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                if (!device.isVirtual)
+                                  mqttStatus.when(
+                                    data: (s) => _MqttBadge(status: s),
+                                    loading: () => const SizedBox.shrink(),
+                                    error: (_, __) => const SizedBox.shrink(),
+                                  ),
                               ],
                             ),
                           ],
@@ -364,6 +387,34 @@ class _OverviewTab extends ConsumerWidget {
               ),
             ),
           ),
+          if (device.isVirtual) ...[
+            AppSpacing.verticalSm,
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton.tonalIcon(
+                    onPressed: () => context.push(
+                      '/virtual-devices/$deviceId/simulator'
+                      '?projectId=${device.projectId}'
+                      '&organizationId=default'
+                      '&profile=${device.simulationProfile ?? "smart_home"}',
+                    ),
+                    icon: const Icon(Icons.play_circle_outline),
+                    label: const Text('Simulator'),
+                  ),
+                ),
+                AppSpacing.horizontalSm,
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () =>
+                        context.push('/virtual-devices/$deviceId/twin'),
+                    icon: const Icon(Icons.compare_arrows),
+                    label: const Text('Digital Twin'),
+                  ),
+                ),
+              ],
+            ),
+          ],
           if (!device.isOnline && device.lastSeenAt != null) ...[
             AppSpacing.verticalSm,
             Card(

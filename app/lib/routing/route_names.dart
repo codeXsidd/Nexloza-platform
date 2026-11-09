@@ -36,4 +36,8 @@ abstract final class RouteNames {
   static const String dashboards = 'dashboards';
   static const String createDashboard = 'createDashboard';
   static const String pairDevice = 'pairDevice';
+  static const String virtualDevices = 'virtualDevices';
+  static const String createVirtualDevice = 'createVirtualDevice';
+  static const String simulatorControl = 'simulatorControl';
+  static const String digitalTwin = 'digitalTwin';
 }

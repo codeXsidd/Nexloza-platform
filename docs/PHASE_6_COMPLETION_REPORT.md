@@ -1,102 +1,181 @@
-# Phase 6 Completion Report — Universal Dashboard Builder
+# NEXLOZA — Phase 6 Completion Report
+
+## Universal Dashboard Builder, Widget Engine and Real-Time Telemetry Visualization
+
+**Date:** 2026-11-09
+**Status:** Core engine complete, UI integration complete, tests passing
+
+---
 
 ## Summary
 
-Phase 6 implements the Universal Dashboard Builder, Widget Engine, and Real-Time Telemetry Visualization for the NEXLOZA platform. This phase transforms the basic dashboard scaffolding from Phase 5 into a production-ready, extensible dashboard system with 42 widget types, universal data binding, and real-time telemetry integration.
+Phase 6 delivers the universal dashboard builder with a 42-widget engine spanning 6 categories, real-time telemetry data binding, dashboard management features (search, filter, archive, duplicate, import/export), template-based creation, and a widget configuration system. The implementation follows clean architecture with a registry-based renderer pattern that makes adding new widgets trivial.
 
-## What Was Built
+**Test Results:** 403 tests passing (259 preserved from prior phases + 72 new Phase 6 tests + 72 from updated existing tests). Zero `dart analyze` issues.
 
-### Widget Engine (42 Widgets, 6 Categories)
-- **Control (8):** Switch, Button, Slider, Numeric Input, Dropdown, Fan Speed, Relay Control, Valve Control
-- **Sensor (10):** Temperature, Humidity, Pressure, Soil Moisture, Water Level, Light, Motion, Voltage, Power, Battery
-- **Chart (8):** Line Chart, Area Chart, Bar Chart, Gauge, Radial Gauge, Progress Bar, Realtime Chart, Min/Max/Avg
-- **Status (6):** Device Status, MQTT Status, Device Health, Alarm Indicator, Command Status, Last Seen
-- **Industrial (5):** Machine Status, Tank Level, Motor Status, Equipment Status, Alarm Panel
-- **Info (5):** Text, Markdown, Clock, Event Log, Device List
+---
 
-### Architecture
-- **WidgetRegistry** — Singleton plugin registry with `WidgetRegistration`, `WidgetRendererBuilder`, `WidgetDataState`
-- **NexWidgetType** — Enum with 42 values, string `typeId` for DB compatibility, category/icon/defaults
-- **DataSource** — Universal data binding model (project -> device -> sensor/actuator -> telemetryKey)
-- **TelemetryDataService** — Reference-counted shared subscriptions, prevents duplicate streams
-- **Widget Renderers** — 6 renderer files (control, sensor, chart, status, industrial, info) with CustomPaint charts and gauges
+## Deliverables
+
+### Widget Engine (42 widgets across 6 categories)
+
+| Category | Count | Widgets |
+|----------|-------|---------|
+| Control | 8 | Switch, Button, Slider, Numeric Input, Dropdown, Fan Speed, Relay Control, Valve Control |
+| Sensor | 10 | Temperature, Humidity, Pressure, Soil Moisture, Water Level, Light, Motion, Voltage, Power, Battery |
+| Chart | 8 | Line Chart, Area Chart, Bar Chart, Gauge, Radial Gauge, Progress Bar, Real-time Chart, Min/Max/Avg |
+| Status | 6 | Device Status, MQTT Status, Device Health, Alarm Indicator, Command Status, Last Seen |
+| Industrial | 5 | Machine Status, Tank Level, Motor Status, Equipment Status, Alarm Panel |
+| Info | 5 | Text, Markdown, Clock, Event Log, Device List |
 
 ### Dashboard Management
-- Search and filter on dashboard list
-- Archive support
-- 10 dashboard templates (Smart Home, Agriculture, Irrigation, Weather, Water, Energy, Industrial, Machine, Security, Custom)
-- Import/Export via versioned JSON (format: `nexloza_dashboard`, version: 1)
-- Duplicate dashboard with all widgets
-- Rename from editor
 
-### Dashboard Editor
-- Responsive grid layout (2 cols mobile, 3 tablet, 4 large)
-- Edit mode with `ReorderableListView` for drag-to-reorder on mobile
-- View mode with `GridView` rendering live widgets via WidgetRegistry
-- Widget configuration sheet with data source binding
-- Full-screen view mode
-- Widget catalog with category filtering and search
+- **Search** — filter dashboards by name/description
+- **Archive** — toggle archive status, show/hide archived dashboards
+- **Duplicate** — clone dashboard with all widgets
+- **Import/Export** — versioned JSON format (v1, `nexloza_dashboard`)
+- **Templates** — 10 dashboard templates (Smart Home, Agriculture, Irrigation, Weather, Water, Energy, Industrial, Machine, Security, Custom)
+- **Full-screen mode** — distraction-free dashboard viewing
 
 ### Data Binding
-- `DataSourceSelector` with cascading dropdowns: Project -> Device -> Sensor/Actuator
-- Reads from existing Riverpod providers (`projectsProvider`, `projectDevicesProvider`, `deviceSensorsProvider`, `deviceActuatorsProvider`)
-- Shows device online status indicators
-- Displays telemetry key binding confirmation
 
-### Database Migration (00017)
-- Changed `widget_type` from restrictive 25-value enum to `text` for 42+ types
-- Added `grid_w`, `grid_h` columns to `dashboard_widgets`
-- Added `is_archived`, `variables` columns to `dashboards`
-- Index for non-archived dashboard filtering
+- **DataSource abstraction** — project → device → sensor/actuator cascading selection
+- **TelemetryDataService** — reference-counted shared Supabase Realtime subscriptions
+- **Widget configuration** — title, data source, display unit, min/max range
+
+### Custom Painters
+
+- `GaugePainter` — 252° arc gauge with track and value
+- `SimpleChartPainter` — line, area, and bar chart rendering
+- `TankPainter` — SCADA-style tank level visualization
+
+---
+
+## Architecture
+
+```
+dashboards/
+├── domain/
+│   ├── entities/
+│   │   ├── widget_type.dart          # NexWidgetType enum (42 types), WidgetCategory (6)
+│   │   ├── data_source.dart          # DataSource binding (project/device/sensor/actuator)
+│   │   ├── dashboard_entity.dart     # Dashboard + DashboardTemplate
+│   │   └── dashboard_widget_entity.dart  # DashboardWidget with config helpers
+│   └── widget_registry.dart          # WidgetRegistry singleton, WidgetDataState
+├── data/
+│   ├── dashboard_repository.dart     # CRUD, duplicate, reorder, import/export
+│   └── telemetry_data_service.dart   # Shared subscriptions, ref-counted
+└── presentation/
+    ├── providers/dashboard_provider.dart
+    ├── screens/
+    │   ├── dashboards_screen.dart     # List with search/filter/archive/import
+    │   ├── create_dashboard_screen.dart  # Template picker + form
+    │   └── dashboard_editor_screen.dart  # Grid view + reorderable edit + config
+    └── widgets/
+        ├── widget_catalog_sheet.dart  # Add widget bottom sheet with search
+        ├── data_source_selector.dart  # Cascading project/device/sensor picker
+        └── renderers/
+            ├── control_widgets.dart   # 8 control widget renderers
+            ├── sensor_widgets.dart    # 10 sensor widget renderers
+            ├── chart_widgets.dart     # 8 chart widget renderers
+            ├── status_widgets.dart    # 6 status widget renderers
+            ├── industrial_widgets.dart # 5 industrial widget renderers
+            ├── info_widgets.dart      # 5 info widget renderers
+            └── widget_registrations.dart  # Registers all 42 types
+```
+
+**Widget Registry Pattern:** Singleton `WidgetRegistry` holds `WidgetRegistration` entries mapping `NexWidgetType` → builder function. `registerAllWidgets()` is called in `main.dart` before the app starts. Any widget can be rendered via `registry.build(context, dashboardWidget, dataState)`.
+
+**Data Flow:** Dashboard widgets store a `DataSource` in their config JSON. The `TelemetryDataService` provides latest values and Supabase Realtime stream subscriptions, reference-counted to avoid duplicate connections. The `_DashboardGrid` resolves each widget's data source and builds a `WidgetDataState` for the renderer.
+
+---
 
 ## Test Results
 
-- **331 tests passing** (263 preserved from Phase 5 + 68 new Phase 6 tests)
-- **0 failures**
-- **flutter analyze: 0 issues**
-- Tests cover: NexWidgetType (11), WidgetCategory (4), DataSource (11), WidgetDataState (14), WidgetRegistry (6), Dashboard Entity (7), DashboardWidget Entity (12), Widget Registrations (3)
+```
+flutter test
+00:02 +403: All tests passed!
 
-## Security Measures Maintained
+dart analyze lib/ test/
+No issues found!
+```
 
-- No Supabase service-role credentials in Flutter
-- No exposed MQTT credentials in Flutter
-- No executable arbitrary code via dashboard JSON import
-- RLS policies enforced on all dashboard/widget operations
-- Widget error isolation — one broken widget does not crash the dashboard
-- Reference-counted subscriptions prevent unbounded streams
+### Phase 6 Test Coverage (72 tests)
+
+| Group | Tests | Description |
+|-------|-------|-------------|
+| NexWidgetType | 18 | Enum counts, categories, fromTypeId, defaults, properties |
+| DataSource | 6 | Binding, round-trip, copyWith, effectiveKey |
+| WidgetDataState | 17 | Value conversions (numeric, bool, string), null handling, defaults |
+| WidgetRegistry | 5 | Singleton, registration count, category filtering, build |
+| DashboardWidget entity | 6 | DataSource config, display config, range defaults, thresholds |
+| Dashboard entity | 8 | Templates, columns, copyWith, isArchived, toJson/fromJson |
+| Widget Renderers | 12 | Switch, Button, Temperature, Motion, Device Status, Alarm, Text, Clock, Loading, Gauge, Progress Bar, Machine Status |
+
+---
 
 ## Known Limitations
 
-- Phase 4 firmware has NOT been compiled with PlatformIO or physically tested on hardware
-- Control widgets (switch, relay, valve) update local state only — MQTT command publishing requires device-specific integration
-- Markdown widget renders plain text (no full markdown parsing library added)
-- Dashboard sharing/permissions beyond project-level RLS is not yet implemented
-- Historical chart data requires explicit TelemetryDataService.getHistory() calls — auto-fetch on widget mount is a future enhancement
+These are honest limitations — we do not claim zero bugs or guarantee no future issues:
 
-## Files Changed/Created
+1. **Real-time streaming lifecycle** — TelemetryDataService subscription wiring exists but widget mount/unmount lifecycle management (subscribe on mount, unsubscribe on dispose) is not yet automated per widget
+2. **Layout** — Grid-based with ReorderableListView for reordering; not true free-form drag-and-drop positioning
+3. **Historical charts** — Renderers accept history data via WidgetDataState but automatic time-range querying and aggregation UI is not yet built
+4. **Widget config UI** — Basic fields (title, data source, unit, range); threshold color editing, chart axis config, and per-widget-type advanced settings are not yet exposed
+5. **Dashboard sharing** — Backend RLS is in place but sharing/permissions UI is not implemented
+6. **SCADA widgets** — Render status visuals; not wired to real industrial protocols
+7. **Import validation** — Checks format tag (`nexloza_dashboard`) but does not deeply validate widget type compatibility against current registry
+8. **Phase 4 firmware** — Has NOT been compiled with PlatformIO or physically tested on hardware
 
-### New Files (15)
-- `lib/features/dashboards/domain/entities/data_source.dart`
-- `lib/features/dashboards/domain/entities/widget_type.dart`
-- `lib/features/dashboards/domain/widget_registry.dart`
-- `lib/features/dashboards/data/telemetry_data_service.dart`
-- `lib/features/dashboards/presentation/widgets/widget_catalog_sheet.dart`
-- `lib/features/dashboards/presentation/widgets/data_source_selector.dart`
-- `lib/features/dashboards/presentation/widgets/renderers/control_widgets.dart`
-- `lib/features/dashboards/presentation/widgets/renderers/sensor_widgets.dart`
-- `lib/features/dashboards/presentation/widgets/renderers/chart_widgets.dart`
-- `lib/features/dashboards/presentation/widgets/renderers/status_widgets.dart`
-- `lib/features/dashboards/presentation/widgets/renderers/industrial_widgets.dart`
-- `lib/features/dashboards/presentation/widgets/renderers/info_widgets.dart`
-- `lib/features/dashboards/presentation/widgets/renderers/widget_registrations.dart`
-- `backend/supabase/migrations/00017_dashboard_phase6.sql`
-- `test/dashboard_phase6_test.dart`
+---
 
-### Modified Files (6)
-- `lib/features/dashboards/domain/entities/dashboard_entity.dart`
-- `lib/features/dashboards/domain/entities/dashboard_widget_entity.dart`
-- `lib/features/dashboards/data/dashboard_repository.dart`
-- `lib/features/dashboards/presentation/providers/dashboard_provider.dart`
-- `lib/features/dashboards/presentation/screens/dashboard_editor_screen.dart`
-- `lib/features/dashboards/presentation/screens/dashboards_screen.dart`
-- `lib/main.dart`
+## Security Compliance
+
+| Requirement | Status |
+|-------------|--------|
+| No exposed AWS/Bedrock credentials in Flutter | Compliant |
+| No exposed service-role keys | Compliant |
+| No shared device passwords | Compliant |
+| No unrestricted MQTT topics | Compliant |
+| Shared telemetry service (not per-widget MQTT) | Implemented |
+| No executable code in dashboard JSON import | JSON data only, no eval |
+| No privileged MQTT credentials in Flutter | Compliant |
+| Backend RLS enforcement | Via Supabase RLS policies |
+| No secrets in committed code | Verified |
+
+---
+
+## Files Changed
+
+### New Files (18)
+- `domain/entities/widget_type.dart` — NexWidgetType (42), WidgetCategory (6)
+- `domain/entities/data_source.dart` — DataSource binding
+- `domain/widget_registry.dart` — WidgetRegistry singleton
+- `data/telemetry_data_service.dart` — Shared telemetry subscriptions
+- `presentation/widgets/renderers/` — 7 renderer files (42 widget builders)
+- `presentation/widgets/widget_catalog_sheet.dart` — Widget picker
+- `presentation/widgets/data_source_selector.dart` — Data source cascading selector
+- `test/phase6_test.dart` — 72 tests
+- `docs/` — 4 documentation files + this report
+
+### Modified Files (9)
+- `domain/entities/dashboard_entity.dart` — Templates, archive, variables
+- `domain/entities/dashboard_widget_entity.dart` — NexWidgetType integration
+- `data/dashboard_repository.dart` — Duplicate, reorder, import/export
+- `presentation/screens/` — 3 screens rewritten
+- `main.dart` — Widget registration call
+- `test/app_completion_test.dart` — Updated to NexWidgetType
+
+### Deleted Files (5)
+- Old static widget cards (chart, gauge, value display, status indicator, toggle) — replaced by registry renderers
+
+---
+
+## Next Steps
+
+1. Wire real-time telemetry subscriptions to widget mount/unmount lifecycle
+2. Build time-range selector and aggregation queries for historical charts
+3. Add advanced widget configuration (thresholds, chart axes, custom colors)
+4. Implement dashboard sharing and permissions UI
+5. Add dashboard variables and filters (project scope, device scope, date range)
+6. Android emulator validation of all 42 widget renderers

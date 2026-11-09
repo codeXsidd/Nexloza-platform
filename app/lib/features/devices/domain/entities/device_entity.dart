@@ -9,6 +9,8 @@ class Device {
   final bool isOnline;
   final DateTime? lastSeenAt;
   final Map<String, dynamic> metadata;
+  final bool isVirtual;
+  final String? simulationProfile;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -23,6 +25,8 @@ class Device {
     this.isOnline = false,
     this.lastSeenAt,
     this.metadata = const {},
+    this.isVirtual = false,
+    this.simulationProfile,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -43,6 +47,8 @@ class Device {
           ? DateTime.parse(json['last_seen_at'] as String)
           : null,
       metadata: json['metadata'] as Map<String, dynamic>? ?? {},
+      isVirtual: json['is_virtual'] as bool? ?? false,
+      simulationProfile: json['simulation_profile'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );
@@ -56,6 +62,8 @@ class Device {
     'firmware_version': firmwareVersion,
     'mac_address': macAddress,
     'metadata': metadata,
+    'is_virtual': isVirtual,
+    'simulation_profile': simulationProfile,
   };
 }
 
