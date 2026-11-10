@@ -3,8 +3,8 @@ import 'package:nexloza/features/rule_engine/domain/entities/rule_node_type.dart
 
 void main() {
   group('RuleNodeType', () {
-    test('has exactly 35 values', () {
-      expect(RuleNodeType.values.length, 35);
+    test('has exactly 39 values', () {
+      expect(RuleNodeType.values.length, 39);
     });
 
     test('every value has non-empty displayName, description, dbValue', () {
@@ -15,7 +15,7 @@ void main() {
       }
     });
 
-    test('category counts: 11 triggers, 13 conditions, 7 actions, 4 flow', () {
+    test('category counts: 11 triggers, 13 conditions, 11 actions, 4 flow', () {
       final triggers =
           RuleNodeType.values.where((t) => t.category == RuleNodeCategory.trigger);
       final conditions =
@@ -27,7 +27,7 @@ void main() {
 
       expect(triggers.length, 11);
       expect(conditions.length, 13);
-      expect(actions.length, 7);
+      expect(actions.length, 11);
       expect(flow.length, 4);
     });
 

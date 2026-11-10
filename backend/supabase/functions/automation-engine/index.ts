@@ -490,6 +490,193 @@ async function executeAction(
         return { success: true, output: { stopped: true } };
       }
 
+      // ----- Phase 9: Alarm action nodes -----
+
+      case "raiseAlarm": {
+        const alarmKey = cfg.alarm_key as string;
+        const severity = cfg.severity as string || "warning";
+        const title = cfg.title as string || "Alarm";
+        const message = cfg.message as string || "";
+        const category = cfg.category as string || "general";
+        if (!alarmKey) return { success: false, output: null, error: "Missing alarm_key" };
+
+        if (!dryRun) {
+          // Upsert: if alarm with same key exists and is active/acknowledged, increment occurrence_count
+          const { data: existing } = await supabase
+            .from("alarms")
+            .select("id, status, occurrence_count")
+            .eq("alarm_key", alarmKey)
+            .eq("project_id", event.project_id)
+            .in("status", ["active", "acknowledged"])
+            .limit(1);
+
+          if (existing && existing.length > 0) {
+            const alarm = existing[0];
+            await supabase
+              .from("alarms")
+              .update({
+                occurrence_count: (alarm.occurrence_count || 1) + 1,
+                last_occurred_at: new Date().toISOString(),
+                severity,
+                condition_value: event.value ?? null,
+              })
+              .eq("id", alarm.id);
+
+            return { success: true, output: { alarm_id: alarm.id, alarm_key: alarmKey, deduplicated: true, dry_run: false } };
+          }
+
+          // Create new alarm
+          const { data: newAlarm, error: insertErr } = await supabase
+            .from("alarms")
+            .insert({
+              alarm_key: alarmKey,
+              project_id: event.project_id,
+              device_id: event.device_id || null,
+              organization_id: event.organization_id,
+              severity,
+              status: "active",
+              source: "rule_action",
+              title,
+              message,
+              category,
+              condition_value: event.value ?? null,
+              data: { correlation_id: correlationId, event_type: event.event_type },
+            })
+            .select("id")
+            .single();
+
+          if (insertErr) return { success: false, output: null, error: insertErr.message };
+
+          // Record creation activity
+          if (newAlarm) {
+            await supabase.from("alarm_activity").insert({
+              alarm_id: newAlarm.id,
+              activity_type: "created",
+              data: { source: "rule_action", correlation_id: correlationId },
+            });
+          }
+
+          return { success: true, output: { alarm_id: newAlarm?.id, alarm_key: alarmKey, deduplicated: false, dry_run: false } };
+        }
+        return { success: true, output: { alarm_key: alarmKey, severity, title, dry_run: true } };
+      }
+
+      case "updateAlarmSeverity": {
+        const alarmKey = cfg.alarm_key as string;
+        const newSeverity = cfg.severity as string || "warning";
+        if (!alarmKey) return { success: false, output: null, error: "Missing alarm_key" };
+
+        if (!dryRun) {
+          const { data: existing } = await supabase
+            .from("alarms")
+            .select("id, severity")
+            .eq("alarm_key", alarmKey)
+            .eq("project_id", event.project_id)
+            .in("status", ["active", "acknowledged"])
+            .limit(1);
+
+          if (!existing || existing.length === 0) {
+            return { success: false, output: null, error: `No active alarm found for key: ${alarmKey}` };
+          }
+
+          const alarm = existing[0];
+          const previousSeverity = alarm.severity;
+
+          await supabase
+            .from("alarms")
+            .update({ severity: newSeverity })
+            .eq("id", alarm.id);
+
+          await supabase.from("alarm_activity").insert({
+            alarm_id: alarm.id,
+            activity_type: "severity_changed",
+            previous_severity: previousSeverity,
+            new_severity: newSeverity,
+            data: { correlation_id: correlationId },
+          });
+
+          return { success: true, output: { alarm_id: alarm.id, previous_severity: previousSeverity, new_severity: newSeverity, dry_run: false } };
+        }
+        return { success: true, output: { alarm_key: alarmKey, severity: newSeverity, dry_run: true } };
+      }
+
+      case "clearAlarm": {
+        const alarmKey = cfg.alarm_key as string;
+        const reason = cfg.reason as string || "Cleared by rule action";
+        if (!alarmKey) return { success: false, output: null, error: "Missing alarm_key" };
+
+        if (!dryRun) {
+          const { data: existing } = await supabase
+            .from("alarms")
+            .select("id, status")
+            .eq("alarm_key", alarmKey)
+            .eq("project_id", event.project_id)
+            .in("status", ["active", "acknowledged"])
+            .limit(1);
+
+          if (!existing || existing.length === 0) {
+            return { success: true, output: { alarm_key: alarmKey, already_cleared: true, dry_run: false } };
+          }
+
+          const alarm = existing[0];
+          await supabase
+            .from("alarms")
+            .update({
+              status: "cleared",
+              cleared_at: new Date().toISOString(),
+              cleared_reason: reason,
+            })
+            .eq("id", alarm.id);
+
+          await supabase.from("alarm_activity").insert({
+            alarm_id: alarm.id,
+            activity_type: "cleared",
+            comment: reason,
+            data: { source: "rule_action", correlation_id: correlationId },
+          });
+
+          // Cancel pending escalation tasks
+          await supabase
+            .from("escalation_tasks")
+            .update({ status: "cancelled" })
+            .eq("alarm_id", alarm.id)
+            .eq("status", "pending");
+
+          return { success: true, output: { alarm_id: alarm.id, alarm_key: alarmKey, cleared: true, dry_run: false } };
+        }
+        return { success: true, output: { alarm_key: alarmKey, reason, dry_run: true } };
+      }
+
+      case "addAlarmComment": {
+        const alarmKey = cfg.alarm_key as string;
+        const comment = cfg.comment as string || "";
+        if (!alarmKey) return { success: false, output: null, error: "Missing alarm_key" };
+        if (!comment) return { success: false, output: null, error: "Missing comment" };
+
+        if (!dryRun) {
+          const { data: existing } = await supabase
+            .from("alarms")
+            .select("id")
+            .eq("alarm_key", alarmKey)
+            .eq("project_id", event.project_id)
+            .limit(1);
+
+          if (!existing || existing.length === 0) {
+            return { success: false, output: null, error: `No alarm found for key: ${alarmKey}` };
+          }
+
+          await supabase.from("alarm_activity").insert({
+            alarm_id: existing[0].id,
+            activity_type: "comment_added",
+            comment,
+            data: { source: "rule_action", correlation_id: correlationId },
+          });
+
+          return { success: true, output: { alarm_id: existing[0].id, comment_added: true, dry_run: false } };
+        }
+        return { success: true, output: { alarm_key: alarmKey, comment, dry_run: true } };
+      }
+
       default:
         return { success: false, output: null, error: `Unknown action type: ${node.type}` };
     }
@@ -721,6 +908,7 @@ function getNodeCategory(type: string): string {
   const actions = [
     "sendCommand", "setActuator", "updateTwinDesired", "executeScene",
     "recordEvent", "logResult", "stopFlow",
+    "raiseAlarm", "updateAlarmSeverity", "clearAlarm", "addAlarmComment",
   ];
   if (triggers.includes(type)) return "trigger";
   if (conditions.includes(type)) return "condition";

@@ -648,8 +648,8 @@ void main() {
       }
     });
 
-    test('42 widget types defined', () {
-      expect(NexWidgetType.values.length, 42);
+    test('47 widget types defined', () {
+      expect(NexWidgetType.values.length, 47);
     });
 
     test('6 widget categories defined', () {

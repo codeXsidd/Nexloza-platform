@@ -11,7 +11,10 @@ class AppNotification {
   final NotificationCategory category;
   final NotificationSeverity severity;
   final bool isRead;
+  final DateTime? readAt;
   final Map<String, dynamic>? data;
+  final String? alarmId;
+  final String? navigationTarget;
   final DateTime createdAt;
 
   const AppNotification({
@@ -23,9 +26,14 @@ class AppNotification {
     this.category = NotificationCategory.system,
     this.severity = NotificationSeverity.info,
     this.isRead = false,
+    this.readAt,
     this.data,
+    this.alarmId,
+    this.navigationTarget,
     required this.createdAt,
   });
+
+  bool get isAlarmLinked => alarmId != null;
 
   factory AppNotification.fromJson(Map<String, dynamic> json) {
     return AppNotification(
@@ -43,7 +51,12 @@ class AppNotification {
         orElse: () => NotificationSeverity.info,
       ),
       isRead: json['is_read'] as bool? ?? false,
+      readAt: json['read_at'] != null
+          ? DateTime.parse(json['read_at'] as String)
+          : null,
       data: json['data'] as Map<String, dynamic>?,
+      alarmId: json['alarm_id'] as String?,
+      navigationTarget: json['navigation_target'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
     );
   }

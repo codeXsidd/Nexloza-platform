@@ -47,4 +47,15 @@ abstract final class RouteNames {
   static const String ruleExecutionHistory = 'ruleExecutionHistory';
   static const String ruleExecutionDetail = 'ruleExecutionDetail';
   static const String ruleDryRun = 'ruleDryRun';
+
+  // Phase 9: Alarm Engine
+  static const String alarms = 'alarms';
+  static const String activeAlarms = 'activeAlarms';
+  static const String alarmHistory = 'alarmHistory';
+  static const String alarmDetail = 'alarmDetail';
+  static const String alarmConfigurations = 'alarmConfigurations';
+  static const String createAlarmConfig = 'createAlarmConfig';
+  static const String escalationPolicies = 'escalationPolicies';
+  static const String escalationPolicyDetail = 'escalationPolicyDetail';
+  static const String notificationPreferences = 'notificationPreferences';
 }

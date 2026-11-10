@@ -44,6 +44,15 @@ import '../features/scenes/presentation/screens/scenes_screen.dart';
 import '../features/scenes/presentation/screens/create_scene_screen.dart';
 import '../features/analytics/presentation/screens/analytics_screen.dart';
 import '../features/integrations/presentation/screens/integrations_screen.dart';
+import '../features/alarms/presentation/screens/alarms_overview_screen.dart';
+import '../features/alarms/presentation/screens/active_alarms_screen.dart';
+import '../features/alarms/presentation/screens/alarm_history_screen.dart';
+import '../features/alarms/presentation/screens/alarm_detail_screen.dart';
+import '../features/alarms/presentation/screens/alarm_config_screen.dart';
+import '../features/alarms/presentation/screens/create_alarm_config_screen.dart';
+import '../features/alarms/presentation/screens/escalation_policies_screen.dart';
+import '../features/alarms/presentation/screens/escalation_policy_detail_screen.dart';
+import '../features/alarms/presentation/screens/notification_preferences_screen.dart';
 import '../features/rule_engine/presentation/screens/rules_list_screen.dart';
 import '../features/rule_engine/presentation/screens/create_rule_screen.dart';
 import '../features/rule_engine/presentation/screens/rule_detail_screen.dart';
@@ -453,6 +462,86 @@ final routerProvider = Provider<GoRouter>((ref) {
             ),
           ),
         ],
+      ),
+      GoRoute(
+        path: '/alarms',
+        name: RouteNames.alarms,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => AlarmsOverviewScreen(
+          projectId: state.uri.queryParameters['projectId'] ?? '',
+        ),
+        routes: [
+          GoRoute(
+            path: 'active',
+            name: RouteNames.activeAlarms,
+            parentNavigatorKey: _rootNavigatorKey,
+            builder: (context, state) => ActiveAlarmsScreen(
+              projectId: state.uri.queryParameters['projectId'] ?? '',
+            ),
+          ),
+          GoRoute(
+            path: 'history',
+            name: RouteNames.alarmHistory,
+            parentNavigatorKey: _rootNavigatorKey,
+            builder: (context, state) => AlarmHistoryScreen(
+              projectId: state.uri.queryParameters['projectId'] ?? '',
+            ),
+          ),
+          GoRoute(
+            path: 'configurations',
+            name: RouteNames.alarmConfigurations,
+            parentNavigatorKey: _rootNavigatorKey,
+            builder: (context, state) => AlarmConfigScreen(
+              projectId: state.uri.queryParameters['projectId'] ?? '',
+            ),
+            routes: [
+              GoRoute(
+                path: 'create',
+                name: RouteNames.createAlarmConfig,
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) => CreateAlarmConfigScreen(
+                  projectId: state.uri.queryParameters['projectId'] ?? '',
+                  organizationId:
+                      state.uri.queryParameters['organizationId'] ?? '',
+                ),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: 'escalation',
+            name: RouteNames.escalationPolicies,
+            parentNavigatorKey: _rootNavigatorKey,
+            builder: (context, state) => EscalationPoliciesScreen(
+              projectId: state.uri.queryParameters['projectId'] ?? '',
+              organizationId:
+                  state.uri.queryParameters['organizationId'] ?? '',
+            ),
+            routes: [
+              GoRoute(
+                path: ':id',
+                name: RouteNames.escalationPolicyDetail,
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) => EscalationPolicyDetailScreen(
+                  policyId: state.pathParameters['id']!,
+                ),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: ':id',
+            name: RouteNames.alarmDetail,
+            parentNavigatorKey: _rootNavigatorKey,
+            builder: (context, state) => AlarmDetailScreen(
+              alarmId: state.pathParameters['id']!,
+            ),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: '/notifications/preferences',
+        name: RouteNames.notificationPreferences,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const NotificationPreferencesScreen(),
       ),
     ],
   );

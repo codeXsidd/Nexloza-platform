@@ -1,5 +1,6 @@
 import '../../../domain/entities/widget_type.dart';
 import '../../../domain/widget_registry.dart';
+import 'alarm_widgets.dart';
 import 'control_widgets.dart';
 import 'sensor_widgets.dart';
 import 'chart_widgets.dart';
@@ -110,6 +111,26 @@ void registerAllWidgets() {
       builder: buildCommandStatus,
     ),
     WidgetRegistration(type: NexWidgetType.lastSeen, builder: buildLastSeen),
+    WidgetRegistration(
+      type: NexWidgetType.alarmCount,
+      builder: buildAlarmCount,
+    ),
+    WidgetRegistration(
+      type: NexWidgetType.criticalAlarmCount,
+      builder: buildCriticalAlarmCount,
+    ),
+    WidgetRegistration(
+      type: NexWidgetType.unacknowledgedAlarmCount,
+      builder: buildUnacknowledgedAlarmCount,
+    ),
+    WidgetRegistration(
+      type: NexWidgetType.alarmSeverityDistribution,
+      builder: buildAlarmSeverityDistribution,
+    ),
+    WidgetRegistration(
+      type: NexWidgetType.recentAlarmActivity,
+      builder: buildRecentAlarmActivity,
+    ),
 
     // Industrial (5)
     WidgetRegistration(

@@ -96,6 +96,16 @@ enum RuleNodeType {
   stopFlow(RuleNodeCategory.action, 'Stop Flow',
       'Immediately stops the current rule execution'),
 
+  // Alarm actions (Phase 9)
+  raiseAlarm(RuleNodeCategory.action, 'Raise Alarm',
+      'Raises or re-raises an alarm with deduplication'),
+  updateAlarmSeverity(RuleNodeCategory.action, 'Update Alarm Severity',
+      'Changes the severity of an existing alarm'),
+  clearAlarm(RuleNodeCategory.action, 'Clear Alarm',
+      'Clears an active or acknowledged alarm'),
+  addAlarmComment(RuleNodeCategory.action, 'Add Alarm Comment',
+      'Adds a comment to an alarm activity log'),
+
   // Flow control
   delay(RuleNodeCategory.flow, 'Delay',
       'Waits for a specified duration before continuing'),
@@ -146,6 +156,10 @@ enum RuleNodeType {
         recordEvent => Icons.event_note,
         logResult => Icons.receipt_long,
         stopFlow => Icons.stop_circle,
+        raiseAlarm => Icons.alarm_add,
+        updateAlarmSeverity => Icons.swap_vert,
+        clearAlarm => Icons.alarm_off,
+        addAlarmComment => Icons.comment,
         delay => Icons.hourglass_empty,
         conditionalBranch => Icons.call_split,
         merge => Icons.call_merge,
@@ -221,6 +235,10 @@ enum RuleNodeType {
         recordEvent ||
         logResult ||
         stopFlow ||
+        raiseAlarm ||
+        updateAlarmSeverity ||
+        clearAlarm ||
+        addAlarmComment ||
         delay ||
         terminate =>
           [
@@ -277,7 +295,11 @@ enum RuleNodeType {
         updateTwinDesired ||
         executeScene ||
         recordEvent ||
-        logResult =>
+        logResult ||
+        raiseAlarm ||
+        updateAlarmSeverity ||
+        clearAlarm ||
+        addAlarmComment =>
           [
             const NodePortDef(
                 id: 'out', label: 'Next', dataType: PortDataType.any),
@@ -327,6 +349,10 @@ enum RuleNodeType {
         executeScene => ['scene_id'],
         recordEvent => ['event_name'],
         logResult => ['message'],
+        raiseAlarm => ['alarm_key', 'severity', 'title'],
+        updateAlarmSeverity => ['alarm_key', 'severity'],
+        clearAlarm => ['alarm_key'],
+        addAlarmComment => ['alarm_key', 'comment'],
         stopFlow || terminate => [],
         delay => ['duration_ms'],
         conditionalBranch => [],

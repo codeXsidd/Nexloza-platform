@@ -220,6 +220,25 @@ class _NodeConfigPanelState extends State<NodeConfigPanel> {
                 color: theme.colorScheme.onSurfaceVariant,
               )),
         ],
+      RuleNodeType.raiseAlarm => [
+          _stringField('alarm_key', 'Alarm Key', 'Unique key for deduplication'),
+          _severityField(),
+          _stringField('title', 'Alarm Title', 'e.g. Temperature High'),
+          _stringField('message', 'Alarm Message', 'Optional detail message'),
+          _stringField('category', 'Category', 'e.g. temperature, pressure'),
+        ],
+      RuleNodeType.updateAlarmSeverity => [
+          _stringField('alarm_key', 'Alarm Key', 'Key of alarm to update'),
+          _severityField(),
+        ],
+      RuleNodeType.clearAlarm => [
+          _stringField('alarm_key', 'Alarm Key', 'Key of alarm to clear'),
+          _stringField('reason', 'Clear Reason', 'Optional reason for clearing'),
+        ],
+      RuleNodeType.addAlarmComment => [
+          _stringField('alarm_key', 'Alarm Key', 'Key of alarm to comment on'),
+          _stringField('comment', 'Comment', 'Comment text to add'),
+        ],
     };
   }
 

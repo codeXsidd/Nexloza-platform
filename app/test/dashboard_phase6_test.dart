@@ -11,8 +11,8 @@ void main() {
   // ── NexWidgetType ──────────────────────────────────────────────
 
   group('NexWidgetType', () {
-    test('has exactly 42 values', () {
-      expect(NexWidgetType.values.length, 42);
+    test('has exactly 47 values', () {
+      expect(NexWidgetType.values.length, 47);
     });
 
     test('fromTypeId resolves known ids', () {
@@ -41,7 +41,7 @@ void main() {
       expect(NexWidgetType.byCategory(WidgetCategory.control).length, 8);
       expect(NexWidgetType.byCategory(WidgetCategory.sensor).length, 10);
       expect(NexWidgetType.byCategory(WidgetCategory.chart).length, 8);
-      expect(NexWidgetType.byCategory(WidgetCategory.status).length, 6);
+      expect(NexWidgetType.byCategory(WidgetCategory.status).length, 11);
       expect(NexWidgetType.byCategory(WidgetCategory.industrial).length, 5);
       expect(NexWidgetType.byCategory(WidgetCategory.info).length, 5);
     });

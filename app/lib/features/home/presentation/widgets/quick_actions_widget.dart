@@ -67,6 +67,11 @@ class QuickActionsWidget extends StatelessWidget {
                   label: 'Rules',
                   onTap: () => context.pushNamed(RouteNames.rules),
                 ),
+                _ActionChip(
+                  icon: Icons.notifications_active,
+                  label: 'Alarms',
+                  onTap: () => context.pushNamed(RouteNames.alarms),
+                ),
               ],
             ),
           ],

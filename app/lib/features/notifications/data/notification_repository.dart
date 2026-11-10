@@ -38,7 +38,10 @@ class NotificationRepository {
     try {
       await _client
           .from('notifications')
-          .update({'is_read': true})
+          .update({
+            'is_read': true,
+            'read_at': DateTime.now().toIso8601String(),
+          })
           .eq('id', id);
       return Result.success(null);
     } on PostgrestException catch (e) {

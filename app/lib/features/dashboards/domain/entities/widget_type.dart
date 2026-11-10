@@ -167,6 +167,36 @@ enum NexWidgetType {
     Icons.send,
   ),
   lastSeen('last_seen', 'Last Seen', WidgetCategory.status, Icons.access_time),
+  alarmCount(
+    'alarm_count',
+    'Alarm Count',
+    WidgetCategory.status,
+    Icons.notifications_active,
+  ),
+  criticalAlarmCount(
+    'critical_alarm_count',
+    'Critical Alarms',
+    WidgetCategory.status,
+    Icons.error,
+  ),
+  unacknowledgedAlarmCount(
+    'unacknowledged_alarm_count',
+    'Unacknowledged',
+    WidgetCategory.status,
+    Icons.warning,
+  ),
+  alarmSeverityDistribution(
+    'alarm_severity_distribution',
+    'Severity Distribution',
+    WidgetCategory.status,
+    Icons.pie_chart,
+  ),
+  recentAlarmActivity(
+    'recent_alarm_activity',
+    'Recent Alarms',
+    WidgetCategory.status,
+    Icons.history,
+  ),
 
   // Industrial widgets
   machineStatus(
@@ -230,12 +260,14 @@ enum NexWidgetType {
     WidgetCategory.chart => 2,
     WidgetCategory.industrial => 2,
     WidgetCategory.info when this == deviceList || this == eventLog => 2,
+    WidgetCategory.status when this == alarmSeverityDistribution || this == recentAlarmActivity => 2,
     _ => 1,
   };
 
   int get defaultHeight => switch (category) {
     WidgetCategory.chart => 2,
     WidgetCategory.industrial when this == alarmPanel => 2,
+    WidgetCategory.status when this == recentAlarmActivity => 2,
     _ => 1,
   };
 

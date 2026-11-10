@@ -9,8 +9,8 @@ import 'package:nexloza/features/dashboards/presentation/widgets/renderers/widge
 
 void main() {
   group('NexWidgetType', () {
-    test('42 widget types are defined', () {
-      expect(NexWidgetType.values.length, 42);
+    test('47 widget types are defined', () {
+      expect(NexWidgetType.values.length, 47);
     });
 
     test('6 categories are defined', () {
@@ -29,8 +29,8 @@ void main() {
       expect(NexWidgetType.byCategory(WidgetCategory.chart).length, 8);
     });
 
-    test('6 status widgets', () {
-      expect(NexWidgetType.byCategory(WidgetCategory.status).length, 6);
+    test('11 status widgets', () {
+      expect(NexWidgetType.byCategory(WidgetCategory.status).length, 11);
     });
 
     test('5 industrial widgets', () {
@@ -264,10 +264,10 @@ void main() {
       expect(identical(a, b), isTrue);
     });
 
-    test('registerAllWidgets registers all 42 types', () {
+    test('registerAllWidgets registers all 47 types', () {
       registerAllWidgets();
       final registry = WidgetRegistry();
-      expect(registry.registeredTypes.length, 42);
+      expect(registry.registeredTypes.length, 47);
     });
 
     test('isRegistered returns true for registered types', () {
@@ -285,7 +285,7 @@ void main() {
       expect(registry.registeredByCategory(WidgetCategory.control).length, 8);
       expect(registry.registeredByCategory(WidgetCategory.sensor).length, 10);
       expect(registry.registeredByCategory(WidgetCategory.chart).length, 8);
-      expect(registry.registeredByCategory(WidgetCategory.status).length, 6);
+      expect(registry.registeredByCategory(WidgetCategory.status).length, 11);
       expect(
         registry.registeredByCategory(WidgetCategory.industrial).length,
         5,
