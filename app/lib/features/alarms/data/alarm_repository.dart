@@ -21,8 +21,7 @@ class AlarmRepository {
           .inFilter('status', ['active', 'acknowledged'])
           .order('severity')
           .order('last_occurred_at', ascending: false);
-      final alarms =
-          (response as List).map((j) => Alarm.fromJson(j)).toList();
+      final alarms = (response as List).map((j) => Alarm.fromJson(j)).toList();
       return Result.success(alarms);
     } catch (e) {
       return Result.failure(ServerFailure('Failed to load active alarms: $e'));
@@ -42,8 +41,7 @@ class AlarmRepository {
           .eq('project_id', projectId)
           .order('last_occurred_at', ascending: false)
           .range(offset, offset + limit - 1);
-      final alarms =
-          (response as List).map((j) => Alarm.fromJson(j)).toList();
+      final alarms = (response as List).map((j) => Alarm.fromJson(j)).toList();
       return Result.success(alarms);
     } catch (e) {
       return Result.failure(ServerFailure('Failed to load alarm history: $e'));
@@ -184,8 +182,7 @@ class AlarmRepository {
           .select()
           .eq('project_id', projectId)
           .inFilter('status', ['active', 'acknowledged']);
-      final alarms =
-          (response as List).map((j) => Alarm.fromJson(j)).toList();
+      final alarms = (response as List).map((j) => Alarm.fromJson(j)).toList();
       return Result.success(AlarmStats.fromAlarms(alarms));
     } catch (e) {
       return Result.failure(ServerFailure('Failed to load alarm stats: $e'));
@@ -193,7 +190,9 @@ class AlarmRepository {
   }
 
   Future<Result<void>> bulkAcknowledge(
-      String projectId, List<String> alarmIds) async {
+    String projectId,
+    List<String> alarmIds,
+  ) async {
     try {
       final supabase = _ref.read(supabaseClientProvider);
       final userId = _ref.read(supabaseAuthProvider).currentUser?.id;
@@ -224,7 +223,8 @@ class AlarmRepository {
       return Result.success(null);
     } catch (e) {
       return Result.failure(
-          ServerFailure('Failed to bulk acknowledge alarms: $e'));
+        ServerFailure('Failed to bulk acknowledge alarms: $e'),
+      );
     }
   }
 }

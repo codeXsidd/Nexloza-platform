@@ -87,13 +87,15 @@ class _CreateAlarmConfigScreenState
       data['sensor_key'] = _sensorKeyController.text.trim();
     }
     if (_thresholdController.text.trim().isNotEmpty) {
-      data['threshold_value'] =
-          double.tryParse(_thresholdController.text.trim());
+      data['threshold_value'] = double.tryParse(
+        _thresholdController.text.trim(),
+      );
     }
     if (_hysteresisEnabled &&
         _hysteresisClearController.text.trim().isNotEmpty) {
-      data['hysteresis_clear_value'] =
-          double.tryParse(_hysteresisClearController.text.trim());
+      data['hysteresis_clear_value'] = double.tryParse(
+        _hysteresisClearController.text.trim(),
+      );
     }
     if (_messageTemplateController.text.trim().isNotEmpty) {
       data['message_template'] = _messageTemplateController.text.trim();
@@ -112,9 +114,8 @@ class _CreateAlarmConfigScreenState
         Navigator.of(context).pop();
       },
       failure: (f) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${f.message}')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error: ${f.message}')));
       },
     );
   }
@@ -150,10 +151,12 @@ class _CreateAlarmConfigScreenState
                   prefixIcon: Icon(Icons.source),
                 ),
                 items: AlarmSource.values
-                    .map((s) => DropdownMenuItem(
-                          value: s,
-                          child: Text(s.displayName),
-                        ))
+                    .map(
+                      (s) => DropdownMenuItem(
+                        value: s,
+                        child: Text(s.displayName),
+                      ),
+                    )
                     .toList(),
                 onChanged: (v) => setState(() => _source = v!),
               ),
@@ -165,8 +168,8 @@ class _CreateAlarmConfigScreenState
                     labelText: 'Sensor Key',
                     prefixIcon: Icon(Icons.sensors),
                   ),
-                  validator: (v) => isSensorSource &&
-                          (v == null || v.trim().isEmpty)
+                  validator: (v) =>
+                      isSensorSource && (v == null || v.trim().isEmpty)
                       ? 'Sensor key required for threshold source'
                       : null,
                 ),
@@ -179,10 +182,9 @@ class _CreateAlarmConfigScreenState
                   prefixIcon: Icon(Icons.compare),
                 ),
                 items: _operators
-                    .map((o) => DropdownMenuItem(
-                          value: o.$1,
-                          child: Text(o.$2),
-                        ))
+                    .map(
+                      (o) => DropdownMenuItem(value: o.$1, child: Text(o.$2)),
+                    )
                     .toList(),
                 onChanged: (v) => setState(() => _operator = v!),
               ),
@@ -193,18 +195,20 @@ class _CreateAlarmConfigScreenState
                   labelText: 'Threshold Value',
                   prefixIcon: Icon(Icons.straighten),
                 ),
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                validator: (v) => isSensorSource &&
-                        (v == null || v.trim().isEmpty)
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                validator: (v) =>
+                    isSensorSource && (v == null || v.trim().isEmpty)
                     ? 'Threshold required for sensor source'
                     : null,
               ),
               AppSpacing.verticalMd,
               SwitchListTile(
                 title: const Text('Hysteresis'),
-                subtitle:
-                    const Text('Use different threshold for clearing alarm'),
+                subtitle: const Text(
+                  'Use different threshold for clearing alarm',
+                ),
                 value: _hysteresisEnabled,
                 onChanged: (v) => setState(() => _hysteresisEnabled = v),
               ),
@@ -216,8 +220,9 @@ class _CreateAlarmConfigScreenState
                     labelText: 'Hysteresis Clear Value',
                     prefixIcon: Icon(Icons.trending_down),
                   ),
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                 ),
               ],
               AppSpacing.verticalMd,
@@ -254,16 +259,18 @@ class _CreateAlarmConfigScreenState
                   prefixIcon: Icon(Icons.priority_high),
                 ),
                 items: AlarmSeverity.values
-                    .map((s) => DropdownMenuItem(
-                          value: s,
-                          child: Row(
-                            children: [
-                              Icon(s.icon, color: s.color, size: 18),
-                              const SizedBox(width: 8),
-                              Text(s.displayName),
-                            ],
-                          ),
-                        ))
+                    .map(
+                      (s) => DropdownMenuItem(
+                        value: s,
+                        child: Row(
+                          children: [
+                            Icon(s.icon, color: s.color, size: 18),
+                            const SizedBox(width: 8),
+                            Text(s.displayName),
+                          ],
+                        ),
+                      ),
+                    )
                     .toList(),
                 onChanged: (v) => setState(() => _severity = v!),
               ),
@@ -281,8 +288,7 @@ class _CreateAlarmConfigScreenState
                 decoration: const InputDecoration(
                   labelText: 'Message Template (optional)',
                   prefixIcon: Icon(Icons.message),
-                  hintText:
-                      'e.g. Temperature exceeded {threshold} on {device}',
+                  hintText: 'e.g. Temperature exceeded {threshold} on {device}',
                 ),
                 maxLines: 3,
               ),

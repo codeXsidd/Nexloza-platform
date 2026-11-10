@@ -99,7 +99,9 @@ class RuleExecutionRepository {
     try {
       final now = DateTime.now();
       final oneDayAgo = now.subtract(const Duration(days: 1)).toIso8601String();
-      final oneWeekAgo = now.subtract(const Duration(days: 7)).toIso8601String();
+      final oneWeekAgo = now
+          .subtract(const Duration(days: 7))
+          .toIso8601String();
 
       final dayResponse = await _client
           .from('automation_executions')
@@ -194,7 +196,8 @@ class RuleExecutionRepository {
   }
 }
 
-final ruleExecutionRepositoryProvider =
-    Provider<RuleExecutionRepository>((ref) {
+final ruleExecutionRepositoryProvider = Provider<RuleExecutionRepository>((
+  ref,
+) {
   return RuleExecutionRepository(ref.watch(supabaseClientProvider));
 });

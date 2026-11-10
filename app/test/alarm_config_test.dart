@@ -17,28 +17,27 @@ void main() {
     int cooldownSeconds = 60,
     String severity = 'warning',
     bool isEnabled = true,
-  }) =>
-      {
-        'id': 'config-1',
-        'project_id': 'proj-1',
-        'device_id': 'dev-1',
-        'organization_id': 'org-1',
-        'name': 'High Temp Alert',
-        'source': source,
-        'sensor_key': 'temperature',
-        'condition_operator': conditionOperator,
-        'threshold_value': thresholdValue,
-        'hysteresis_enabled': hysteresisEnabled,
-        'hysteresis_clear_value': hysteresisClearValue,
-        'debounce_seconds': debounceSeconds,
-        'cooldown_seconds': cooldownSeconds,
-        'severity': severity,
-        'category': 'temperature',
-        'message_template': 'Temperature is {{value}} (threshold: {{threshold}})',
-        'is_enabled': isEnabled,
-        'created_at': '2026-11-10T10:00:00Z',
-        'updated_at': '2026-11-10T10:00:00Z',
-      };
+  }) => {
+    'id': 'config-1',
+    'project_id': 'proj-1',
+    'device_id': 'dev-1',
+    'organization_id': 'org-1',
+    'name': 'High Temp Alert',
+    'source': source,
+    'sensor_key': 'temperature',
+    'condition_operator': conditionOperator,
+    'threshold_value': thresholdValue,
+    'hysteresis_enabled': hysteresisEnabled,
+    'hysteresis_clear_value': hysteresisClearValue,
+    'debounce_seconds': debounceSeconds,
+    'cooldown_seconds': cooldownSeconds,
+    'severity': severity,
+    'category': 'temperature',
+    'message_template': 'Temperature is {{value}} (threshold: {{threshold}})',
+    'is_enabled': isEnabled,
+    'created_at': '2026-11-10T10:00:00Z',
+    'updated_at': '2026-11-10T10:00:00Z',
+  };
 
   group('AlarmConfiguration — fromJson', () {
     test('parses all fields correctly', () {
@@ -85,10 +84,9 @@ void main() {
     });
 
     test('hysteresis fields are parsed', () {
-      final config = AlarmConfiguration.fromJson(makeConfigJson(
-        hysteresisEnabled: true,
-        hysteresisClearValue: 75.0,
-      ));
+      final config = AlarmConfiguration.fromJson(
+        makeConfigJson(hysteresisEnabled: true, hysteresisClearValue: 75.0),
+      );
       expect(config.hysteresisEnabled, true);
       expect(config.hysteresisClearValue, 75.0);
     });
@@ -97,55 +95,64 @@ void main() {
   group('AlarmConfiguration — operatorDisplayName', () {
     test('gt displays as >', () {
       final config = AlarmConfiguration.fromJson(
-          makeConfigJson(conditionOperator: 'gt'));
+        makeConfigJson(conditionOperator: 'gt'),
+      );
       expect(config.operatorDisplayName, '>');
     });
 
     test('gte displays as >=', () {
       final config = AlarmConfiguration.fromJson(
-          makeConfigJson(conditionOperator: 'gte'));
+        makeConfigJson(conditionOperator: 'gte'),
+      );
       expect(config.operatorDisplayName, '>=');
     });
 
     test('lt displays as <', () {
       final config = AlarmConfiguration.fromJson(
-          makeConfigJson(conditionOperator: 'lt'));
+        makeConfigJson(conditionOperator: 'lt'),
+      );
       expect(config.operatorDisplayName, '<');
     });
 
     test('lte displays as <=', () {
       final config = AlarmConfiguration.fromJson(
-          makeConfigJson(conditionOperator: 'lte'));
+        makeConfigJson(conditionOperator: 'lte'),
+      );
       expect(config.operatorDisplayName, '<=');
     });
 
     test('eq displays as =', () {
       final config = AlarmConfiguration.fromJson(
-          makeConfigJson(conditionOperator: 'eq'));
+        makeConfigJson(conditionOperator: 'eq'),
+      );
       expect(config.operatorDisplayName, '=');
     });
 
     test('neq displays as !=', () {
       final config = AlarmConfiguration.fromJson(
-          makeConfigJson(conditionOperator: 'neq'));
+        makeConfigJson(conditionOperator: 'neq'),
+      );
       expect(config.operatorDisplayName, '!=');
     });
 
     test('between displays as between', () {
       final config = AlarmConfiguration.fromJson(
-          makeConfigJson(conditionOperator: 'between'));
+        makeConfigJson(conditionOperator: 'between'),
+      );
       expect(config.operatorDisplayName, 'between');
     });
 
     test('outside displays as outside', () {
       final config = AlarmConfiguration.fromJson(
-          makeConfigJson(conditionOperator: 'outside'));
+        makeConfigJson(conditionOperator: 'outside'),
+      );
       expect(config.operatorDisplayName, 'outside');
     });
 
     test('unknown operator returns raw value', () {
       final config = AlarmConfiguration.fromJson(
-          makeConfigJson(conditionOperator: 'custom_op'));
+        makeConfigJson(conditionOperator: 'custom_op'),
+      );
       expect(config.operatorDisplayName, 'custom_op');
     });
   });
@@ -186,25 +193,41 @@ void main() {
     });
 
     test('fromString resolves all known types', () {
-      expect(AlarmActivityType.fromString('created'),
-          AlarmActivityType.created);
-      expect(AlarmActivityType.fromString('acknowledged'),
-          AlarmActivityType.acknowledged);
-      expect(AlarmActivityType.fromString('escalated'),
-          AlarmActivityType.escalated);
-      expect(AlarmActivityType.fromString('cleared'),
-          AlarmActivityType.cleared);
-      expect(AlarmActivityType.fromString('severity_changed'),
-          AlarmActivityType.severityChanged);
-      expect(AlarmActivityType.fromString('comment_added'),
-          AlarmActivityType.commentAdded);
-      expect(AlarmActivityType.fromString('suppressed'),
-          AlarmActivityType.suppressed);
+      expect(
+        AlarmActivityType.fromString('created'),
+        AlarmActivityType.created,
+      );
+      expect(
+        AlarmActivityType.fromString('acknowledged'),
+        AlarmActivityType.acknowledged,
+      );
+      expect(
+        AlarmActivityType.fromString('escalated'),
+        AlarmActivityType.escalated,
+      );
+      expect(
+        AlarmActivityType.fromString('cleared'),
+        AlarmActivityType.cleared,
+      );
+      expect(
+        AlarmActivityType.fromString('severity_changed'),
+        AlarmActivityType.severityChanged,
+      );
+      expect(
+        AlarmActivityType.fromString('comment_added'),
+        AlarmActivityType.commentAdded,
+      );
+      expect(
+        AlarmActivityType.fromString('suppressed'),
+        AlarmActivityType.suppressed,
+      );
     });
 
     test('fromString returns created for unknown input', () {
-      expect(AlarmActivityType.fromString('nonexistent'),
-          AlarmActivityType.created);
+      expect(
+        AlarmActivityType.fromString('nonexistent'),
+        AlarmActivityType.created,
+      );
     });
 
     test('icons are distinct Material icons', () {

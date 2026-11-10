@@ -3,6 +3,10 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/design_system/nex_stat_card.dart';
+import '../../../../core/responsive/breakpoints.dart';
+import '../../../../core/responsive/responsive_builder.dart';
+import '../../../../theme/app_colors.dart';
 import '../../../../theme/app_spacing.dart';
 import '../../../projects/presentation/providers/project_provider.dart';
 import '../../../devices/presentation/providers/device_provider.dart';
@@ -27,66 +31,51 @@ class AnalyticsScreen extends ConsumerWidget {
           ref.invalidate(automationsProvider);
         },
         child: ListView(
-          padding: AppSpacing.screenPadding,
+          padding: AppBreakpoints.screenPadding(context),
           children: [
             Text('Overview', style: theme.textTheme.titleMedium),
             AppSpacing.verticalSm,
-            Row(
+            ResponsiveGrid(
               children: [
-                Expanded(
-                  child: _StatCard(
-                    label: 'Projects',
-                    value: projectsAsync.when(
-                      data: (p) => '${p.length}',
-                      loading: () => '...',
-                      error: (_, __) => '--',
-                    ),
-                    icon: Icons.folder,
-                    color: theme.colorScheme.primary,
+                NexStatCard(
+                  label: 'Projects',
+                  value: projectsAsync.when(
+                    data: (p) => '${p.length}',
+                    loading: () => '...',
+                    error: (_, __) => '--',
                   ),
+                  icon: Icons.folder,
+                  iconColor: AppColors.primary,
                 ),
-                AppSpacing.horizontalSm,
-                Expanded(
-                  child: _StatCard(
-                    label: 'Devices',
-                    value: devicesAsync.when(
-                      data: (d) => '${d.length}',
-                      loading: () => '...',
-                      error: (_, __) => '--',
-                    ),
-                    icon: Icons.devices_other,
-                    color: Colors.teal,
+                NexStatCard(
+                  label: 'Devices',
+                  value: devicesAsync.when(
+                    data: (d) => '${d.length}',
+                    loading: () => '...',
+                    error: (_, __) => '--',
                   ),
+                  icon: Icons.devices_other,
+                  iconColor: AppColors.secondary,
                 ),
-              ],
-            ),
-            AppSpacing.verticalSm,
-            Row(
-              children: [
-                Expanded(
-                  child: _StatCard(
-                    label: 'Online',
-                    value: devicesAsync.when(
-                      data: (d) => '${d.where((x) => x.isOnline).length}',
-                      loading: () => '...',
-                      error: (_, __) => '--',
-                    ),
-                    icon: Icons.wifi,
-                    color: Colors.green,
+                NexStatCard(
+                  label: 'Online',
+                  value: devicesAsync.when(
+                    data: (d) => '${d.where((x) => x.isOnline).length}',
+                    loading: () => '...',
+                    error: (_, __) => '--',
                   ),
+                  icon: Icons.wifi,
+                  iconColor: AppColors.success,
                 ),
-                AppSpacing.horizontalSm,
-                Expanded(
-                  child: _StatCard(
-                    label: 'Automations',
-                    value: automationsAsync.when(
-                      data: (a) => '${a.length}',
-                      loading: () => '...',
-                      error: (_, __) => '--',
-                    ),
-                    icon: Icons.auto_awesome,
-                    color: Colors.orange,
+                NexStatCard(
+                  label: 'Automations',
+                  value: automationsAsync.when(
+                    data: (a) => '${a.length}',
+                    loading: () => '...',
+                    error: (_, __) => '--',
                   ),
+                  icon: Icons.auto_awesome,
+                  iconColor: AppColors.warning,
                 ),
               ],
             ),
@@ -113,8 +102,16 @@ class AnalyticsScreen extends ConsumerWidget {
                   final offline = devices.length - online;
                   return _PieChart(
                     segments: [
-                      _PieSegment('Online', online.toDouble(), Colors.green),
-                      _PieSegment('Offline', offline.toDouble(), Colors.red),
+                      _PieSegment(
+                        'Online',
+                        online.toDouble(),
+                        AppColors.success,
+                      ),
+                      _PieSegment(
+                        'Offline',
+                        offline.toDouble(),
+                        AppColors.error,
+                      ),
                     ],
                   );
                 },
@@ -221,21 +218,21 @@ class AnalyticsScreen extends ConsumerWidget {
                           child: _MiniStat(
                             label: 'Total',
                             value: '${automations.length}',
-                            color: theme.colorScheme.primary,
+                            color: AppColors.primary,
                           ),
                         ),
                         Expanded(
                           child: _MiniStat(
                             label: 'Enabled',
                             value: '$enabled',
-                            color: Colors.green,
+                            color: AppColors.success,
                           ),
                         ),
                         Expanded(
                           child: _MiniStat(
                             label: 'Disabled',
                             value: '$disabled',
-                            color: Colors.orange,
+                            color: AppColors.warning,
                           ),
                         ),
                       ],
@@ -245,42 +242,6 @@ class AnalyticsScreen extends ConsumerWidget {
               },
             ),
             AppSpacing.verticalXl,
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
-  final Color color;
-
-  const _StatCard({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: AppSpacing.cardPadding,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: color, size: 24),
-            AppSpacing.verticalSm,
-            Text(
-              value,
-              style: theme.textTheme.headlineMedium?.copyWith(color: color),
-            ),
-            Text(label, style: theme.textTheme.bodySmall),
           ],
         ),
       ),
@@ -335,7 +296,10 @@ class _PieChart extends StatelessWidget {
         Expanded(
           child: CustomPaint(
             size: const Size(160, 160),
-            painter: _PieChartPainter(segments: segments),
+            painter: _PieChartPainter(
+              segments: segments,
+              holeColor: theme.scaffoldBackgroundColor,
+            ),
           ),
         ),
         AppSpacing.horizontalMd,
@@ -373,8 +337,9 @@ class _PieChart extends StatelessWidget {
 
 class _PieChartPainter extends CustomPainter {
   final List<_PieSegment> segments;
+  final Color holeColor;
 
-  _PieChartPainter({required this.segments});
+  _PieChartPainter({required this.segments, required this.holeColor});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -402,11 +367,12 @@ class _PieChartPainter extends CustomPainter {
     }
 
     final holePaint = Paint()
-      ..color = const Color(0xFFFAFAFA)
+      ..color = holeColor
       ..style = PaintingStyle.fill;
     canvas.drawCircle(center, radius * 0.55, holePaint);
   }
 
   @override
-  bool shouldRepaint(_PieChartPainter old) => segments != old.segments;
+  bool shouldRepaint(_PieChartPainter old) =>
+      segments != old.segments || holeColor != old.holeColor;
 }

@@ -60,6 +60,9 @@ import '../features/rule_engine/presentation/screens/rule_editor_screen.dart';
 import '../features/rule_engine/presentation/screens/execution_history_screen.dart';
 import '../features/rule_engine/presentation/screens/execution_detail_screen.dart';
 import '../features/rule_engine/presentation/screens/rule_dry_run_screen.dart';
+import '../features/device_templates/presentation/screens/device_templates_screen.dart';
+import '../features/firmware/presentation/screens/firmware_screen.dart';
+import '../features/developer_tools/presentation/screens/developer_tools_screen.dart';
 import '../shared/widgets/app_scaffold.dart';
 import '../shared/widgets/not_found_screen.dart';
 import 'route_names.dart';
@@ -122,10 +125,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.emailVerification,
         builder: (context, state) => const EmailVerificationScreen(),
       ),
+
+      // Main shell: 5 branches for mobile bottom nav
+      // Branch 0: Home, Branch 1: Devices, Branch 2: Automation,
+      // Branch 3: Analytics, Branch 4: Settings
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
             AppScaffold(navigationShell: navigationShell),
         branches: [
+          // Branch 0: Home
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -135,41 +143,8 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/projects',
-                name: RouteNames.projects,
-                builder: (context, state) => const ProjectsScreen(),
-                routes: [
-                  GoRoute(
-                    path: 'create',
-                    name: RouteNames.createProject,
-                    parentNavigatorKey: _rootNavigatorKey,
-                    builder: (context, state) => const CreateProjectScreen(),
-                  ),
-                  GoRoute(
-                    path: ':id',
-                    name: RouteNames.projectDetail,
-                    parentNavigatorKey: _rootNavigatorKey,
-                    builder: (context, state) => ProjectDetailScreen(
-                      projectId: state.pathParameters['id']!,
-                    ),
-                    routes: [
-                      GoRoute(
-                        path: 'edit',
-                        name: RouteNames.editProject,
-                        parentNavigatorKey: _rootNavigatorKey,
-                        builder: (context, state) => EditProjectScreen(
-                          projectId: state.pathParameters['id']!,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
-          ),
+
+          // Branch 1: Devices
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -227,6 +202,8 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
+
+          // Branch 2: Automation
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -252,12 +229,57 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
+
+          // Branch 3: Analytics
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/ai',
-                name: RouteNames.aiAssistant,
-                builder: (context, state) => const AiAssistantScreen(),
+                path: '/analytics',
+                name: RouteNames.analytics,
+                builder: (context, state) => const AnalyticsScreen(),
+              ),
+            ],
+          ),
+
+          // Branch 4: Settings
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/settings',
+                name: RouteNames.settings,
+                builder: (context, state) => const SettingsScreen(),
+              ),
+            ],
+          ),
+        ],
+      ),
+
+      // Top-level routes (accessible from sidebar, push on top of shell)
+      GoRoute(
+        path: '/projects',
+        name: RouteNames.projects,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ProjectsScreen(),
+        routes: [
+          GoRoute(
+            path: 'create',
+            name: RouteNames.createProject,
+            parentNavigatorKey: _rootNavigatorKey,
+            builder: (context, state) => const CreateProjectScreen(),
+          ),
+          GoRoute(
+            path: ':id',
+            name: RouteNames.projectDetail,
+            parentNavigatorKey: _rootNavigatorKey,
+            builder: (context, state) =>
+                ProjectDetailScreen(projectId: state.pathParameters['id']!),
+            routes: [
+              GoRoute(
+                path: 'edit',
+                name: RouteNames.editProject,
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) =>
+                    EditProjectScreen(projectId: state.pathParameters['id']!),
               ),
             ],
           ),
@@ -268,12 +290,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.notifications,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const NotificationsScreen(),
-      ),
-      GoRoute(
-        path: '/settings',
-        name: RouteNames.settings,
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const SettingsScreen(),
       ),
       GoRoute(
         path: '/profile',
@@ -316,6 +332,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const InvitationsScreen(),
       ),
       GoRoute(
+        path: '/ai',
+        name: RouteNames.aiAssistant,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const AiAssistantScreen(),
+      ),
+      GoRoute(
         path: '/device-studio',
         name: RouteNames.deviceStudio,
         parentNavigatorKey: _rootNavigatorKey,
@@ -355,12 +377,6 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const CreateSceneScreen(),
           ),
         ],
-      ),
-      GoRoute(
-        path: '/analytics',
-        name: RouteNames.analytics,
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const AnalyticsScreen(),
       ),
       GoRoute(
         path: '/integrations',
@@ -423,33 +439,29 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: ':id',
             name: RouteNames.ruleDetail,
             parentNavigatorKey: _rootNavigatorKey,
-            builder: (context, state) => RuleDetailScreen(
-              ruleId: state.pathParameters['id']!,
-            ),
+            builder: (context, state) =>
+                RuleDetailScreen(ruleId: state.pathParameters['id']!),
             routes: [
               GoRoute(
                 path: 'editor',
                 name: RouteNames.ruleEditor,
                 parentNavigatorKey: _rootNavigatorKey,
-                builder: (context, state) => RuleEditorScreen(
-                  ruleId: state.pathParameters['id']!,
-                ),
+                builder: (context, state) =>
+                    RuleEditorScreen(ruleId: state.pathParameters['id']!),
               ),
               GoRoute(
                 path: 'executions',
                 name: RouteNames.ruleExecutionHistory,
                 parentNavigatorKey: _rootNavigatorKey,
-                builder: (context, state) => ExecutionHistoryScreen(
-                  ruleId: state.pathParameters['id']!,
-                ),
+                builder: (context, state) =>
+                    ExecutionHistoryScreen(ruleId: state.pathParameters['id']!),
               ),
               GoRoute(
                 path: 'dry-run',
                 name: RouteNames.ruleDryRun,
                 parentNavigatorKey: _rootNavigatorKey,
-                builder: (context, state) => RuleDryRunScreen(
-                  automationId: state.pathParameters['id']!,
-                ),
+                builder: (context, state) =>
+                    RuleDryRunScreen(automationId: state.pathParameters['id']!),
               ),
             ],
           ),
@@ -513,8 +525,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             parentNavigatorKey: _rootNavigatorKey,
             builder: (context, state) => EscalationPoliciesScreen(
               projectId: state.uri.queryParameters['projectId'] ?? '',
-              organizationId:
-                  state.uri.queryParameters['organizationId'] ?? '',
+              organizationId: state.uri.queryParameters['organizationId'] ?? '',
             ),
             routes: [
               GoRoute(
@@ -531,9 +542,8 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: ':id',
             name: RouteNames.alarmDetail,
             parentNavigatorKey: _rootNavigatorKey,
-            builder: (context, state) => AlarmDetailScreen(
-              alarmId: state.pathParameters['id']!,
-            ),
+            builder: (context, state) =>
+                AlarmDetailScreen(alarmId: state.pathParameters['id']!),
           ),
         ],
       ),
@@ -542,6 +552,26 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.notificationPreferences,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const NotificationPreferencesScreen(),
+      ),
+
+      // Phase 10: New routes
+      GoRoute(
+        path: '/device-templates',
+        name: RouteNames.deviceTemplates,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const DeviceTemplatesScreen(),
+      ),
+      GoRoute(
+        path: '/firmware',
+        name: RouteNames.firmware,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const FirmwareScreen(),
+      ),
+      GoRoute(
+        path: '/developer',
+        name: RouteNames.developerTools,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const DeveloperToolsScreen(),
       ),
     ],
   );

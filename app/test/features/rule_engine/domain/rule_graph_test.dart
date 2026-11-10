@@ -73,10 +73,7 @@ void main() {
     });
 
     test('fromJson with missing fields uses defaults', () {
-      final node = RuleNode.fromJson({
-        'id': 'n2',
-        'type': 'manualTrigger',
-      });
+      final node = RuleNode.fromJson({'id': 'n2', 'type': 'manualTrigger'});
       expect(node.id, 'n2');
       expect(node.position, Offset.zero);
       expect(node.config, isEmpty);
@@ -162,11 +159,7 @@ void main() {
     test('findNode returns node when present', () {
       final graph = RuleGraph(
         nodes: [
-          RuleNode(
-            id: 'n1',
-            type: RuleNodeType.delay,
-            position: Offset.zero,
-          ),
+          RuleNode(id: 'n1', type: RuleNodeType.delay, position: Offset.zero),
         ],
       );
       expect(graph.findNode('n1'), isNotNull);
@@ -182,23 +175,26 @@ void main() {
       const graph = RuleGraph(
         edges: [
           RuleEdge(
-              id: 'e1',
-              sourceNodeId: 'n1',
-              sourcePort: 'out',
-              targetNodeId: 'n2',
-              targetPort: 'in'),
+            id: 'e1',
+            sourceNodeId: 'n1',
+            sourcePort: 'out',
+            targetNodeId: 'n2',
+            targetPort: 'in',
+          ),
           RuleEdge(
-              id: 'e2',
-              sourceNodeId: 'n1',
-              sourcePort: 'out',
-              targetNodeId: 'n3',
-              targetPort: 'in'),
+            id: 'e2',
+            sourceNodeId: 'n1',
+            sourcePort: 'out',
+            targetNodeId: 'n3',
+            targetPort: 'in',
+          ),
           RuleEdge(
-              id: 'e3',
-              sourceNodeId: 'n2',
-              sourcePort: 'out',
-              targetNodeId: 'n3',
-              targetPort: 'in'),
+            id: 'e3',
+            sourceNodeId: 'n2',
+            sourcePort: 'out',
+            targetNodeId: 'n3',
+            targetPort: 'in',
+          ),
         ],
       );
       expect(graph.edgesFrom('n1').length, 2);
@@ -209,17 +205,19 @@ void main() {
       const graph = RuleGraph(
         edges: [
           RuleEdge(
-              id: 'e1',
-              sourceNodeId: 'n1',
-              sourcePort: 'out',
-              targetNodeId: 'n3',
-              targetPort: 'in'),
+            id: 'e1',
+            sourceNodeId: 'n1',
+            sourcePort: 'out',
+            targetNodeId: 'n3',
+            targetPort: 'in',
+          ),
           RuleEdge(
-              id: 'e2',
-              sourceNodeId: 'n2',
-              sourcePort: 'out',
-              targetNodeId: 'n3',
-              targetPort: 'in_b'),
+            id: 'e2',
+            sourceNodeId: 'n2',
+            sourcePort: 'out',
+            targetNodeId: 'n3',
+            targetPort: 'in_b',
+          ),
         ],
       );
       expect(graph.edgesTo('n3').length, 2);
@@ -230,17 +228,20 @@ void main() {
       final graph = RuleGraph(
         nodes: [
           RuleNode(
-              id: 'n1',
-              type: RuleNodeType.telemetryReceived,
-              position: Offset.zero),
+            id: 'n1',
+            type: RuleNodeType.telemetryReceived,
+            position: Offset.zero,
+          ),
           RuleNode(
-              id: 'n2',
-              type: RuleNodeType.greaterThan,
-              position: Offset.zero),
+            id: 'n2',
+            type: RuleNodeType.greaterThan,
+            position: Offset.zero,
+          ),
           RuleNode(
-              id: 'n3',
-              type: RuleNodeType.sendCommand,
-              position: Offset.zero),
+            id: 'n3',
+            type: RuleNodeType.sendCommand,
+            position: Offset.zero,
+          ),
         ],
       );
       final triggers = graph.triggerNodes;
@@ -287,8 +288,9 @@ void main() {
 
     test('canPublish: only validated is true', () {
       expect(RuleStatus.validated.canPublish, isTrue);
-      for (final s
-          in RuleStatus.values.where((s) => s != RuleStatus.validated)) {
+      for (final s in RuleStatus.values.where(
+        (s) => s != RuleStatus.validated,
+      )) {
         expect(s.canPublish, isFalse);
       }
     });
@@ -318,11 +320,7 @@ void main() {
         'id': 'v1',
         'automation_id': 'a1',
         'version_number': 3,
-        'graph_snapshot': {
-          'schema_version': 1,
-          'nodes': [],
-          'edges': [],
-        },
+        'graph_snapshot': {'schema_version': 1, 'nodes': [], 'edges': []},
         'published_at': '2026-11-10T12:00:00Z',
         'published_by': 'user1',
       });

@@ -34,22 +34,23 @@ class EscalationPolicy {
       name: json['name'] as String,
       description: json['description'] as String?,
       isEnabled: json['is_enabled'] as bool? ?? true,
-      stages: stagesList
-          .map((s) => EscalationStage.fromJson(s as Map<String, dynamic>))
-          .toList()
-        ..sort((a, b) => a.stageNumber.compareTo(b.stageNumber)),
+      stages:
+          stagesList
+              .map((s) => EscalationStage.fromJson(s as Map<String, dynamic>))
+              .toList()
+            ..sort((a, b) => a.stageNumber.compareTo(b.stageNumber)),
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'project_id': projectId,
-        'organization_id': organizationId,
-        'name': name,
-        'description': description,
-        'is_enabled': isEnabled,
-      };
+    'project_id': projectId,
+    'organization_id': organizationId,
+    'name': name,
+    'description': description,
+    'is_enabled': isEnabled,
+  };
 }
 
 class EscalationStage {
@@ -72,11 +73,11 @@ class EscalationStage {
   });
 
   String get actionDisplayName => switch (actionType) {
-        'notify' => 'Notify',
-        'reassign' => 'Reassign',
-        'auto_acknowledge' => 'Auto Acknowledge',
-        _ => actionType,
-      };
+    'notify' => 'Notify',
+    'reassign' => 'Reassign',
+    'auto_acknowledge' => 'Auto Acknowledge',
+    _ => actionType,
+  };
 
   factory EscalationStage.fromJson(Map<String, dynamic> json) {
     final targets = json['notification_targets'];
@@ -96,10 +97,10 @@ class EscalationStage {
   }
 
   Map<String, dynamic> toJson() => {
-        'policy_id': policyId,
-        'stage_number': stageNumber,
-        'delay_minutes': delayMinutes,
-        'notification_targets': notificationTargets,
-        'action_type': actionType,
-      };
+    'policy_id': policyId,
+    'stage_number': stageNumber,
+    'delay_minutes': delayMinutes,
+    'notification_targets': notificationTargets,
+    'action_type': actionType,
+  };
 }

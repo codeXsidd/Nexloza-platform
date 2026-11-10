@@ -34,12 +34,12 @@ class RuleNode {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'type': type.dbValue,
-        'position': {'x': position.dx, 'y': position.dy},
-        'config': config,
-        'label': label,
-      };
+    'id': id,
+    'type': type.dbValue,
+    'position': {'x': position.dx, 'y': position.dy},
+    'config': config,
+    'label': label,
+  };
 
   factory RuleNode.fromJson(Map<String, dynamic> json) {
     final pos = json['position'] as Map<String, dynamic>? ?? {};
@@ -72,12 +72,12 @@ class RuleEdge {
   });
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'source_node_id': sourceNodeId,
-        'source_port': sourcePort,
-        'target_node_id': targetNodeId,
-        'target_port': targetPort,
-      };
+    'id': id,
+    'source_node_id': sourceNodeId,
+    'source_port': sourcePort,
+    'target_node_id': targetNodeId,
+    'target_port': targetPort,
+  };
 
   factory RuleEdge.fromJson(Map<String, dynamic> json) {
     return RuleEdge(
@@ -101,10 +101,7 @@ class RuleGraph {
     this.edges = const [],
   });
 
-  RuleGraph copyWith({
-    List<RuleNode>? nodes,
-    List<RuleEdge>? edges,
-  }) {
+  RuleGraph copyWith({List<RuleNode>? nodes, List<RuleEdge>? edges}) {
     return RuleGraph(
       schemaVersion: schemaVersion,
       nodes: nodes ?? this.nodes,
@@ -131,19 +128,22 @@ class RuleGraph {
       nodes.where((n) => n.type.isTrigger).toList();
 
   Map<String, dynamic> toJson() => {
-        'schema_version': schemaVersion,
-        'nodes': nodes.map((n) => n.toJson()).toList(),
-        'edges': edges.map((e) => e.toJson()).toList(),
-      };
+    'schema_version': schemaVersion,
+    'nodes': nodes.map((n) => n.toJson()).toList(),
+    'edges': edges.map((e) => e.toJson()).toList(),
+  };
 
   factory RuleGraph.fromJson(Map<String, dynamic> json) {
     return RuleGraph(
-      schemaVersion: json['schema_version'] as int? ?? currentGraphSchemaVersion,
-      nodes: (json['nodes'] as List?)
+      schemaVersion:
+          json['schema_version'] as int? ?? currentGraphSchemaVersion,
+      nodes:
+          (json['nodes'] as List?)
               ?.map((n) => RuleNode.fromJson(n as Map<String, dynamic>))
               .toList() ??
           [],
-      edges: (json['edges'] as List?)
+      edges:
+          (json['edges'] as List?)
               ?.map((e) => RuleEdge.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
@@ -162,13 +162,13 @@ enum RuleStatus {
   archived;
 
   String get displayName => switch (this) {
-        draft => 'Draft',
-        validated => 'Validated',
-        published => 'Published',
-        enabled => 'Enabled',
-        disabled => 'Disabled',
-        archived => 'Archived',
-      };
+    draft => 'Draft',
+    validated => 'Validated',
+    published => 'Published',
+    enabled => 'Enabled',
+    disabled => 'Disabled',
+    archived => 'Archived',
+  };
 
   bool get isEditable => this == draft || this == validated;
   bool get isActive => this == enabled;

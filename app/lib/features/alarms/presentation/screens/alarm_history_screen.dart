@@ -47,8 +47,7 @@ class _AlarmHistoryScreenState extends ConsumerState<AlarmHistoryScreen> {
                       label: Text(status.displayName),
                       selected: _statusFilter == status,
                       selectedColor: status.color.withAlpha(40),
-                      onSelected: (_) =>
-                          setState(() => _statusFilter = status),
+                      onSelected: (_) => setState(() => _statusFilter = status),
                     ),
                     const SizedBox(width: 8),
                   ],
@@ -58,20 +57,22 @@ class _AlarmHistoryScreenState extends ConsumerState<AlarmHistoryScreen> {
           ),
           Expanded(
             child: historyAsync.when(
-              loading: () =>
-                  const Center(child: CircularProgressIndicator()),
+              loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, _) => Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Icon(Icons.error_outline, size: 48),
                     AppSpacing.verticalSm,
-                    Text('Failed to load alarm history',
-                        style: theme.textTheme.titleMedium),
+                    Text(
+                      'Failed to load alarm history',
+                      style: theme.textTheme.titleMedium,
+                    ),
                     AppSpacing.verticalSm,
                     FilledButton(
                       onPressed: () => ref.invalidate(
-                          alarmHistoryProvider(widget.projectId)),
+                        alarmHistoryProvider(widget.projectId),
+                      ),
                       child: const Text('Retry'),
                     ),
                   ],
@@ -80,9 +81,7 @@ class _AlarmHistoryScreenState extends ConsumerState<AlarmHistoryScreen> {
               data: (alarms) {
                 final filtered = _statusFilter == null
                     ? alarms
-                    : alarms
-                        .where((a) => a.status == _statusFilter)
-                        .toList();
+                    : alarms.where((a) => a.status == _statusFilter).toList();
                 if (filtered.isEmpty) {
                   return EmptyStateWidget(
                     icon: Icons.history,
@@ -93,8 +92,8 @@ class _AlarmHistoryScreenState extends ConsumerState<AlarmHistoryScreen> {
                   );
                 }
                 return RefreshIndicator(
-                  onRefresh: () async => ref
-                      .invalidate(alarmHistoryProvider(widget.projectId)),
+                  onRefresh: () async =>
+                      ref.invalidate(alarmHistoryProvider(widget.projectId)),
                   child: ListView.separated(
                     padding: AppSpacing.screenPadding,
                     itemCount: filtered.length,
@@ -140,8 +139,7 @@ class _HistoryTile extends StatelessWidget {
         subtitle: Row(
           children: [
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
                 color: alarm.status.color.withAlpha(30),
                 borderRadius: BorderRadius.circular(4),

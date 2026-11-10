@@ -51,9 +51,8 @@ class _CreateRuleScreenState extends ConsumerState<CreateRuleScreen> {
           context.pop();
         },
         failure: (f) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(f.message)),
-          );
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(f.message)));
         },
       );
     } finally {

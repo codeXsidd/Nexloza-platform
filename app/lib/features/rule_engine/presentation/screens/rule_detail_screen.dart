@@ -21,79 +21,82 @@ class RuleDetailScreen extends ConsumerWidget {
     final ruleAsync = ref.watch(ruleDetailProvider(ruleId));
 
     return Scaffold(
-      appBar: ruleAsync.whenOrNull(
-        data: (rule) => rule != null
-            ? AppBar(
-                title: Text(rule.name),
-                actions: [
-                  PopupMenuButton<_MenuAction>(
-                    onSelected: (action) =>
-                        _handleMenuAction(context, ref, action, rule),
-                    itemBuilder: (_) => [
-                      const PopupMenuItem(
-                        value: _MenuAction.edit,
-                        child: ListTile(
-                          leading: Icon(Icons.edit),
-                          title: Text('Edit'),
-                          dense: true,
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                      ),
-                      if (rule.status.canPublish)
-                        const PopupMenuItem(
-                          value: _MenuAction.publish,
-                          child: ListTile(
-                            leading: Icon(Icons.publish),
-                            title: Text('Publish'),
-                            dense: true,
-                            contentPadding: EdgeInsets.zero,
+      appBar:
+          ruleAsync.whenOrNull(
+            data: (rule) => rule != null
+                ? AppBar(
+                    title: Text(rule.name),
+                    actions: [
+                      PopupMenuButton<_MenuAction>(
+                        onSelected: (action) =>
+                            _handleMenuAction(context, ref, action, rule),
+                        itemBuilder: (_) => [
+                          const PopupMenuItem(
+                            value: _MenuAction.edit,
+                            child: ListTile(
+                              leading: Icon(Icons.edit),
+                              title: Text('Edit'),
+                              dense: true,
+                              contentPadding: EdgeInsets.zero,
+                            ),
                           ),
-                        ),
-                      if (rule.status.canEnable)
-                        const PopupMenuItem(
-                          value: _MenuAction.enable,
-                          child: ListTile(
-                            leading: Icon(Icons.play_arrow),
-                            title: Text('Enable'),
-                            dense: true,
-                            contentPadding: EdgeInsets.zero,
+                          if (rule.status.canPublish)
+                            const PopupMenuItem(
+                              value: _MenuAction.publish,
+                              child: ListTile(
+                                leading: Icon(Icons.publish),
+                                title: Text('Publish'),
+                                dense: true,
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                            ),
+                          if (rule.status.canEnable)
+                            const PopupMenuItem(
+                              value: _MenuAction.enable,
+                              child: ListTile(
+                                leading: Icon(Icons.play_arrow),
+                                title: Text('Enable'),
+                                dense: true,
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                            ),
+                          if (rule.status.isActive)
+                            const PopupMenuItem(
+                              value: _MenuAction.disable,
+                              child: ListTile(
+                                leading: Icon(Icons.pause),
+                                title: Text('Disable'),
+                                dense: true,
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                            ),
+                          const PopupMenuItem(
+                            value: _MenuAction.archive,
+                            child: ListTile(
+                              leading: Icon(Icons.archive),
+                              title: Text('Archive'),
+                              dense: true,
+                              contentPadding: EdgeInsets.zero,
+                            ),
                           ),
-                        ),
-                      if (rule.status.isActive)
-                        const PopupMenuItem(
-                          value: _MenuAction.disable,
-                          child: ListTile(
-                            leading: Icon(Icons.pause),
-                            title: Text('Disable'),
-                            dense: true,
-                            contentPadding: EdgeInsets.zero,
+                          const PopupMenuItem(
+                            value: _MenuAction.delete,
+                            child: ListTile(
+                              leading: Icon(Icons.delete, color: Colors.red),
+                              title: Text(
+                                'Delete',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                              dense: true,
+                              contentPadding: EdgeInsets.zero,
+                            ),
                           ),
-                        ),
-                      const PopupMenuItem(
-                        value: _MenuAction.archive,
-                        child: ListTile(
-                          leading: Icon(Icons.archive),
-                          title: Text('Archive'),
-                          dense: true,
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                      ),
-                      const PopupMenuItem(
-                        value: _MenuAction.delete,
-                        child: ListTile(
-                          leading: Icon(Icons.delete, color: Colors.red),
-                          title:
-                              Text('Delete', style: TextStyle(color: Colors.red)),
-                          dense: true,
-                          contentPadding: EdgeInsets.zero,
-                        ),
+                        ],
                       ),
                     ],
-                  ),
-                ],
-              )
-            : AppBar(title: const Text('Rule Detail')),
-      ) ??
+                  )
+                : AppBar(title: const Text('Rule Detail')),
+          ) ??
           AppBar(title: const Text('Rule Detail')),
       body: ruleAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -227,10 +230,7 @@ class _RuleDetailBody extends ConsumerWidget {
                   AppSpacing.verticalSm,
                 ],
                 _InfoRow(label: 'Priority', value: '${rule.priority}'),
-                _InfoRow(
-                  label: 'Cooldown',
-                  value: '${rule.cooldownSeconds}s',
-                ),
+                _InfoRow(label: 'Cooldown', value: '${rule.cooldownSeconds}s'),
                 _InfoRow(
                   label: 'Max Executions/hr',
                   value: '${rule.maxExecutionsPerHour}',
@@ -255,8 +255,11 @@ class _RuleDetailBody extends ConsumerWidget {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.account_tree,
-                        color: theme.colorScheme.primary, size: 20),
+                    Icon(
+                      Icons.account_tree,
+                      color: theme.colorScheme.primary,
+                      size: 20,
+                    ),
                     AppSpacing.horizontalSm,
                     Text('Rule Graph', style: theme.textTheme.titleSmall),
                   ],
@@ -310,11 +313,16 @@ class _RuleDetailBody extends ConsumerWidget {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.history,
-                            color: theme.colorScheme.primary, size: 20),
+                        Icon(
+                          Icons.history,
+                          color: theme.colorScheme.primary,
+                          size: 20,
+                        ),
                         AppSpacing.horizontalSm,
-                        Text('Version History',
-                            style: theme.textTheme.titleSmall),
+                        Text(
+                          'Version History',
+                          style: theme.textTheme.titleSmall,
+                        ),
                       ],
                     ),
                     AppSpacing.verticalSm,
@@ -365,11 +373,16 @@ class _RuleDetailBody extends ConsumerWidget {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.list_alt,
-                            color: theme.colorScheme.primary, size: 20),
+                        Icon(
+                          Icons.list_alt,
+                          color: theme.colorScheme.primary,
+                          size: 20,
+                        ),
                         AppSpacing.horizontalSm,
-                        Text('Recent Executions',
-                            style: theme.textTheme.titleSmall),
+                        Text(
+                          'Recent Executions',
+                          style: theme.textTheme.titleSmall,
+                        ),
                       ],
                     ),
                     AppSpacing.verticalSm,

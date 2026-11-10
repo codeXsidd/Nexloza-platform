@@ -64,8 +64,10 @@ void main() {
 
     test('addNode generates unique id and stores node', () {
       final id1 = notifier.addNode(RuleNodeType.manualTrigger, Offset.zero);
-      final id2 =
-          notifier.addNode(RuleNodeType.greaterThan, const Offset(100, 0));
+      final id2 = notifier.addNode(
+        RuleNodeType.greaterThan,
+        const Offset(100, 0),
+      );
       expect(id1, isNot(id2));
       expect(rs().nodes.length, 2);
       expect(rs().nodes[id1]!.type, RuleNodeType.manualTrigger);
@@ -79,8 +81,10 @@ void main() {
     });
 
     test('moveNode updates position with delta', () {
-      final id =
-          notifier.addNode(RuleNodeType.manualTrigger, const Offset(10, 20));
+      final id = notifier.addNode(
+        RuleNodeType.manualTrigger,
+        const Offset(10, 20),
+      );
       notifier.moveNode(id, const Offset(5, -3));
       expect(rs().nodes[id]!.position, const Offset(15, 17));
     });
@@ -92,27 +96,32 @@ void main() {
     });
 
     test('deleteNode removes node and connected edges', () {
-      notifier.loadGraph(RuleGraph(
-        nodes: [
-          RuleNode(
+      notifier.loadGraph(
+        RuleGraph(
+          nodes: [
+            RuleNode(
               id: 'n1',
               type: RuleNodeType.manualTrigger,
-              position: Offset.zero),
-          RuleNode(
+              position: Offset.zero,
+            ),
+            RuleNode(
               id: 'n2',
               type: RuleNodeType.logResult,
               position: Offset.zero,
-              config: {'message': 'x'}),
-        ],
-        edges: const [
-          RuleEdge(
+              config: {'message': 'x'},
+            ),
+          ],
+          edges: const [
+            RuleEdge(
               id: 'e1',
               sourceNodeId: 'n1',
               sourcePort: 'out',
               targetNodeId: 'n2',
-              targetPort: 'in'),
-        ],
-      ));
+              targetPort: 'in',
+            ),
+          ],
+        ),
+      );
       expect(rs().nodes.length, 2);
       expect(rs().edges.length, 1);
 
@@ -132,10 +141,11 @@ void main() {
     });
 
     test('duplicateNode creates copy with offset position', () {
-      final id =
-          notifier.addNode(RuleNodeType.sendCommand, const Offset(100, 100));
-      notifier.updateNodeConfig(
-          id, {'device_id': 'd1', 'command_type': 'on'});
+      final id = notifier.addNode(
+        RuleNodeType.sendCommand,
+        const Offset(100, 100),
+      );
+      notifier.updateNodeConfig(id, {'device_id': 'd1', 'command_type': 'on'});
 
       notifier.duplicateNode(id);
       expect(rs().nodes.length, 2);
@@ -164,24 +174,29 @@ void main() {
     });
 
     test('addEdge rejects duplicate target port connections', () {
-      notifier.loadGraph(RuleGraph(
-        nodes: [
-          RuleNode(
+      notifier.loadGraph(
+        RuleGraph(
+          nodes: [
+            RuleNode(
               id: 'n1',
               type: RuleNodeType.manualTrigger,
-              position: Offset.zero),
-          RuleNode(
+              position: Offset.zero,
+            ),
+            RuleNode(
               id: 'n2',
               type: RuleNodeType.greaterThan,
               position: Offset.zero,
-              config: {'value': 5}),
-          RuleNode(
+              config: {'value': 5},
+            ),
+            RuleNode(
               id: 'n3',
               type: RuleNodeType.telemetryReceived,
               position: Offset.zero,
-              config: {'device_id': 'd1'}),
-        ],
-      ));
+              config: {'device_id': 'd1'},
+            ),
+          ],
+        ),
+      );
 
       final first = notifier.addEdge('n1', 'out', 'n2', 'in');
       expect(first, isNotNull);
@@ -217,8 +232,10 @@ void main() {
     test('validate populates validationErrors on empty graph', () {
       notifier.validate();
       expect(rs().validationErrors, isNotEmpty);
-      expect(rs().validationErrors.first.message,
-          contains('at least one trigger'));
+      expect(
+        rs().validationErrors.first.message,
+        contains('at least one trigger'),
+      );
     });
 
     test('clearDirty resets isDirty flag', () {
@@ -240,19 +257,23 @@ void main() {
     });
 
     test('completeConnection creates edge and clears pending', () {
-      notifier.loadGraph(RuleGraph(
-        nodes: [
-          RuleNode(
+      notifier.loadGraph(
+        RuleGraph(
+          nodes: [
+            RuleNode(
               id: 'n1',
               type: RuleNodeType.manualTrigger,
-              position: Offset.zero),
-          RuleNode(
+              position: Offset.zero,
+            ),
+            RuleNode(
               id: 'n2',
               type: RuleNodeType.logResult,
               position: Offset.zero,
-              config: {'message': 'hi'}),
-        ],
-      ));
+              config: {'message': 'hi'},
+            ),
+          ],
+        ),
+      );
 
       notifier.startConnection('n1', 'out');
       notifier.completeConnection('n2', 'in');

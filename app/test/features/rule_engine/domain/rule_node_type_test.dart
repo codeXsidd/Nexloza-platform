@@ -16,14 +16,18 @@ void main() {
     });
 
     test('category counts: 11 triggers, 13 conditions, 11 actions, 4 flow', () {
-      final triggers =
-          RuleNodeType.values.where((t) => t.category == RuleNodeCategory.trigger);
-      final conditions =
-          RuleNodeType.values.where((t) => t.category == RuleNodeCategory.condition);
-      final actions =
-          RuleNodeType.values.where((t) => t.category == RuleNodeCategory.action);
-      final flow =
-          RuleNodeType.values.where((t) => t.category == RuleNodeCategory.flow);
+      final triggers = RuleNodeType.values.where(
+        (t) => t.category == RuleNodeCategory.trigger,
+      );
+      final conditions = RuleNodeType.values.where(
+        (t) => t.category == RuleNodeCategory.condition,
+      );
+      final actions = RuleNodeType.values.where(
+        (t) => t.category == RuleNodeCategory.action,
+      );
+      final flow = RuleNodeType.values.where(
+        (t) => t.category == RuleNodeCategory.flow,
+      );
 
       expect(triggers.length, 11);
       expect(conditions.length, 13);
@@ -50,7 +54,10 @@ void main() {
     });
 
     test('fromString unknown returns manualTrigger', () {
-      expect(RuleNodeType.fromString('nonexistent'), RuleNodeType.manualTrigger);
+      expect(
+        RuleNodeType.fromString('nonexistent'),
+        RuleNodeType.manualTrigger,
+      );
       expect(RuleNodeType.fromString(''), RuleNodeType.manualTrigger);
     });
   });
@@ -83,26 +90,22 @@ void main() {
     });
 
     test('same type connects to same type', () {
-      expect(
-          PortDataType.boolean.canConnectTo(PortDataType.boolean), isTrue);
+      expect(PortDataType.boolean.canConnectTo(PortDataType.boolean), isTrue);
       expect(PortDataType.number.canConnectTo(PortDataType.number), isTrue);
       expect(PortDataType.string.canConnectTo(PortDataType.string), isTrue);
       expect(PortDataType.event.canConnectTo(PortDataType.event), isTrue);
     });
 
     test('boolean cannot connect to number', () {
-      expect(
-          PortDataType.boolean.canConnectTo(PortDataType.number), isFalse);
+      expect(PortDataType.boolean.canConnectTo(PortDataType.number), isFalse);
     });
 
     test('string cannot connect to boolean', () {
-      expect(
-          PortDataType.string.canConnectTo(PortDataType.boolean), isFalse);
+      expect(PortDataType.string.canConnectTo(PortDataType.boolean), isFalse);
     });
 
     test('event can connect to non-event (one-way compatibility)', () {
-      expect(
-          PortDataType.event.canConnectTo(PortDataType.boolean), isTrue);
+      expect(PortDataType.event.canConnectTo(PortDataType.boolean), isTrue);
       expect(PortDataType.event.canConnectTo(PortDataType.number), isTrue);
     });
   });

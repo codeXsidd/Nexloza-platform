@@ -128,117 +128,112 @@ class _NodeConfigPanelState extends State<NodeConfigPanel> {
       RuleNodeType.telemetryReceived ||
       RuleNodeType.deviceOnlineTrigger ||
       RuleNodeType.deviceOfflineTrigger ||
-      RuleNodeType.deviceStatusChanged =>
-        [_deviceIdField()],
-      RuleNodeType.sensorValueChanged => [
-          _deviceIdField(),
-          _sensorKeyField(),
-        ],
-      RuleNodeType.sensorAboveThreshold ||
-      RuleNodeType.sensorBelowThreshold =>
-        [
-          _deviceIdField(),
-          _sensorKeyField(),
-          _thresholdField(),
-        ],
-      RuleNodeType.twinReportedChanged ||
-      RuleNodeType.twinDesiredChanged =>
-        [
-          _deviceIdField(),
-          _attributeKeyField(),
-        ],
+      RuleNodeType.deviceStatusChanged => [_deviceIdField()],
+      RuleNodeType.sensorValueChanged => [_deviceIdField(), _sensorKeyField()],
+      RuleNodeType.sensorAboveThreshold || RuleNodeType.sensorBelowThreshold =>
+        [_deviceIdField(), _sensorKeyField(), _thresholdField()],
+      RuleNodeType.twinReportedChanged || RuleNodeType.twinDesiredChanged => [
+        _deviceIdField(),
+        _attributeKeyField(),
+      ],
       RuleNodeType.scheduledTrigger => [_cronField()],
       RuleNodeType.manualTrigger => [
-          Text('No configuration needed.',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              )),
-        ],
+        Text(
+          'No configuration needed.',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
       RuleNodeType.equalTo ||
       RuleNodeType.notEqualTo ||
       RuleNodeType.greaterThan ||
       RuleNodeType.greaterThanOrEqual ||
       RuleNodeType.lessThan ||
-      RuleNodeType.lessThanOrEqual =>
-        [_valueField()],
+      RuleNodeType.lessThanOrEqual => [_valueField()],
       RuleNodeType.betweenRange => [_minMaxFields()],
       RuleNodeType.booleanCheck => [_boolExpectedField()],
-      RuleNodeType.andGate ||
-      RuleNodeType.orGate ||
-      RuleNodeType.notGate =>
-        [
-          Text('Connect inputs to evaluate.',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              )),
-        ],
+      RuleNodeType.andGate || RuleNodeType.orGate || RuleNodeType.notGate => [
+        Text(
+          'Connect inputs to evaluate.',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
       RuleNodeType.deviceOnlineCheck => [_deviceIdField()],
       RuleNodeType.twinDesiredVsReported => [
-          _deviceIdField(),
-          _attributeKeyField(),
-        ],
+        _deviceIdField(),
+        _attributeKeyField(),
+      ],
       RuleNodeType.sendCommand => [
-          _deviceIdField(),
-          _stringField('command_type', 'Command Type', 'e.g. set_state'),
-          _jsonField('payload', 'Payload JSON'),
-        ],
+        _deviceIdField(),
+        _stringField('command_type', 'Command Type', 'e.g. set_state'),
+        _jsonField('payload', 'Payload JSON'),
+      ],
       RuleNodeType.setActuator => [
-          _deviceIdField(),
-          _stringField('actuator_key', 'Actuator Key', 'e.g. fan_speed'),
-          _valueField(label: 'Target Value', key: 'value'),
-        ],
+        _deviceIdField(),
+        _stringField('actuator_key', 'Actuator Key', 'e.g. fan_speed'),
+        _valueField(label: 'Target Value', key: 'value'),
+      ],
       RuleNodeType.updateTwinDesired => [
-          _deviceIdField(),
-          _jsonField('attributes', 'Desired Attributes JSON'),
-        ],
+        _deviceIdField(),
+        _jsonField('attributes', 'Desired Attributes JSON'),
+      ],
       RuleNodeType.executeScene => [
-          _stringField('scene_id', 'Scene ID', 'UUID of the scene'),
-        ],
+        _stringField('scene_id', 'Scene ID', 'UUID of the scene'),
+      ],
       RuleNodeType.recordEvent => [
-          _stringField('event_name', 'Event Name', 'e.g. irrigation_blocked'),
-          _severityField(),
-        ],
+        _stringField('event_name', 'Event Name', 'e.g. irrigation_blocked'),
+        _severityField(),
+      ],
       RuleNodeType.logResult => [
-          _stringField('message', 'Log Message', 'Message to record'),
-        ],
+        _stringField('message', 'Log Message', 'Message to record'),
+      ],
       RuleNodeType.stopFlow || RuleNodeType.terminate => [
-          Text('Stops the rule execution.',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              )),
-        ],
+        Text(
+          'Stops the rule execution.',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
       RuleNodeType.delay => [_durationField()],
       RuleNodeType.conditionalBranch => [
-          Text('Routes execution based on the incoming boolean value.',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              )),
-        ],
+        Text(
+          'Routes execution based on the incoming boolean value.',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
       RuleNodeType.merge => [
-          Text('Merges multiple execution paths.',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              )),
-        ],
+        Text(
+          'Merges multiple execution paths.',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
       RuleNodeType.raiseAlarm => [
-          _stringField('alarm_key', 'Alarm Key', 'Unique key for deduplication'),
-          _severityField(),
-          _stringField('title', 'Alarm Title', 'e.g. Temperature High'),
-          _stringField('message', 'Alarm Message', 'Optional detail message'),
-          _stringField('category', 'Category', 'e.g. temperature, pressure'),
-        ],
+        _stringField('alarm_key', 'Alarm Key', 'Unique key for deduplication'),
+        _severityField(),
+        _stringField('title', 'Alarm Title', 'e.g. Temperature High'),
+        _stringField('message', 'Alarm Message', 'Optional detail message'),
+        _stringField('category', 'Category', 'e.g. temperature, pressure'),
+      ],
       RuleNodeType.updateAlarmSeverity => [
-          _stringField('alarm_key', 'Alarm Key', 'Key of alarm to update'),
-          _severityField(),
-        ],
+        _stringField('alarm_key', 'Alarm Key', 'Key of alarm to update'),
+        _severityField(),
+      ],
       RuleNodeType.clearAlarm => [
-          _stringField('alarm_key', 'Alarm Key', 'Key of alarm to clear'),
-          _stringField('reason', 'Clear Reason', 'Optional reason for clearing'),
-        ],
+        _stringField('alarm_key', 'Alarm Key', 'Key of alarm to clear'),
+        _stringField('reason', 'Clear Reason', 'Optional reason for clearing'),
+      ],
       RuleNodeType.addAlarmComment => [
-          _stringField('alarm_key', 'Alarm Key', 'Key of alarm to comment on'),
-          _stringField('comment', 'Comment', 'Comment text to add'),
-        ],
+        _stringField('alarm_key', 'Alarm Key', 'Key of alarm to comment on'),
+        _stringField('comment', 'Comment', 'Comment text to add'),
+      ],
     };
   }
 
@@ -252,7 +247,9 @@ class _NodeConfigPanelState extends State<NodeConfigPanel> {
           isDense: true,
           prefixIcon: Icon(Icons.memory, size: 20),
         ),
-        controller: TextEditingController(text: _config['device_id'] as String? ?? ''),
+        controller: TextEditingController(
+          text: _config['device_id'] as String? ?? '',
+        ),
         onChanged: (v) => _updateConfig('device_id', v),
       ),
     );
@@ -268,8 +265,9 @@ class _NodeConfigPanelState extends State<NodeConfigPanel> {
           isDense: true,
           prefixIcon: Icon(Icons.sensors, size: 20),
         ),
-        controller:
-            TextEditingController(text: _config['sensor_key'] as String? ?? ''),
+        controller: TextEditingController(
+          text: _config['sensor_key'] as String? ?? '',
+        ),
         onChanged: (v) => _updateConfig('sensor_key', v),
       ),
     );
@@ -287,7 +285,8 @@ class _NodeConfigPanelState extends State<NodeConfigPanel> {
         ),
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
         controller: TextEditingController(
-            text: _config['threshold']?.toString() ?? ''),
+          text: _config['threshold']?.toString() ?? '',
+        ),
         onChanged: (v) {
           final num? parsed = double.tryParse(v);
           if (parsed != null) _updateConfig('threshold', parsed);
@@ -307,7 +306,8 @@ class _NodeConfigPanelState extends State<NodeConfigPanel> {
           prefixIcon: Icon(Icons.vpn_key, size: 20),
         ),
         controller: TextEditingController(
-            text: _config['attribute_key'] as String? ?? ''),
+          text: _config['attribute_key'] as String? ?? '',
+        ),
         onChanged: (v) => _updateConfig('attribute_key', v),
       ),
     );
@@ -324,13 +324,17 @@ class _NodeConfigPanelState extends State<NodeConfigPanel> {
           prefixIcon: Icon(Icons.schedule, size: 20),
         ),
         controller: TextEditingController(
-            text: _config['cron_expression'] as String? ?? ''),
+          text: _config['cron_expression'] as String? ?? '',
+        ),
         onChanged: (v) => _updateConfig('cron_expression', v),
       ),
     );
   }
 
-  Widget _valueField({String label = 'Comparison Value', String key = 'value'}) {
+  Widget _valueField({
+    String label = 'Comparison Value',
+    String key = 'value',
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: TextField(
@@ -340,8 +344,7 @@ class _NodeConfigPanelState extends State<NodeConfigPanel> {
           isDense: true,
           prefixIcon: const Icon(Icons.data_object, size: 20),
         ),
-        controller:
-            TextEditingController(text: _config[key]?.toString() ?? ''),
+        controller: TextEditingController(text: _config[key]?.toString() ?? ''),
         onChanged: (v) {
           final num? asNum = double.tryParse(v);
           if (asNum != null) {
@@ -370,7 +373,8 @@ class _NodeConfigPanelState extends State<NodeConfigPanel> {
             ),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             controller: TextEditingController(
-                text: _config['min_value']?.toString() ?? ''),
+              text: _config['min_value']?.toString() ?? '',
+            ),
             onChanged: (v) {
               final parsed = double.tryParse(v);
               if (parsed != null) _updateConfig('min_value', parsed);
@@ -386,7 +390,8 @@ class _NodeConfigPanelState extends State<NodeConfigPanel> {
             ),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             controller: TextEditingController(
-                text: _config['max_value']?.toString() ?? ''),
+              text: _config['max_value']?.toString() ?? '',
+            ),
             onChanged: (v) {
               final parsed = double.tryParse(v);
               if (parsed != null) _updateConfig('max_value', parsed);
@@ -445,7 +450,8 @@ class _NodeConfigPanelState extends State<NodeConfigPanel> {
         ),
         keyboardType: TextInputType.number,
         controller: TextEditingController(
-            text: _config['duration_ms']?.toString() ?? ''),
+          text: _config['duration_ms']?.toString() ?? '',
+        ),
         onChanged: (v) {
           final parsed = int.tryParse(v);
           if (parsed != null) _updateConfig('duration_ms', parsed);
@@ -463,8 +469,7 @@ class _NodeConfigPanelState extends State<NodeConfigPanel> {
           hintText: hint,
           isDense: true,
         ),
-        controller:
-            TextEditingController(text: _config[key] as String? ?? ''),
+        controller: TextEditingController(text: _config[key] as String? ?? ''),
         onChanged: (v) => _updateConfig(key, v),
       ),
     );

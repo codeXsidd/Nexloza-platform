@@ -40,8 +40,13 @@ class RuleCanvas extends StatefulWidget {
   final ValueChanged<String>? onNodeTapped;
   final void Function(String nodeId, Offset delta)? onNodeMoved;
   final ValueChanged<String>? onNodeDeleted;
-  final void Function(String sourceNodeId, String sourcePort,
-      String targetNodeId, String targetPort)? onEdgeCreated;
+  final void Function(
+    String sourceNodeId,
+    String sourcePort,
+    String targetNodeId,
+    String targetPort,
+  )?
+  onEdgeCreated;
   final ValueChanged<String>? onEdgeDeleted;
   final VoidCallback? onCanvasTapped;
 
@@ -88,7 +93,10 @@ class _RuleCanvasState extends State<RuleCanvas> {
     if (portIndex < 0) return;
     final pos = Offset(
       node.position.dx + NodeWidget.width,
-      node.position.dy + NodeWidget.headerHeight + 12 + portIndex * NodeWidget.portSpacing,
+      node.position.dy +
+          NodeWidget.headerHeight +
+          12 +
+          portIndex * NodeWidget.portSpacing,
     );
     setState(() {
       _pending = PendingConnection(
@@ -135,11 +143,15 @@ class _RuleCanvasState extends State<RuleCanvas> {
               if (renderBox == null) return;
               final inv = Matrix4.inverted(_transformController.value);
               final local = MatrixUtils.transformPoint(
-                  inv, renderBox.globalToLocal(d.globalPosition));
+                inv,
+                renderBox.globalToLocal(d.globalPosition),
+              );
               setState(() => _pendingEnd = local);
             }
           : null,
-      onPanEnd: _pending != null ? (_) => setState(() => _pending = null) : null,
+      onPanEnd: _pending != null
+          ? (_) => setState(() => _pending = null)
+          : null,
       child: InteractiveViewer(
         transformationController: _transformController,
         minScale: 0.3,
@@ -151,9 +163,7 @@ class _RuleCanvasState extends State<RuleCanvas> {
           height: 4000,
           child: Stack(
             children: [
-              const Positioned.fill(
-                child: CustomPaint(painter: GridPainter()),
-              ),
+              const Positioned.fill(child: CustomPaint(painter: GridPainter())),
               Positioned.fill(
                 child: CustomPaint(
                   painter: EdgePainter(
@@ -163,11 +173,12 @@ class _RuleCanvasState extends State<RuleCanvas> {
                     pendingStart: _pending?.startPosition,
                     pendingEnd: _pending != null ? _pendingEnd : null,
                     pendingColor: _pending != null
-                        ? (state.nodes[_pending!.sourceNodeId]
-                                    ?.type
-                                    .category
-                                    .color ??
-                                Colors.grey)
+                        ? (state
+                                  .nodes[_pending!.sourceNodeId]
+                                  ?.type
+                                  .category
+                                  .color ??
+                              Colors.grey)
                         : Colors.grey,
                   ),
                 ),

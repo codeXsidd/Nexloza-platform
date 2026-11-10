@@ -79,10 +79,7 @@ class _RuleEditorScreenState extends ConsumerState<RuleEditorScreen> {
             children: [
               const Icon(Icons.error_outline, size: 48),
               AppSpacing.verticalSm,
-              Text(
-                'Failed to load rule',
-                style: theme.textTheme.titleMedium,
-              ),
+              Text('Failed to load rule', style: theme.textTheme.titleMedium),
               AppSpacing.verticalSm,
               FilledButton(
                 onPressed: () =>
@@ -105,10 +102,13 @@ class _RuleEditorScreenState extends ConsumerState<RuleEditorScreen> {
                     '${editorState.validationErrors.length} validation '
                     '${editorState.validationErrors.length == 1 ? 'error' : 'errors'}',
                   ),
-                  leading: Icon(Icons.warning_amber,
-                      color: theme.colorScheme.error),
-                  backgroundColor:
-                      theme.colorScheme.errorContainer.withValues(alpha: 0.3),
+                  leading: Icon(
+                    Icons.warning_amber,
+                    color: theme.colorScheme.error,
+                  ),
+                  backgroundColor: theme.colorScheme.errorContainer.withValues(
+                    alpha: 0.3,
+                  ),
                   actions: [
                     TextButton(
                       onPressed: () =>
@@ -181,9 +181,8 @@ class _RuleEditorScreenState extends ConsumerState<RuleEditorScreen> {
     // Read updated state after validation
     final updated = ref.read(ruleEditorProvider);
     if (updated.validationErrors.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Graph is valid')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Graph is valid')));
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -206,9 +205,7 @@ class _RuleEditorScreenState extends ConsumerState<RuleEditorScreen> {
     final ok = await controller.saveGraph(widget.ruleId, graph);
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(ok ? 'Graph saved' : 'Failed to save graph'),
-        ),
+        SnackBar(content: Text(ok ? 'Graph saved' : 'Failed to save graph')),
       );
     }
     if (ok) {
@@ -223,9 +220,7 @@ class _RuleEditorScreenState extends ConsumerState<RuleEditorScreen> {
         context: context,
         builder: (ctx) => AlertDialog(
           title: const Text('Unsaved Changes'),
-          content: const Text(
-            'You have unsaved changes. Discard them?',
-          ),
+          content: const Text('You have unsaved changes. Discard them?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
@@ -277,4 +272,3 @@ class _RuleEditorScreenState extends ConsumerState<RuleEditorScreen> {
     );
   }
 }
-

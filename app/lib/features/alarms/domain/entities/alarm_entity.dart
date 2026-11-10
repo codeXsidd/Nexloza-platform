@@ -93,7 +93,9 @@ class Alarm {
       projectId: json['project_id'] as String,
       deviceId: json['device_id'] as String?,
       organizationId: json['organization_id'] as String,
-      severity: AlarmSeverity.fromString(json['severity'] as String? ?? 'warning'),
+      severity: AlarmSeverity.fromString(
+        json['severity'] as String? ?? 'warning',
+      ),
       status: AlarmStatus.fromString(json['status'] as String? ?? 'active'),
       source: AlarmSource.fromString(json['source'] as String? ?? 'manual'),
       title: json['title'] as String,
@@ -101,7 +103,8 @@ class Alarm {
       category: json['category'] as String? ?? 'general',
       conditionValue: (json['condition_value'] as num?)?.toDouble(),
       thresholdValue: (json['threshold_value'] as num?)?.toDouble(),
-      hysteresisClearValue: (json['hysteresis_clear_value'] as num?)?.toDouble(),
+      hysteresisClearValue: (json['hysteresis_clear_value'] as num?)
+          ?.toDouble(),
       acknowledgedBy: json['acknowledged_by'] as String?,
       acknowledgedAt: json['acknowledged_at'] != null
           ? DateTime.parse(json['acknowledged_at'] as String)
@@ -113,9 +116,11 @@ class Alarm {
       clearedReason: json['cleared_reason'] as String?,
       occurrenceCount: json['occurrence_count'] as int? ?? 1,
       firstOccurredAt: DateTime.parse(
-          json['first_occurred_at'] as String? ?? json['created_at'] as String),
+        json['first_occurred_at'] as String? ?? json['created_at'] as String,
+      ),
       lastOccurredAt: DateTime.parse(
-          json['last_occurred_at'] as String? ?? json['created_at'] as String),
+        json['last_occurred_at'] as String? ?? json['created_at'] as String,
+      ),
       data: json['data'] is Map
           ? Map<String, dynamic>.from(json['data'] as Map)
           : {},
@@ -130,26 +135,26 @@ class Alarm {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'alarm_key': alarmKey,
-        'project_id': projectId,
-        'device_id': deviceId,
-        'organization_id': organizationId,
-        'severity': severity.dbValue,
-        'status': status.dbValue,
-        'source': source.dbValue,
-        'title': title,
-        'message': message,
-        'category': category,
-        'condition_value': conditionValue,
-        'threshold_value': thresholdValue,
-        'hysteresis_clear_value': hysteresisClearValue,
-        'occurrence_count': occurrenceCount,
-        'first_occurred_at': firstOccurredAt.toIso8601String(),
-        'last_occurred_at': lastOccurredAt.toIso8601String(),
-        'data': data,
-        'escalation_policy_id': escalationPolicyId,
-      };
+    'id': id,
+    'alarm_key': alarmKey,
+    'project_id': projectId,
+    'device_id': deviceId,
+    'organization_id': organizationId,
+    'severity': severity.dbValue,
+    'status': status.dbValue,
+    'source': source.dbValue,
+    'title': title,
+    'message': message,
+    'category': category,
+    'condition_value': conditionValue,
+    'threshold_value': thresholdValue,
+    'hysteresis_clear_value': hysteresisClearValue,
+    'occurrence_count': occurrenceCount,
+    'first_occurred_at': firstOccurredAt.toIso8601String(),
+    'last_occurred_at': lastOccurredAt.toIso8601String(),
+    'data': data,
+    'escalation_policy_id': escalationPolicyId,
+  };
 }
 
 class AlarmStats {
@@ -174,26 +179,33 @@ class AlarmStats {
   });
 
   factory AlarmStats.empty() => const AlarmStats(
-        totalActive: 0,
-        criticalCount: 0,
-        highCount: 0,
-        mediumCount: 0,
-        warningCount: 0,
-        informationalCount: 0,
-        acknowledgedCount: 0,
-        unacknowledgedCount: 0,
-      );
+    totalActive: 0,
+    criticalCount: 0,
+    highCount: 0,
+    mediumCount: 0,
+    warningCount: 0,
+    informationalCount: 0,
+    acknowledgedCount: 0,
+    unacknowledgedCount: 0,
+  );
 
   factory AlarmStats.fromAlarms(List<Alarm> alarms) {
     final active = alarms.where((a) => a.isActive || a.isAcknowledged).toList();
     return AlarmStats(
       totalActive: active.length,
-      criticalCount: active.where((a) => a.severity == AlarmSeverity.critical).length,
+      criticalCount: active
+          .where((a) => a.severity == AlarmSeverity.critical)
+          .length,
       highCount: active.where((a) => a.severity == AlarmSeverity.high).length,
-      mediumCount: active.where((a) => a.severity == AlarmSeverity.medium).length,
-      warningCount: active.where((a) => a.severity == AlarmSeverity.warning).length,
-      informationalCount:
-          active.where((a) => a.severity == AlarmSeverity.informational).length,
+      mediumCount: active
+          .where((a) => a.severity == AlarmSeverity.medium)
+          .length,
+      warningCount: active
+          .where((a) => a.severity == AlarmSeverity.warning)
+          .length,
+      informationalCount: active
+          .where((a) => a.severity == AlarmSeverity.informational)
+          .length,
       acknowledgedCount: active.where((a) => a.isAcknowledged).length,
       unacknowledgedCount: active.where((a) => a.isActive).length,
     );

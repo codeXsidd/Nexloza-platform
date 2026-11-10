@@ -11,7 +11,8 @@ class AlarmConfigRepository {
   AlarmConfigRepository(this._ref);
 
   Future<Result<List<AlarmConfiguration>>> getConfigurations(
-      String projectId) async {
+    String projectId,
+  ) async {
     try {
       final supabase = _ref.read(supabaseClientProvider);
       final response = await supabase
@@ -25,12 +26,14 @@ class AlarmConfigRepository {
       return Result.success(configs);
     } catch (e) {
       return Result.failure(
-          ServerFailure('Failed to load alarm configurations: $e'));
+        ServerFailure('Failed to load alarm configurations: $e'),
+      );
     }
   }
 
   Future<Result<AlarmConfiguration>> createConfiguration(
-      Map<String, dynamic> data) async {
+    Map<String, dynamic> data,
+  ) async {
     try {
       final supabase = _ref.read(supabaseClientProvider);
       final response = await supabase
@@ -41,12 +44,15 @@ class AlarmConfigRepository {
       return Result.success(AlarmConfiguration.fromJson(response));
     } catch (e) {
       return Result.failure(
-          ServerFailure('Failed to create alarm configuration: $e'));
+        ServerFailure('Failed to create alarm configuration: $e'),
+      );
     }
   }
 
   Future<Result<AlarmConfiguration>> updateConfiguration(
-      String id, Map<String, dynamic> data) async {
+    String id,
+    Map<String, dynamic> data,
+  ) async {
     try {
       final supabase = _ref.read(supabaseClientProvider);
       final response = await supabase
@@ -58,7 +64,8 @@ class AlarmConfigRepository {
       return Result.success(AlarmConfiguration.fromJson(response));
     } catch (e) {
       return Result.failure(
-          ServerFailure('Failed to update alarm configuration: $e'));
+        ServerFailure('Failed to update alarm configuration: $e'),
+      );
     }
   }
 
@@ -69,7 +76,8 @@ class AlarmConfigRepository {
       return Result.success(null);
     } catch (e) {
       return Result.failure(
-          ServerFailure('Failed to delete alarm configuration: $e'));
+        ServerFailure('Failed to delete alarm configuration: $e'),
+      );
     }
   }
 
@@ -78,11 +86,13 @@ class AlarmConfigRepository {
       final supabase = _ref.read(supabaseClientProvider);
       await supabase
           .from('alarm_configurations')
-          .update({'is_enabled': enabled}).eq('id', id);
+          .update({'is_enabled': enabled})
+          .eq('id', id);
       return Result.success(null);
     } catch (e) {
       return Result.failure(
-          ServerFailure('Failed to toggle alarm configuration: $e'));
+        ServerFailure('Failed to toggle alarm configuration: $e'),
+      );
     }
   }
 }

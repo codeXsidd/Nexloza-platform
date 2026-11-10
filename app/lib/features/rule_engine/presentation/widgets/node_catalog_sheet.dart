@@ -74,8 +74,10 @@ class _NodeCatalogSheetState extends State<NodeCatalogSheet> {
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
             ),
             onChanged: (v) => setState(() => _query = v),
           ),

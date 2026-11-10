@@ -136,9 +136,11 @@ void main() {
       );
       final errors = validator.validate(disconnectedGraph);
       expect(
-          errors.any(
-              (e) => e.nodeId == 'orphan' && e.message.contains('not connected')),
-          isTrue);
+        errors.any(
+          (e) => e.nodeId == 'orphan' && e.message.contains('not connected'),
+        ),
+        isTrue,
+      );
     });
   });
 
@@ -177,29 +179,33 @@ void main() {
         ],
         edges: const [
           RuleEdge(
-              id: 'e1',
-              sourceNodeId: 'trigger',
-              sourcePort: 'out',
-              targetNodeId: 'cond',
-              targetPort: 'in'),
+            id: 'e1',
+            sourceNodeId: 'trigger',
+            sourcePort: 'out',
+            targetNodeId: 'cond',
+            targetPort: 'in',
+          ),
           RuleEdge(
-              id: 'e2',
-              sourceNodeId: 'cond',
-              sourcePort: 'out',
-              targetNodeId: 'branch',
-              targetPort: 'in'),
+            id: 'e2',
+            sourceNodeId: 'cond',
+            sourcePort: 'out',
+            targetNodeId: 'branch',
+            targetPort: 'in',
+          ),
           RuleEdge(
-              id: 'e3',
-              sourceNodeId: 'branch',
-              sourcePort: 'true',
-              targetNodeId: 'action_true',
-              targetPort: 'in'),
+            id: 'e3',
+            sourceNodeId: 'branch',
+            sourcePort: 'true',
+            targetNodeId: 'action_true',
+            targetPort: 'in',
+          ),
           RuleEdge(
-              id: 'e4',
-              sourceNodeId: 'branch',
-              sourcePort: 'false',
-              targetNodeId: 'action_false',
-              targetPort: 'in'),
+            id: 'e4',
+            sourceNodeId: 'branch',
+            sourcePort: 'false',
+            targetNodeId: 'action_false',
+            targetPort: 'in',
+          ),
         ],
       );
       final errors = validator.validate(graph);
@@ -242,35 +248,40 @@ void main() {
         ],
         edges: const [
           RuleEdge(
-              id: 'e1',
-              sourceNodeId: 'trigger',
-              sourcePort: 'out',
-              targetNodeId: 'cond_a',
-              targetPort: 'in'),
+            id: 'e1',
+            sourceNodeId: 'trigger',
+            sourcePort: 'out',
+            targetNodeId: 'cond_a',
+            targetPort: 'in',
+          ),
           RuleEdge(
-              id: 'e2',
-              sourceNodeId: 'trigger',
-              sourcePort: 'out',
-              targetNodeId: 'cond_b',
-              targetPort: 'in'),
+            id: 'e2',
+            sourceNodeId: 'trigger',
+            sourcePort: 'out',
+            targetNodeId: 'cond_b',
+            targetPort: 'in',
+          ),
           RuleEdge(
-              id: 'e3',
-              sourceNodeId: 'cond_a',
-              sourcePort: 'out',
-              targetNodeId: 'm',
-              targetPort: 'in_a'),
+            id: 'e3',
+            sourceNodeId: 'cond_a',
+            sourcePort: 'out',
+            targetNodeId: 'm',
+            targetPort: 'in_a',
+          ),
           RuleEdge(
-              id: 'e4',
-              sourceNodeId: 'cond_b',
-              sourcePort: 'out',
-              targetNodeId: 'm',
-              targetPort: 'in_b'),
+            id: 'e4',
+            sourceNodeId: 'cond_b',
+            sourcePort: 'out',
+            targetNodeId: 'm',
+            targetPort: 'in_b',
+          ),
           RuleEdge(
-              id: 'e5',
-              sourceNodeId: 'm',
-              sourcePort: 'out',
-              targetNodeId: 'action',
-              targetPort: 'in'),
+            id: 'e5',
+            sourceNodeId: 'm',
+            sourcePort: 'out',
+            targetNodeId: 'action',
+            targetPort: 'in',
+          ),
         ],
       );
       final errors = validator.validate(graph);

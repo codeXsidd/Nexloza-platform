@@ -10,7 +10,7 @@ class NodeWidget extends StatelessWidget {
   final ValueChanged<Offset>? onMoved;
   final VoidCallback? onDelete;
   final void Function(String nodeId, String portId, bool isOutput)?
-      onPortTapDown;
+  onPortTapDown;
   final void Function(String nodeId, String portId, bool isOutput)? onPortTapUp;
 
   static const double width = 180;
@@ -45,15 +45,13 @@ class NodeWidget extends StatelessWidget {
     final borderColor = hasError
         ? Colors.red
         : isSelected
-            ? catColor
-            : Colors.transparent;
+        ? catColor
+        : Colors.transparent;
     final borderWidth = (isSelected || hasError) ? 2.5 : 1.0;
 
     return GestureDetector(
       onTap: onTap,
-      onPanUpdate: onMoved != null
-          ? (d) => onMoved!(d.delta)
-          : null,
+      onPanUpdate: onMoved != null ? (d) => onMoved!(d.delta) : null,
       child: SizedBox(
         width: width,
         height: totalHeight,
@@ -67,7 +65,9 @@ class NodeWidget extends StatelessWidget {
                 border: Border.all(color: borderColor, width: borderWidth),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: isSelected ? 0.15 : 0.08),
+                    color: Colors.black.withValues(
+                      alpha: isSelected ? 0.15 : 0.08,
+                    ),
                     blurRadius: isSelected ? 8 : 4,
                     offset: const Offset(0, 2),
                   ),
@@ -77,9 +77,7 @@ class NodeWidget extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _Header(node: node, catColor: catColor, hasError: hasError),
-                  Expanded(
-                    child: _Body(node: node),
-                  ),
+                  Expanded(child: _Body(node: node)),
                 ],
               ),
             ),
@@ -92,9 +90,15 @@ class NodeWidget extends StatelessWidget {
                   color: catColor,
                   isOutput: false,
                   onTapDown: () => onPortTapDown?.call(
-                      node.id, node.type.inputPorts[i].id, false),
+                    node.id,
+                    node.type.inputPorts[i].id,
+                    false,
+                  ),
                   onTapUp: () => onPortTapUp?.call(
-                      node.id, node.type.inputPorts[i].id, false),
+                    node.id,
+                    node.type.inputPorts[i].id,
+                    false,
+                  ),
                 ),
               ),
             // Output ports (right side)
@@ -106,9 +110,15 @@ class NodeWidget extends StatelessWidget {
                   color: catColor,
                   isOutput: true,
                   onTapDown: () => onPortTapDown?.call(
-                      node.id, node.type.outputPorts[i].id, true),
+                    node.id,
+                    node.type.outputPorts[i].id,
+                    true,
+                  ),
                   onTapUp: () => onPortTapUp?.call(
-                      node.id, node.type.outputPorts[i].id, true),
+                    node.id,
+                    node.type.outputPorts[i].id,
+                    true,
+                  ),
                 ),
               ),
           ],
@@ -171,8 +181,9 @@ class _Body extends StatelessWidget {
     final theme = Theme.of(context);
     final inputPorts = node.type.inputPorts;
     final outputPorts = node.type.outputPorts;
-    final maxPorts =
-        inputPorts.length > outputPorts.length ? inputPorts.length : outputPorts.length;
+    final maxPorts = inputPorts.length > outputPorts.length
+        ? inputPorts.length
+        : outputPorts.length;
 
     if (maxPorts == 0) {
       return Padding(

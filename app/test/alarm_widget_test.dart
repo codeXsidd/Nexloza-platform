@@ -13,13 +13,17 @@ void main() {
     });
 
     test('unacknowledgedAlarmCount exists', () {
-      expect(NexWidgetType.unacknowledgedAlarmCount.typeId,
-          'unacknowledged_alarm_count');
+      expect(
+        NexWidgetType.unacknowledgedAlarmCount.typeId,
+        'unacknowledged_alarm_count',
+      );
     });
 
     test('alarmSeverityDistribution exists', () {
-      expect(NexWidgetType.alarmSeverityDistribution.typeId,
-          'alarm_severity_distribution');
+      expect(
+        NexWidgetType.alarmSeverityDistribution.typeId,
+        'alarm_severity_distribution',
+      );
     });
 
     test('recentAlarmActivity exists', () {
@@ -37,10 +41,14 @@ void main() {
     test('all 5 new alarm widgets are status category', () {
       expect(NexWidgetType.alarmCount.category, WidgetCategory.status);
       expect(NexWidgetType.criticalAlarmCount.category, WidgetCategory.status);
-      expect(NexWidgetType.unacknowledgedAlarmCount.category,
-          WidgetCategory.status);
-      expect(NexWidgetType.alarmSeverityDistribution.category,
-          WidgetCategory.status);
+      expect(
+        NexWidgetType.unacknowledgedAlarmCount.category,
+        WidgetCategory.status,
+      );
+      expect(
+        NexWidgetType.alarmSeverityDistribution.category,
+        WidgetCategory.status,
+      );
       expect(NexWidgetType.recentAlarmActivity.category, WidgetCategory.status);
     });
   });
@@ -66,16 +74,23 @@ void main() {
 
   group('NexWidgetType — fromTypeId for new alarm widgets', () {
     test('fromTypeId resolves all new alarm type IDs', () {
-      expect(NexWidgetType.fromTypeId('alarm_count'),
-          NexWidgetType.alarmCount);
-      expect(NexWidgetType.fromTypeId('critical_alarm_count'),
-          NexWidgetType.criticalAlarmCount);
-      expect(NexWidgetType.fromTypeId('unacknowledged_alarm_count'),
-          NexWidgetType.unacknowledgedAlarmCount);
-      expect(NexWidgetType.fromTypeId('alarm_severity_distribution'),
-          NexWidgetType.alarmSeverityDistribution);
-      expect(NexWidgetType.fromTypeId('recent_alarm_activity'),
-          NexWidgetType.recentAlarmActivity);
+      expect(NexWidgetType.fromTypeId('alarm_count'), NexWidgetType.alarmCount);
+      expect(
+        NexWidgetType.fromTypeId('critical_alarm_count'),
+        NexWidgetType.criticalAlarmCount,
+      );
+      expect(
+        NexWidgetType.fromTypeId('unacknowledged_alarm_count'),
+        NexWidgetType.unacknowledgedAlarmCount,
+      );
+      expect(
+        NexWidgetType.fromTypeId('alarm_severity_distribution'),
+        NexWidgetType.alarmSeverityDistribution,
+      );
+      expect(
+        NexWidgetType.fromTypeId('recent_alarm_activity'),
+        NexWidgetType.recentAlarmActivity,
+      );
     });
   });
 

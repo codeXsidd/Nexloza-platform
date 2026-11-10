@@ -52,8 +52,9 @@ class AlarmActivity {
     return AlarmActivity(
       id: json['id'] as String,
       alarmId: json['alarm_id'] as String,
-      activityType:
-          AlarmActivityType.fromString(json['activity_type'] as String? ?? 'created'),
+      activityType: AlarmActivityType.fromString(
+        json['activity_type'] as String? ?? 'created',
+      ),
       performedBy: json['performed_by'] as String?,
       comment: json['comment'] as String?,
       previousSeverity: json['previous_severity'] != null

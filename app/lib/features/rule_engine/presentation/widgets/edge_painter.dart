@@ -42,8 +42,13 @@ class EdgePainter extends CustomPainter {
     }
   }
 
-  void _drawBezier(Canvas canvas, Offset start, Offset end, Color color,
-      {bool isSelected = false}) {
+  void _drawBezier(
+    Canvas canvas,
+    Offset start,
+    Offset end,
+    Color color, {
+    bool isSelected = false,
+  }) {
     final paint = Paint()
       ..color = isSelected ? color : color.withValues(alpha: 0.7)
       ..strokeWidth = isSelected ? 3.0 : 2.0
@@ -53,20 +58,18 @@ class EdgePainter extends CustomPainter {
     final dx = (end.dx - start.dx).abs() * 0.5;
     final path = Path()
       ..moveTo(start.dx, start.dy)
-      ..cubicTo(
-        start.dx + dx,
-        start.dy,
-        end.dx - dx,
-        end.dy,
-        end.dx,
-        end.dy,
-      );
+      ..cubicTo(start.dx + dx, start.dy, end.dx - dx, end.dy, end.dx, end.dy);
 
     canvas.drawPath(path, paint);
   }
 
-  void _drawArrowHead(Canvas canvas, Offset start, Offset end, Color color,
-      {bool isSelected = false}) {
+  void _drawArrowHead(
+    Canvas canvas,
+    Offset start,
+    Offset end,
+    Color color, {
+    bool isSelected = false,
+  }) {
     final dx = (end.dx - start.dx).abs() * 0.5;
     final controlX = end.dx - dx;
     final angle = math.atan2(end.dy - end.dy, end.dx - controlX);

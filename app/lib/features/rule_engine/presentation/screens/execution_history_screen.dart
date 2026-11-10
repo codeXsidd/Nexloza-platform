@@ -34,8 +34,7 @@ class ExecutionHistoryScreen extends ConsumerWidget {
               ),
               AppSpacing.verticalSm,
               FilledButton(
-                onPressed: () =>
-                    ref.invalidate(ruleExecutionsProvider(ruleId)),
+                onPressed: () => ref.invalidate(ruleExecutionsProvider(ruleId)),
                 child: const Text('Retry'),
               ),
             ],
@@ -46,8 +45,7 @@ class ExecutionHistoryScreen extends ConsumerWidget {
             return const EmptyStateWidget(
               icon: Icons.history,
               title: 'No executions yet',
-              subtitle:
-                  'This rule has not been triggered. Enable it or run a dry run.',
+              subtitle: 'This rule has not been triggered. Enable it or run a dry run.',
             );
           }
           return RefreshIndicator(
@@ -57,9 +55,8 @@ class ExecutionHistoryScreen extends ConsumerWidget {
               padding: AppSpacing.screenPadding,
               itemCount: executions.length,
               separatorBuilder: (_, __) => AppSpacing.verticalSm,
-              itemBuilder: (context, index) => _ExecutionCard(
-                execution: executions[index],
-              ),
+              itemBuilder: (context, index) =>
+                  _ExecutionCard(execution: executions[index]),
             ),
           );
         },
@@ -84,8 +81,9 @@ class _ExecutionCard extends StatelessWidget {
       ExecutionStatus.cancelled => (Icons.cancel, Colors.grey),
     };
 
-    final duration =
-        execution.durationMs != null ? '${execution.durationMs}ms' : '--';
+    final duration = execution.durationMs != null
+        ? '${execution.durationMs}ms'
+        : '--';
 
     // Build a short trigger summary from triggerData
     String triggerSummary;

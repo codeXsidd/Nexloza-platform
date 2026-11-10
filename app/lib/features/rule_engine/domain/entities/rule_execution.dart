@@ -5,11 +5,11 @@ enum ExecutionStatus {
   cancelled;
 
   String get displayName => switch (this) {
-        running => 'Running',
-        completed => 'Completed',
-        failed => 'Failed',
-        cancelled => 'Cancelled',
-      };
+    running => 'Running',
+    completed => 'Completed',
+    failed => 'Failed',
+    cancelled => 'Cancelled',
+  };
 
   static ExecutionStatus fromString(String value) {
     return ExecutionStatus.values.firstWhere(
@@ -52,13 +52,13 @@ class NodeResult {
   });
 
   Map<String, dynamic> toJson() => {
-        'node_id': nodeId,
-        'node_type': nodeType,
-        'status': status,
-        'output': output,
-        'error': error,
-        'evaluated_at': evaluatedAt.toIso8601String(),
-      };
+    'node_id': nodeId,
+    'node_type': nodeType,
+    'status': status,
+    'output': output,
+    'error': error,
+    'evaluated_at': evaluatedAt.toIso8601String(),
+  };
 
   factory NodeResult.fromJson(Map<String, dynamic> json) {
     return NodeResult(
@@ -112,21 +112,23 @@ class RuleExecution {
       id: json['id'] as String,
       automationId: json['automation_id'] as String,
       triggerId: json['trigger_id'] as String?,
-      triggerData:
-          Map<String, dynamic>.from(json['trigger_data'] as Map? ?? {}),
+      triggerData: Map<String, dynamic>.from(
+        json['trigger_data'] as Map? ?? {},
+      ),
       status: ExecutionStatus.fromString(json['status'] as String),
       startedAt: DateTime.parse(json['started_at'] as String),
       completedAt: json['completed_at'] != null
           ? DateTime.parse(json['completed_at'] as String)
           : null,
       errorMessage: json['error_message'] as String?,
-      actionsExecuted: (json['actions_executed'] as List?)
-              ?.cast<Map<String, dynamic>>() ??
+      actionsExecuted:
+          (json['actions_executed'] as List?)?.cast<Map<String, dynamic>>() ??
           [],
       durationMs: json['duration_ms'] as int?,
       correlationId: json['correlation_id'] as String?,
       executionDepth: json['execution_depth'] as int? ?? 0,
-      nodeResults: (json['node_results'] as List?)
+      nodeResults:
+          (json['node_results'] as List?)
               ?.map((r) => NodeResult.fromJson(r as Map<String, dynamic>))
               .toList() ??
           [],

@@ -10,16 +10,15 @@ void main() {
     int delayMinutes = 15,
     List<String> targets = const ['user-a'],
     String actionType = 'notify',
-  }) =>
-      {
-        'id': id,
-        'policy_id': policyId,
-        'stage_number': stageNumber,
-        'delay_minutes': delayMinutes,
-        'notification_targets': targets,
-        'action_type': actionType,
-        'created_at': '2026-11-10T10:00:00Z',
-      };
+  }) => {
+    'id': id,
+    'policy_id': policyId,
+    'stage_number': stageNumber,
+    'delay_minutes': delayMinutes,
+    'notification_targets': targets,
+    'action_type': actionType,
+    'created_at': '2026-11-10T10:00:00Z',
+  };
 
   Map<String, dynamic> makePolicyJson({
     String id = 'policy-1',
@@ -27,32 +26,34 @@ void main() {
     String? description,
     bool isEnabled = true,
     List<Map<String, dynamic>>? stages,
-  }) =>
-      {
-        'id': id,
-        'project_id': 'proj-1',
-        'organization_id': 'org-1',
-        'name': name,
-        'description': description,
-        'is_enabled': isEnabled,
-        'escalation_stages': stages ??
-            [
-              makeStageJson(stageNumber: 1, delayMinutes: 5),
-              makeStageJson(
-                  id: 'stage-2',
-                  stageNumber: 2,
-                  delayMinutes: 15,
-                  targets: ['user-b']),
-              makeStageJson(
-                  id: 'stage-3',
-                  stageNumber: 3,
-                  delayMinutes: 30,
-                  targets: ['user-c'],
-                  actionType: 'reassign'),
-            ],
-        'created_at': '2026-11-10T10:00:00Z',
-        'updated_at': '2026-11-10T10:00:00Z',
-      };
+  }) => {
+    'id': id,
+    'project_id': 'proj-1',
+    'organization_id': 'org-1',
+    'name': name,
+    'description': description,
+    'is_enabled': isEnabled,
+    'escalation_stages':
+        stages ??
+        [
+          makeStageJson(stageNumber: 1, delayMinutes: 5),
+          makeStageJson(
+            id: 'stage-2',
+            stageNumber: 2,
+            delayMinutes: 15,
+            targets: ['user-b'],
+          ),
+          makeStageJson(
+            id: 'stage-3',
+            stageNumber: 3,
+            delayMinutes: 30,
+            targets: ['user-c'],
+            actionType: 'reassign',
+          ),
+        ],
+    'created_at': '2026-11-10T10:00:00Z',
+    'updated_at': '2026-11-10T10:00:00Z',
+  };
 
   group('EscalationPolicy — fromJson', () {
     test('parses all fields correctly', () {
@@ -66,11 +67,15 @@ void main() {
     });
 
     test('stages are sorted by stageNumber', () {
-      final policy = EscalationPolicy.fromJson(makePolicyJson(stages: [
-        makeStageJson(id: 's3', stageNumber: 3, delayMinutes: 30),
-        makeStageJson(id: 's1', stageNumber: 1, delayMinutes: 5),
-        makeStageJson(id: 's2', stageNumber: 2, delayMinutes: 15),
-      ]));
+      final policy = EscalationPolicy.fromJson(
+        makePolicyJson(
+          stages: [
+            makeStageJson(id: 's3', stageNumber: 3, delayMinutes: 30),
+            makeStageJson(id: 's1', stageNumber: 1, delayMinutes: 5),
+            makeStageJson(id: 's2', stageNumber: 2, delayMinutes: 15),
+          ],
+        ),
+      );
       expect(policy.stages[0].stageNumber, 1);
       expect(policy.stages[1].stageNumber, 2);
       expect(policy.stages[2].stageNumber, 3);
@@ -88,7 +93,8 @@ void main() {
       expect(policy.description, isNull);
 
       final withDesc = EscalationPolicy.fromJson(
-          makePolicyJson(description: 'High priority'));
+        makePolicyJson(description: 'High priority'),
+      );
       expect(withDesc.description, 'High priority');
     });
   });
@@ -136,7 +142,8 @@ void main() {
 
     test('notification_targets handles list of strings', () {
       final stage = EscalationStage.fromJson(
-          makeStageJson(targets: ['user-a', 'user-b', 'user-c']));
+        makeStageJson(targets: ['user-a', 'user-b', 'user-c']),
+      );
       expect(stage.notificationTargets.length, 3);
     });
 
@@ -171,25 +178,29 @@ void main() {
   group('EscalationStage — actionDisplayName', () {
     test('notify displays as Notify', () {
       final stage = EscalationStage.fromJson(
-          makeStageJson(actionType: 'notify'));
+        makeStageJson(actionType: 'notify'),
+      );
       expect(stage.actionDisplayName, 'Notify');
     });
 
     test('reassign displays as Reassign', () {
       final stage = EscalationStage.fromJson(
-          makeStageJson(actionType: 'reassign'));
+        makeStageJson(actionType: 'reassign'),
+      );
       expect(stage.actionDisplayName, 'Reassign');
     });
 
     test('auto_acknowledge displays as Auto Acknowledge', () {
       final stage = EscalationStage.fromJson(
-          makeStageJson(actionType: 'auto_acknowledge'));
+        makeStageJson(actionType: 'auto_acknowledge'),
+      );
       expect(stage.actionDisplayName, 'Auto Acknowledge');
     });
 
     test('unknown action type returns raw value', () {
       final stage = EscalationStage.fromJson(
-          makeStageJson(actionType: 'custom_action'));
+        makeStageJson(actionType: 'custom_action'),
+      );
       expect(stage.actionDisplayName, 'custom_action');
     });
   });

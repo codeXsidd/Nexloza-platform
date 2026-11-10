@@ -2,22 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/responsive/breakpoints.dart';
 import '../../core/services/mqtt_service.dart';
+import '../../theme/app_colors.dart';
+import 'web_console_sidebar.dart';
 
 class AppScaffold extends ConsumerWidget {
   final StatefulNavigationShell navigationShell;
 
   const AppScaffold({super.key, required this.navigationShell});
 
-  static const _destinations = [
-    _NavItem(Icons.home_outlined, Icons.home, 'Home'),
-    _NavItem(Icons.folder_outlined, Icons.folder, 'Projects'),
+  static const _mobileDestinations = [
+    _NavItem(Icons.home_outlined, Icons.home_rounded, 'Home'),
     _NavItem(Icons.devices_other_outlined, Icons.devices_other, 'Devices'),
-    _NavItem(Icons.auto_awesome_outlined, Icons.auto_awesome, 'Automations'),
-    _NavItem(Icons.smart_toy_outlined, Icons.smart_toy, 'AI'),
+    _NavItem(Icons.auto_awesome_outlined, Icons.auto_awesome, 'Automation'),
+    _NavItem(Icons.analytics_outlined, Icons.analytics, 'Analytics'),
+    _NavItem(Icons.settings_outlined, Icons.settings, 'Settings'),
   ];
 
-  void _onTap(int index) {
+  void _onMobileTap(int index) {
     navigationShell.goBranch(
       index,
       initialLocation: index == navigationShell.currentIndex,
@@ -26,40 +29,50 @@ class AppScaffold extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final width = MediaQuery.sizeOf(context).width;
-    final useRail = width >= 600;
+    final screenSize = AppBreakpoints.of(context);
     final mqttStatus = ref.watch(mqttStatusProvider);
 
-    if (useRail) {
-      return Scaffold(
-        body: Row(
-          children: [
-            NavigationRail(
-              selectedIndex: navigationShell.currentIndex,
-              onDestinationSelected: _onTap,
-              labelType: width >= 900
-                  ? NavigationRailLabelType.all
-                  : NavigationRailLabelType.selected,
-              leading: Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: _MqttStatusIcon(mqttStatus: mqttStatus),
-              ),
-              destinations: [
-                for (final d in _destinations)
-                  NavigationRailDestination(
-                    icon: Icon(d.icon),
-                    selectedIcon: Icon(d.selectedIcon),
-                    label: Text(d.label),
-                  ),
-              ],
-            ),
-            const VerticalDivider(width: 1, thickness: 1),
-            Expanded(child: navigationShell),
-          ],
-        ),
+    if (screenSize == ScreenSize.desktop ||
+        screenSize == ScreenSize.wideDesktop) {
+      return _DesktopLayout(
+        navigationShell: navigationShell,
+        mqttStatus: mqttStatus,
       );
     }
 
+    if (screenSize == ScreenSize.tablet) {
+      return _TabletLayout(
+        navigationShell: navigationShell,
+        mqttStatus: mqttStatus,
+        destinations: _mobileDestinations,
+        onTap: _onMobileTap,
+      );
+    }
+
+    return _MobileLayout(
+      navigationShell: navigationShell,
+      mqttStatus: mqttStatus,
+      destinations: _mobileDestinations,
+      onTap: _onMobileTap,
+    );
+  }
+}
+
+class _MobileLayout extends StatelessWidget {
+  final StatefulNavigationShell navigationShell;
+  final AsyncValue<MqttConnectionStatus> mqttStatus;
+  final List<_NavItem> destinations;
+  final void Function(int) onTap;
+
+  const _MobileLayout({
+    required this.navigationShell,
+    required this.mqttStatus,
+    required this.destinations,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       body: navigationShell,
       bottomNavigationBar: Column(
@@ -68,15 +81,109 @@ class AppScaffold extends ConsumerWidget {
           _MqttStatusBar(mqttStatus: mqttStatus),
           NavigationBar(
             selectedIndex: navigationShell.currentIndex,
-            onDestinationSelected: _onTap,
+            onDestinationSelected: onTap,
             destinations: [
-              for (final d in _destinations)
+              for (final d in destinations)
                 NavigationDestination(
                   icon: Icon(d.icon),
                   selectedIcon: Icon(d.selectedIcon),
                   label: d.label,
                 ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TabletLayout extends StatelessWidget {
+  final StatefulNavigationShell navigationShell;
+  final AsyncValue<MqttConnectionStatus> mqttStatus;
+  final List<_NavItem> destinations;
+  final void Function(int) onTap;
+
+  const _TabletLayout({
+    required this.navigationShell,
+    required this.mqttStatus,
+    required this.destinations,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Column(
+        children: [
+          _MqttStatusBar(mqttStatus: mqttStatus),
+          Expanded(
+            child: Row(
+              children: [
+                NavigationRail(
+                  selectedIndex: navigationShell.currentIndex,
+                  onDestinationSelected: onTap,
+                  labelType: NavigationRailLabelType.all,
+                  leading: Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: _MqttStatusIcon(mqttStatus: mqttStatus),
+                  ),
+                  destinations: [
+                    for (final d in destinations)
+                      NavigationRailDestination(
+                        icon: Icon(d.icon),
+                        selectedIcon: Icon(d.selectedIcon),
+                        label: Text(d.label),
+                      ),
+                  ],
+                ),
+                const VerticalDivider(width: 1, thickness: 1),
+                Expanded(child: navigationShell),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DesktopLayout extends StatelessWidget {
+  final StatefulNavigationShell navigationShell;
+  final AsyncValue<MqttConnectionStatus> mqttStatus;
+
+  const _DesktopLayout({
+    required this.navigationShell,
+    required this.mqttStatus,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Scaffold(
+      body: Column(
+        children: [
+          _MqttStatusBar(mqttStatus: mqttStatus),
+          Expanded(
+            child: Row(
+              children: [
+                WebConsoleSidebar(
+                  currentShellIndex: navigationShell.currentIndex,
+                  onShellIndexChanged: (index) {
+                    navigationShell.goBranch(
+                      index,
+                      initialLocation: index == navigationShell.currentIndex,
+                    );
+                  },
+                ),
+                VerticalDivider(
+                  width: 1,
+                  thickness: 1,
+                  color: scheme.outlineVariant,
+                ),
+                Expanded(child: navigationShell),
+              ],
+            ),
           ),
         ],
       ),
@@ -93,10 +200,10 @@ class _MqttStatusIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final status = mqttStatus.valueOrNull ?? MqttConnectionStatus.disconnected;
     final color = switch (status) {
-      MqttConnectionStatus.connected => const Color(0xFF4CAF50),
-      MqttConnectionStatus.connecting => Colors.orange,
-      MqttConnectionStatus.disconnected => Colors.grey,
-      MqttConnectionStatus.error => Colors.red,
+      MqttConnectionStatus.connected => AppColors.online,
+      MqttConnectionStatus.connecting => AppColors.warning,
+      MqttConnectionStatus.disconnected => AppColors.offline,
+      MqttConnectionStatus.error => AppColors.error,
     };
     final tooltip = switch (status) {
       MqttConnectionStatus.connected => 'MQTT Connected',
@@ -151,16 +258,16 @@ class _MqttStatusBar extends StatelessWidget {
 
     final (color, icon, text) = switch (status) {
       MqttConnectionStatus.connecting => (
-        Colors.orange,
+        AppColors.warning,
         Icons.sync,
         'Connecting to MQTT broker...',
       ),
       MqttConnectionStatus.error => (
-        Colors.red,
+        AppColors.error,
         Icons.error_outline,
         'MQTT connection error',
       ),
-      _ => (Colors.grey, Icons.cloud_off, 'MQTT disconnected'),
+      _ => (AppColors.offline, Icons.cloud_off, 'MQTT disconnected'),
     };
 
     return Container(

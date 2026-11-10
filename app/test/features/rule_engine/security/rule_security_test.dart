@@ -22,9 +22,7 @@ void main() {
         1000,
         (i) => RuleNode(
           id: 'n$i',
-          type: i == 0
-              ? RuleNodeType.manualTrigger
-              : RuleNodeType.greaterThan,
+          type: i == 0 ? RuleNodeType.manualTrigger : RuleNodeType.greaterThan,
           position: Offset(i * 10.0, 0),
           config: i == 0 ? {} : {'value': i},
         ),
@@ -32,13 +30,15 @@ void main() {
 
       final edges = <RuleEdge>[];
       for (int i = 0; i < 999; i++) {
-        edges.add(RuleEdge(
-          id: 'e$i',
-          sourceNodeId: 'n$i',
-          sourcePort: 'out',
-          targetNodeId: 'n${i + 1}',
-          targetPort: 'in',
-        ));
+        edges.add(
+          RuleEdge(
+            id: 'e$i',
+            sourceNodeId: 'n$i',
+            sourcePort: 'out',
+            targetNodeId: 'n${i + 1}',
+            targetPort: 'in',
+          ),
+        );
       }
 
       final graph = RuleGraph(nodes: nodes, edges: edges);
@@ -57,23 +57,27 @@ void main() {
         ),
       ];
       for (int i = 1; i <= 100; i++) {
-        nodes.add(RuleNode(
-          id: 'n$i',
-          type: RuleNodeType.logResult,
-          position: Offset(i * 10.0, 0),
-          config: {'message': 'level $i'},
-        ));
+        nodes.add(
+          RuleNode(
+            id: 'n$i',
+            type: RuleNodeType.logResult,
+            position: Offset(i * 10.0, 0),
+            config: {'message': 'level $i'},
+          ),
+        );
       }
 
       final edges = <RuleEdge>[];
       for (int i = 0; i < 100; i++) {
-        edges.add(RuleEdge(
-          id: 'e$i',
-          sourceNodeId: 'n$i',
-          sourcePort: 'out',
-          targetNodeId: 'n${i + 1}',
-          targetPort: 'in',
-        ));
+        edges.add(
+          RuleEdge(
+            id: 'e$i',
+            sourceNodeId: 'n$i',
+            sourcePort: 'out',
+            targetNodeId: 'n${i + 1}',
+            targetPort: 'in',
+          ),
+        );
       }
 
       final graph = RuleGraph(nodes: nodes, edges: edges);
@@ -115,23 +119,26 @@ void main() {
       expect(restored.label, "<script>alert('xss')</script>");
     });
 
-    test('empty config on node with required keys produces validation errors',
-        () {
-      final graph = RuleGraph(
-        nodes: [
-          RuleNode(
-            id: 'n1',
-            type: RuleNodeType.sendCommand,
-            position: Offset.zero,
-            config: {},
-          ),
-        ],
-      );
-      final errors = validator.validate(graph);
-      final configErrors =
-          errors.where((e) => e.message.contains('missing required config'));
-      expect(configErrors.length, greaterThanOrEqualTo(2));
-    });
+    test(
+      'empty config on node with required keys produces validation errors',
+      () {
+        final graph = RuleGraph(
+          nodes: [
+            RuleNode(
+              id: 'n1',
+              type: RuleNodeType.sendCommand,
+              position: Offset.zero,
+              config: {},
+            ),
+          ],
+        );
+        final errors = validator.validate(graph);
+        final configErrors = errors.where(
+          (e) => e.message.contains('missing required config'),
+        );
+        expect(configErrors.length, greaterThanOrEqualTo(2));
+      },
+    );
 
     test('null config values are handled gracefully', () {
       final graph = RuleGraph(
@@ -140,24 +147,19 @@ void main() {
             id: 'n1',
             type: RuleNodeType.sensorAboveThreshold,
             position: Offset.zero,
-            config: {
-              'device_id': null,
-              'sensor_key': null,
-              'threshold': null,
-            },
+            config: {'device_id': null, 'sensor_key': null, 'threshold': null},
           ),
         ],
       );
       final errors = validator.validate(graph);
-      final configErrors =
-          errors.where((e) => e.message.contains('missing required config'));
+      final configErrors = errors.where(
+        (e) => e.message.contains('missing required config'),
+      );
       expect(configErrors.length, 3);
     });
 
     test('graph JSON with missing nodes array is safe', () {
-      final graph = RuleGraph.fromJson({
-        'schema_version': 1,
-      });
+      final graph = RuleGraph.fromJson({'schema_version': 1});
       expect(graph.nodes, isEmpty);
       expect(graph.edges, isEmpty);
     });

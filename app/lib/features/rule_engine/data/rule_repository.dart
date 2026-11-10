@@ -88,8 +88,9 @@ class RuleRepository {
       }
       final from = page * pageSize;
       final to = from + pageSize - 1;
-      final response =
-          await query.order('updated_at', ascending: false).range(from, to);
+      final response = await query
+          .order('updated_at', ascending: false)
+          .range(from, to);
       final rules = (response as List)
           .map((e) => RuleAutomation.fromJson(e as Map<String, dynamic>))
           .toList();
@@ -103,8 +104,11 @@ class RuleRepository {
 
   Future<Result<RuleAutomation>> getRule(String id) async {
     try {
-      final response =
-          await _client.from('automations').select().eq('id', id).single();
+      final response = await _client
+          .from('automations')
+          .select()
+          .eq('id', id)
+          .single();
       return Result.success(RuleAutomation.fromJson(response));
     } on PostgrestException catch (e) {
       return Result.failure(ServerFailure(e.message));
@@ -170,7 +174,8 @@ class RuleRepository {
   }
 
   Future<Result<List<ValidationError>>> validateRule(
-      String automationId) async {
+    String automationId,
+  ) async {
     try {
       final response = await _client
           .from('automations')
@@ -215,17 +220,13 @@ class RuleRepository {
       final status = rule['status'] as String? ?? 'draft';
       if (status != 'validated') {
         return Result.failure(
-          const ValidationFailure(
-            'Rule must be validated before publishing',
-          ),
+          const ValidationFailure('Rule must be validated before publishing'),
         );
       }
 
       final graphJson = rule['rule_graph'] as Map<String, dynamic>?;
       if (graphJson == null) {
-        return Result.failure(
-          const ValidationFailure('No rule graph defined'),
-        );
+        return Result.failure(const ValidationFailure('No rule graph defined'));
       }
 
       final userId = _client.auth.currentUser?.id;
@@ -315,7 +316,8 @@ class RuleRepository {
   }
 
   Future<Result<List<RuleVersion>>> getVersionHistory(
-      String automationId) async {
+    String automationId,
+  ) async {
     try {
       final response = await _client
           .from('rule_versions')

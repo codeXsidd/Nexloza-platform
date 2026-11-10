@@ -137,8 +137,9 @@ class _ExecutionDetailBody extends StatelessWidget {
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.errorContainer
-                          .withValues(alpha: 0.3),
+                      color: theme.colorScheme.errorContainer.withValues(
+                        alpha: 0.3,
+                      ),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Column(
@@ -178,8 +179,11 @@ class _ExecutionDetailBody extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.bolt,
-                        color: theme.colorScheme.primary, size: 20),
+                    Icon(
+                      Icons.bolt,
+                      color: theme.colorScheme.primary,
+                      size: 20,
+                    ),
                     AppSpacing.horizontalSm,
                     Text('Trigger Data', style: theme.textTheme.titleSmall),
                   ],
@@ -237,8 +241,11 @@ class _ExecutionDetailBody extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.timeline,
-                        color: theme.colorScheme.primary, size: 20),
+                    Icon(
+                      Icons.timeline,
+                      color: theme.colorScheme.primary,
+                      size: 20,
+                    ),
                     AppSpacing.horizontalSm,
                     Text('Node Results', style: theme.textTheme.titleSmall),
                   ],
@@ -291,12 +298,7 @@ class _DetailRow extends StatelessWidget {
               ),
             ),
           ),
-          Expanded(
-            child: Text(
-              value,
-              style: theme.textTheme.bodyMedium,
-            ),
-          ),
+          Expanded(child: Text(value, style: theme.textTheme.bodyMedium)),
         ],
       ),
     );
@@ -330,8 +332,7 @@ class _NodeResultTile extends StatelessWidget {
       'twin_reported_changed' ||
       'twin_desired_changed' ||
       'scheduled_trigger' ||
-      'manual_trigger' =>
-        Icons.bolt,
+      'manual_trigger' => Icons.bolt,
       'equal_to' ||
       'not_equal_to' ||
       'greater_than' ||
@@ -344,21 +345,18 @@ class _NodeResultTile extends StatelessWidget {
       'or_gate' ||
       'not_gate' ||
       'device_online_check' ||
-      'twin_desired_vs_reported' =>
-        Icons.rule,
+      'twin_desired_vs_reported' => Icons.rule,
       'send_command' ||
       'set_actuator' ||
       'update_twin_desired' ||
       'execute_scene' ||
       'record_event' ||
-      'log_result' =>
-        Icons.play_circle,
+      'log_result' => Icons.play_circle,
       'delay' ||
       'conditional_branch' ||
       'merge' ||
       'stop_flow' ||
-      'terminate' =>
-        Icons.call_split,
+      'terminate' => Icons.call_split,
       _ => Icons.circle_outlined,
     };
   }
@@ -476,8 +474,9 @@ class _NodeResultTile extends StatelessWidget {
                       width: double.infinity,
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.errorContainer
-                            .withValues(alpha: 0.3),
+                        color: theme.colorScheme.errorContainer.withValues(
+                          alpha: 0.3,
+                        ),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(

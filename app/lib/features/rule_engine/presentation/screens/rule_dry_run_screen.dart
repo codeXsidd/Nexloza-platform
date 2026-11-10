@@ -202,7 +202,8 @@ class _RuleDryRunScreenState extends ConsumerState<RuleDryRunScreen> {
                           child: Text(
                             _error!,
                             style: TextStyle(
-                                color: theme.colorScheme.onErrorContainer),
+                              color: theme.colorScheme.onErrorContainer,
+                            ),
                           ),
                         ),
                       ],
@@ -258,7 +259,9 @@ class _DryRunResult extends StatelessWidget {
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: statusColor.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(8),
@@ -275,7 +278,9 @@ class _DryRunResult extends StatelessWidget {
                     AppSpacing.horizontalSm,
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.purple.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(8),
@@ -342,8 +347,8 @@ class _NodeResultTile extends StatelessWidget {
           result.status == 'evaluated'
               ? Icons.check_circle
               : result.status == 'failed'
-                  ? Icons.error
-                  : Icons.skip_next,
+              ? Icons.error
+              : Icons.skip_next,
           color: color,
           size: 20,
         ),
@@ -354,11 +359,22 @@ class _NodeResultTile extends StatelessWidget {
           ),
         ),
         subtitle: result.error != null
-            ? Text(result.error!, style: TextStyle(color: theme.colorScheme.error, fontSize: 11))
+            ? Text(
+                result.error!,
+                style: TextStyle(color: theme.colorScheme.error, fontSize: 11),
+              )
             : result.output != null
-                ? Text('${result.output}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11))
-                : null,
-        trailing: Text(result.status, style: TextStyle(color: color, fontSize: 11)),
+            ? Text(
+                '${result.output}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 11),
+              )
+            : null,
+        trailing: Text(
+          result.status,
+          style: TextStyle(color: color, fontSize: 11),
+        ),
       ),
     );
   }

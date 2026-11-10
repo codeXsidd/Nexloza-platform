@@ -59,8 +59,7 @@ class RulesListScreen extends ConsumerWidget {
               padding: AppSpacing.screenPadding,
               itemCount: rules.length,
               separatorBuilder: (_, __) => AppSpacing.verticalSm,
-              itemBuilder: (context, index) =>
-                  _RuleCard(rule: rules[index]),
+              itemBuilder: (context, index) => _RuleCard(rule: rules[index]),
             ),
           );
         },
@@ -108,16 +107,12 @@ class _RuleCard extends StatelessWidget {
                   ),
                   AppSpacing.horizontalSm,
                   Expanded(
-                    child: Text(
-                      rule.name,
-                      style: theme.textTheme.titleMedium,
-                    ),
+                    child: Text(rule.name, style: theme.textTheme.titleMedium),
                   ),
                   _StatusChip(status: rule.status),
                 ],
               ),
-              if (rule.description != null &&
-                  rule.description!.isNotEmpty) ...[
+              if (rule.description != null && rule.description!.isNotEmpty) ...[
                 AppSpacing.verticalXs,
                 Text(
                   rule.description!,

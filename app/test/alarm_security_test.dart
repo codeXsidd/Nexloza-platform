@@ -109,23 +109,25 @@ void main() {
       expect(stage.notificationTargets, isEmpty);
     });
 
-    test('AlarmConfiguration.fromJson uses default operator for invalid input',
-        () {
-      final json = {
-        'id': 'config-1',
-        'project_id': 'proj-1',
-        'organization_id': 'org-1',
-        'name': 'Test Config',
-        'condition_operator': 'invalid_op',
-        'created_at': '2026-01-01T00:00:00Z',
-        'updated_at': '2026-01-01T00:00:00Z',
-      };
-      final config = AlarmConfiguration.fromJson(json);
-      expect(config.conditionOperator, 'invalid_op');
-      // The DB constraint prevents invalid operators from being stored,
-      // but the Dart entity accepts whatever JSON provides without crashing
-      expect(config.name, 'Test Config');
-    });
+    test(
+      'AlarmConfiguration.fromJson uses default operator for invalid input',
+      () {
+        final json = {
+          'id': 'config-1',
+          'project_id': 'proj-1',
+          'organization_id': 'org-1',
+          'name': 'Test Config',
+          'condition_operator': 'invalid_op',
+          'created_at': '2026-01-01T00:00:00Z',
+          'updated_at': '2026-01-01T00:00:00Z',
+        };
+        final config = AlarmConfiguration.fromJson(json);
+        expect(config.conditionOperator, 'invalid_op');
+        // The DB constraint prevents invalid operators from being stored,
+        // but the Dart entity accepts whatever JSON provides without crashing
+        expect(config.name, 'Test Config');
+      },
+    );
   });
 
   group('Alarm entity — fromJson with missing optional fields', () {

@@ -11,7 +11,10 @@ void main() {
     });
 
     test('updateAlarmSeverity exists and is action category', () {
-      expect(RuleNodeType.updateAlarmSeverity.category, RuleNodeCategory.action);
+      expect(
+        RuleNodeType.updateAlarmSeverity.category,
+        RuleNodeCategory.action,
+      );
       expect(RuleNodeType.updateAlarmSeverity.isAction, isTrue);
     });
 
@@ -31,7 +34,10 @@ void main() {
 
     test('alarm node display names are correct', () {
       expect(RuleNodeType.raiseAlarm.displayName, 'Raise Alarm');
-      expect(RuleNodeType.updateAlarmSeverity.displayName, 'Update Alarm Severity');
+      expect(
+        RuleNodeType.updateAlarmSeverity.displayName,
+        'Update Alarm Severity',
+      );
       expect(RuleNodeType.clearAlarm.displayName, 'Clear Alarm');
       expect(RuleNodeType.addAlarmComment.displayName, 'Add Alarm Comment');
     });
@@ -52,9 +58,15 @@ void main() {
 
     test('fromString resolves all 4 alarm node names', () {
       expect(RuleNodeType.fromString('raiseAlarm'), RuleNodeType.raiseAlarm);
-      expect(RuleNodeType.fromString('updateAlarmSeverity'), RuleNodeType.updateAlarmSeverity);
+      expect(
+        RuleNodeType.fromString('updateAlarmSeverity'),
+        RuleNodeType.updateAlarmSeverity,
+      );
       expect(RuleNodeType.fromString('clearAlarm'), RuleNodeType.clearAlarm);
-      expect(RuleNodeType.fromString('addAlarmComment'), RuleNodeType.addAlarmComment);
+      expect(
+        RuleNodeType.fromString('addAlarmComment'),
+        RuleNodeType.addAlarmComment,
+      );
     });
   });
 
@@ -66,8 +78,16 @@ void main() {
         RuleNodeType.clearAlarm,
         RuleNodeType.addAlarmComment,
       ]) {
-        expect(type.inputPorts.length, 1, reason: '${type.name} should have 1 input port');
-        expect(type.inputPorts.first.id, 'in', reason: '${type.name} input port id');
+        expect(
+          type.inputPorts.length,
+          1,
+          reason: '${type.name} should have 1 input port',
+        );
+        expect(
+          type.inputPorts.first.id,
+          'in',
+          reason: '${type.name} input port id',
+        );
       }
     });
 
@@ -78,21 +98,34 @@ void main() {
         RuleNodeType.clearAlarm,
         RuleNodeType.addAlarmComment,
       ]) {
-        expect(type.outputPorts.length, 1, reason: '${type.name} should have 1 output port');
-        expect(type.outputPorts.first.id, 'out', reason: '${type.name} output port id');
+        expect(
+          type.outputPorts.length,
+          1,
+          reason: '${type.name} should have 1 output port',
+        );
+        expect(
+          type.outputPorts.first.id,
+          'out',
+          reason: '${type.name} output port id',
+        );
       }
     });
   });
 
   group('RuleNodeType — alarm node required config keys', () {
     test('raiseAlarm requires alarm_key, severity, title', () {
-      expect(RuleNodeType.raiseAlarm.requiredConfigKeys,
-          ['alarm_key', 'severity', 'title']);
+      expect(RuleNodeType.raiseAlarm.requiredConfigKeys, [
+        'alarm_key',
+        'severity',
+        'title',
+      ]);
     });
 
     test('updateAlarmSeverity requires alarm_key, severity', () {
-      expect(RuleNodeType.updateAlarmSeverity.requiredConfigKeys,
-          ['alarm_key', 'severity']);
+      expect(RuleNodeType.updateAlarmSeverity.requiredConfigKeys, [
+        'alarm_key',
+        'severity',
+      ]);
     });
 
     test('clearAlarm requires alarm_key', () {
@@ -100,8 +133,10 @@ void main() {
     });
 
     test('addAlarmComment requires alarm_key, comment', () {
-      expect(RuleNodeType.addAlarmComment.requiredConfigKeys,
-          ['alarm_key', 'comment']);
+      expect(RuleNodeType.addAlarmComment.requiredConfigKeys, [
+        'alarm_key',
+        'comment',
+      ]);
     });
   });
 

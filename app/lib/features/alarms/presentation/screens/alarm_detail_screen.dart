@@ -47,7 +47,11 @@ class _AlarmDetailScreenState extends ConsumerState<AlarmDetailScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(
-                ctx, controller.text.trim().isEmpty ? 'Manually cleared' : controller.text.trim()),
+              ctx,
+              controller.text.trim().isEmpty
+                  ? 'Manually cleared'
+                  : controller.text.trim(),
+            ),
             child: const Text('Clear'),
           ),
         ],
@@ -185,10 +189,11 @@ class _AlarmDetailScreenState extends ConsumerState<AlarmDetailScreen> {
               AppSpacing.verticalSm,
               activityAsync.when(
                 loading: () => const Center(
-                    child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: CircularProgressIndicator(),
-                )),
+                  child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
                 error: (e, _) => Card(
                   color: theme.colorScheme.errorContainer,
                   child: Padding(
@@ -212,8 +217,12 @@ class _AlarmDetailScreenState extends ConsumerState<AlarmDetailScreen> {
                   }
                   return Column(
                     children: activities
-                        .map((a) => _ActivityTile(
-                            activity: a, formatDateTime: _formatDateTime))
+                        .map(
+                          (a) => _ActivityTile(
+                            activity: a,
+                            formatDateTime: _formatDateTime,
+                          ),
+                        )
                         .toList(),
                   );
                 },
@@ -243,7 +252,11 @@ class _HeaderSection extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(alarm.severity.icon, color: alarm.severity.color, size: 32),
+                Icon(
+                  alarm.severity.icon,
+                  color: alarm.severity.color,
+                  size: 32,
+                ),
                 AppSpacing.horizontalSm,
                 Expanded(
                   child: Column(
@@ -342,30 +355,37 @@ class _InfoSection extends StatelessWidget {
               _InfoRow(label: 'Device ID', value: alarm.deviceId!),
             if (alarm.conditionValue != null)
               _InfoRow(
-                  label: 'Condition Value',
-                  value: alarm.conditionValue!.toStringAsFixed(2)),
+                label: 'Condition Value',
+                value: alarm.conditionValue!.toStringAsFixed(2),
+              ),
             if (alarm.thresholdValue != null)
               _InfoRow(
-                  label: 'Threshold',
-                  value: alarm.thresholdValue!.toStringAsFixed(2)),
+                label: 'Threshold',
+                value: alarm.thresholdValue!.toStringAsFixed(2),
+              ),
             _InfoRow(
-                label: 'Occurrences',
-                value: alarm.occurrenceCount.toString()),
+              label: 'Occurrences',
+              value: alarm.occurrenceCount.toString(),
+            ),
             _InfoRow(
-                label: 'First Occurred',
-                value: formatDateTime(alarm.firstOccurredAt)),
+              label: 'First Occurred',
+              value: formatDateTime(alarm.firstOccurredAt),
+            ),
             _InfoRow(
-                label: 'Last Occurred',
-                value: formatDateTime(alarm.lastOccurredAt)),
+              label: 'Last Occurred',
+              value: formatDateTime(alarm.lastOccurredAt),
+            ),
             _InfoRow(label: 'Duration', value: formatDuration(alarm.duration)),
             if (alarm.acknowledgedAt != null)
               _InfoRow(
-                  label: 'Acknowledged At',
-                  value: formatDateTime(alarm.acknowledgedAt!)),
+                label: 'Acknowledged At',
+                value: formatDateTime(alarm.acknowledgedAt!),
+              ),
             if (alarm.clearedAt != null)
               _InfoRow(
-                  label: 'Cleared At',
-                  value: formatDateTime(alarm.clearedAt!)),
+                label: 'Cleared At',
+                value: formatDateTime(alarm.clearedAt!),
+              ),
             if (alarm.clearedReason != null)
               _InfoRow(label: 'Clear Reason', value: alarm.clearedReason!),
           ],
@@ -398,9 +418,7 @@ class _InfoRow extends StatelessWidget {
               ),
             ),
           ),
-          Expanded(
-            child: Text(value, style: theme.textTheme.bodySmall),
-          ),
+          Expanded(child: Text(value, style: theme.textTheme.bodySmall)),
         ],
       ),
     );

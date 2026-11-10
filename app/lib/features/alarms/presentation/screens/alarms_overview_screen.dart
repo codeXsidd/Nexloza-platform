@@ -33,8 +33,10 @@ class AlarmsOverviewScreen extends ConsumerWidget {
                 color: theme.colorScheme.errorContainer,
                 child: Padding(
                   padding: AppSpacing.cardPadding,
-                  child: Text('Failed to load stats: $e',
-                      style: TextStyle(color: theme.colorScheme.onErrorContainer)),
+                  child: Text(
+                    'Failed to load stats: $e',
+                    style: TextStyle(color: theme.colorScheme.onErrorContainer),
+                  ),
                 ),
               ),
               data: (stats) => _StatsGrid(stats: stats),

@@ -12,10 +12,10 @@ enum AlarmStatus {
   const AlarmStatus(this.dbValue, this.displayName, this.color);
 
   IconData get icon => switch (this) {
-        active => Icons.error,
-        acknowledged => Icons.check_circle_outline,
-        cleared => Icons.check_circle,
-      };
+    active => Icons.error,
+    acknowledged => Icons.check_circle_outline,
+    cleared => Icons.check_circle,
+  };
 
   static AlarmStatus fromString(String value) {
     return AlarmStatus.values.firstWhere(

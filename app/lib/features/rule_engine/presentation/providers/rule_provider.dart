@@ -14,8 +14,10 @@ import '../../domain/entities/rule_validation.dart';
 // Rule list
 // ---------------------------------------------------------------------------
 
-final rulesProvider =
-    FutureProvider.family<List<RuleAutomation>, String?>((ref, projectId) async {
+final rulesProvider = FutureProvider.family<List<RuleAutomation>, String?>((
+  ref,
+  projectId,
+) async {
   final repo = ref.watch(ruleRepositoryProvider);
   final result = await repo.getRules(projectId: projectId);
   return result.when(
@@ -28,22 +30,23 @@ final rulesProvider =
 // Single rule detail
 // ---------------------------------------------------------------------------
 
-final ruleDetailProvider =
-    FutureProvider.family<RuleAutomation?, String>((ref, id) async {
+final ruleDetailProvider = FutureProvider.family<RuleAutomation?, String>((
+  ref,
+  id,
+) async {
   final repo = ref.watch(ruleRepositoryProvider);
   final result = await repo.getRule(id);
-  return result.when(
-    success: (data) => data,
-    failure: (_) => null,
-  );
+  return result.when(success: (data) => data, failure: (_) => null);
 });
 
 // ---------------------------------------------------------------------------
 // Version history
 // ---------------------------------------------------------------------------
 
-final ruleVersionsProvider =
-    FutureProvider.family<List<RuleVersion>, String>((ref, automationId) async {
+final ruleVersionsProvider = FutureProvider.family<List<RuleVersion>, String>((
+  ref,
+  automationId,
+) async {
   final repo = ref.watch(ruleRepositoryProvider);
   final result = await repo.getVersionHistory(automationId);
   return result.when(
@@ -57,45 +60,49 @@ final ruleVersionsProvider =
 // ---------------------------------------------------------------------------
 
 final ruleExecutionsProvider =
-    FutureProvider.family<List<RuleExecution>, String>(
-        (ref, automationId) async {
-  final repo = ref.watch(ruleExecutionRepositoryProvider);
-  final result = await repo.getExecutions(automationId: automationId);
-  return result.when(
-    success: (data) => data,
-    failure: (f) => throw Exception(f.message),
-  );
-});
+    FutureProvider.family<List<RuleExecution>, String>((
+      ref,
+      automationId,
+    ) async {
+      final repo = ref.watch(ruleExecutionRepositoryProvider);
+      final result = await repo.getExecutions(automationId: automationId);
+      return result.when(
+        success: (data) => data,
+        failure: (f) => throw Exception(f.message),
+      );
+    });
 
-final executionDetailProvider =
-    FutureProvider.family<RuleExecution?, String>((ref, executionId) async {
+final executionDetailProvider = FutureProvider.family<RuleExecution?, String>((
+  ref,
+  executionId,
+) async {
   final repo = ref.watch(ruleExecutionRepositoryProvider);
   final result = await repo.getExecution(executionId);
-  return result.when(
-    success: (data) => data,
-    failure: (_) => null,
-  );
+  return result.when(success: (data) => data, failure: (_) => null);
 });
 
 // ---------------------------------------------------------------------------
 // Validation
 // ---------------------------------------------------------------------------
 
-final ruleValidationProvider = FutureProvider.family<List<ValidationError>,
-    String>((ref, automationId) async {
-  final repo = ref.watch(ruleRepositoryProvider);
-  final result = await repo.getRule(automationId);
-  return result.when(
-    success: (automation) {
-      final graph = automation.ruleGraph;
-      if (graph == null) {
-        return [const ValidationError(message: 'No rule graph defined')];
-      }
-      return const RuleGraphValidator().validate(graph);
-    },
-    failure: (f) => [ValidationError(message: f.message)],
-  );
-});
+final ruleValidationProvider =
+    FutureProvider.family<List<ValidationError>, String>((
+      ref,
+      automationId,
+    ) async {
+      final repo = ref.watch(ruleRepositoryProvider);
+      final result = await repo.getRule(automationId);
+      return result.when(
+        success: (automation) {
+          final graph = automation.ruleGraph;
+          if (graph == null) {
+            return [const ValidationError(message: 'No rule graph defined')];
+          }
+          return const RuleGraphValidator().validate(graph);
+        },
+        failure: (f) => [ValidationError(message: f.message)],
+      );
+    });
 
 // ---------------------------------------------------------------------------
 // Editor state
@@ -145,8 +152,9 @@ class RuleEditorState {
     return RuleEditorState(
       nodes: nodes ?? this.nodes,
       edges: edges ?? this.edges,
-      selectedNodeId:
-          selectedNodeId != null ? selectedNodeId() : this.selectedNodeId,
+      selectedNodeId: selectedNodeId != null
+          ? selectedNodeId()
+          : this.selectedNodeId,
       pendingConnectionSource: pendingConnectionSource != null
           ? pendingConnectionSource()
           : this.pendingConnectionSource,
@@ -160,10 +168,8 @@ class RuleEditorState {
     );
   }
 
-  RuleGraph toGraph() => RuleGraph(
-        nodes: nodes.values.toList(),
-        edges: edges.values.toList(),
-      );
+  RuleGraph toGraph() =>
+      RuleGraph(nodes: nodes.values.toList(), edges: edges.values.toList());
 
   bool get canUndo => undoStack.isNotEmpty;
   bool get canRedo => redoStack.isNotEmpty;
@@ -243,9 +249,7 @@ class RuleEditorNotifier extends Notifier<RuleEditorState> {
       position: position,
       label: type.displayName,
     );
-    state = state.copyWith(
-      nodes: {...state.nodes, id: node},
-    );
+    state = state.copyWith(nodes: {...state.nodes, id: node});
     return id;
   }
 
@@ -264,9 +268,7 @@ class RuleEditorNotifier extends Notifier<RuleEditorState> {
     final node = state.nodes[nodeId];
     if (node == null) return;
     final updated = node.copyWith(config: config);
-    state = state.copyWith(
-      nodes: {...state.nodes, nodeId: updated},
-    );
+    state = state.copyWith(nodes: {...state.nodes, nodeId: updated});
   }
 
   void updateNodeLabel(String nodeId, String label) {
@@ -274,9 +276,7 @@ class RuleEditorNotifier extends Notifier<RuleEditorState> {
     final node = state.nodes[nodeId];
     if (node == null) return;
     final updated = node.copyWith(label: label);
-    state = state.copyWith(
-      nodes: {...state.nodes, nodeId: updated},
-    );
+    state = state.copyWith(nodes: {...state.nodes, nodeId: updated});
   }
 
   void deleteNode(String nodeId) {
@@ -284,7 +284,8 @@ class RuleEditorNotifier extends Notifier<RuleEditorState> {
     final nodes = Map.of(state.nodes)..remove(nodeId);
     final edges = Map.of(state.edges)
       ..removeWhere(
-          (_, e) => e.sourceNodeId == nodeId || e.targetNodeId == nodeId);
+        (_, e) => e.sourceNodeId == nodeId || e.targetNodeId == nodeId,
+      );
     state = state.copyWith(
       nodes: nodes,
       edges: edges,
@@ -305,9 +306,7 @@ class RuleEditorNotifier extends Notifier<RuleEditorState> {
       config: Map.of(node.config),
       label: '${node.label} (copy)',
     );
-    state = state.copyWith(
-      nodes: {...state.nodes, newId: newNode},
-    );
+    state = state.copyWith(nodes: {...state.nodes, newId: newNode});
   }
 
   void selectNode(String? nodeId) {
@@ -323,7 +322,8 @@ class RuleEditorNotifier extends Notifier<RuleEditorState> {
     if (sourceNodeId == targetNodeId) return null;
 
     final existing = state.edges.values.any(
-        (e) => e.targetNodeId == targetNodeId && e.targetPort == targetPort);
+      (e) => e.targetNodeId == targetNodeId && e.targetPort == targetPort,
+    );
     if (existing) return null;
 
     _pushUndo();
@@ -335,9 +335,7 @@ class RuleEditorNotifier extends Notifier<RuleEditorState> {
       targetNodeId: targetNodeId,
       targetPort: targetPort,
     );
-    state = state.copyWith(
-      edges: {...state.edges, id: edge},
-    );
+    state = state.copyWith(edges: {...state.edges, id: edge});
     return id;
   }
 
@@ -383,8 +381,8 @@ class RuleEditorNotifier extends Notifier<RuleEditorState> {
 
 final ruleEditorProvider =
     NotifierProvider<RuleEditorNotifier, RuleEditorState>(
-  RuleEditorNotifier.new,
-);
+      RuleEditorNotifier.new,
+    );
 
 // ---------------------------------------------------------------------------
 // Rule Controller

@@ -260,7 +260,9 @@ enum NexWidgetType {
     WidgetCategory.chart => 2,
     WidgetCategory.industrial => 2,
     WidgetCategory.info when this == deviceList || this == eventLog => 2,
-    WidgetCategory.status when this == alarmSeverityDistribution || this == recentAlarmActivity => 2,
+    WidgetCategory.status
+        when this == alarmSeverityDistribution || this == recentAlarmActivity =>
+      2,
     _ => 1,
   };
 

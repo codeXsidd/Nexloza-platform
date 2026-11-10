@@ -44,8 +44,12 @@ void main() {
         ],
       );
       final errors = validator.validate(graph);
-      expect(errors.any((e) => e.nodeId == 'n2' && e.message.contains('Only one trigger')),
-          isTrue);
+      expect(
+        errors.any(
+          (e) => e.nodeId == 'n2' && e.message.contains('Only one trigger'),
+        ),
+        isTrue,
+      );
     });
 
     test('missing required config produces error per key', () {
@@ -60,8 +64,10 @@ void main() {
         ],
       );
       final errors = validator.validate(graph);
-      final configErrors =
-          errors.where((e) => e.nodeId == 'n1' && e.message.contains('missing required config'));
+      final configErrors = errors.where(
+        (e) =>
+            e.nodeId == 'n1' && e.message.contains('missing required config'),
+      );
       expect(configErrors.length, 3);
     });
 
@@ -83,11 +89,12 @@ void main() {
           ],
           edges: const [
             RuleEdge(
-                id: 'e1',
-                sourceNodeId: 'n1',
-                sourcePort: 'out',
-                targetNodeId: 'n2',
-                targetPort: 'in'),
+              id: 'e1',
+              sourceNodeId: 'n1',
+              sourcePort: 'out',
+              targetNodeId: 'n2',
+              targetPort: 'in',
+            ),
           ],
         );
         final errors = validator.validate(graph);
@@ -116,17 +123,19 @@ void main() {
         ],
         edges: const [
           RuleEdge(
-              id: 'e1',
-              sourceNodeId: 'n1',
-              sourcePort: 'out',
-              targetNodeId: 'n2',
-              targetPort: 'in'),
+            id: 'e1',
+            sourceNodeId: 'n1',
+            sourcePort: 'out',
+            targetNodeId: 'n2',
+            targetPort: 'in',
+          ),
         ],
       );
       final errors = validator.validate(graph);
       expect(
-          errors.any((e) => e.message.contains('min_value must be <= max_value')),
-          isTrue);
+        errors.any((e) => e.message.contains('min_value must be <= max_value')),
+        isTrue,
+      );
     });
 
     test('delay out of bounds produces error', () {
@@ -146,17 +155,19 @@ void main() {
         ],
         edges: const [
           RuleEdge(
-              id: 'e1',
-              sourceNodeId: 'n1',
-              sourcePort: 'out',
-              targetNodeId: 'n2',
-              targetPort: 'in'),
+            id: 'e1',
+            sourceNodeId: 'n1',
+            sourcePort: 'out',
+            targetNodeId: 'n2',
+            targetPort: 'in',
+          ),
         ],
       );
       final errors = validator.validate(graph);
       expect(
-          errors.any((e) => e.message.contains('duration must be 100ms')),
-          isTrue);
+        errors.any((e) => e.message.contains('duration must be 100ms')),
+        isTrue,
+      );
     });
 
     test('self-referencing edge produces error', () {
@@ -170,16 +181,16 @@ void main() {
         ],
         edges: const [
           RuleEdge(
-              id: 'e1',
-              sourceNodeId: 'n1',
-              sourcePort: 'out',
-              targetNodeId: 'n1',
-              targetPort: 'out'),
+            id: 'e1',
+            sourceNodeId: 'n1',
+            sourcePort: 'out',
+            targetNodeId: 'n1',
+            targetPort: 'out',
+          ),
         ],
       );
       final errors = validator.validate(graph);
-      expect(
-          errors.any((e) => e.message.contains('Self-referencing')), isTrue);
+      expect(errors.any((e) => e.message.contains('Self-referencing')), isTrue);
     });
 
     test('edge with invalid source node produces error', () {
@@ -193,17 +204,23 @@ void main() {
         ],
         edges: const [
           RuleEdge(
-              id: 'e1',
-              sourceNodeId: 'missing',
-              sourcePort: 'out',
-              targetNodeId: 'n1',
-              targetPort: 'in'),
+            id: 'e1',
+            sourceNodeId: 'missing',
+            sourcePort: 'out',
+            targetNodeId: 'n1',
+            targetPort: 'in',
+          ),
         ],
       );
       final errors = validator.validate(graph);
       expect(
-          errors.any((e) => e.message.contains('source node') && e.message.contains('not found')),
-          isTrue);
+        errors.any(
+          (e) =>
+              e.message.contains('source node') &&
+              e.message.contains('not found'),
+        ),
+        isTrue,
+      );
     });
 
     test('edge with invalid source port produces error', () {
@@ -223,16 +240,19 @@ void main() {
         ],
         edges: const [
           RuleEdge(
-              id: 'e1',
-              sourceNodeId: 'n1',
-              sourcePort: 'bogus_port',
-              targetNodeId: 'n2',
-              targetPort: 'in'),
+            id: 'e1',
+            sourceNodeId: 'n1',
+            sourcePort: 'bogus_port',
+            targetNodeId: 'n2',
+            targetPort: 'in',
+          ),
         ],
       );
       final errors = validator.validate(graph);
-      expect(errors.any((e) => e.message.contains('invalid output port')),
-          isTrue);
+      expect(
+        errors.any((e) => e.message.contains('invalid output port')),
+        isTrue,
+      );
     });
 
     test('disconnected non-trigger node produces error', () {
@@ -253,47 +273,56 @@ void main() {
       );
       final errors = validator.validate(graph);
       expect(
-          errors.any((e) => e.nodeId == 'n2' && e.message.contains('not connected')),
-          isTrue);
+        errors.any(
+          (e) => e.nodeId == 'n2' && e.message.contains('not connected'),
+        ),
+        isTrue,
+      );
     });
 
     test('cycle detection: A -> B -> C -> A', () {
       final graph = RuleGraph(
         nodes: [
           RuleNode(
-              id: 'a',
-              type: RuleNodeType.manualTrigger,
-              position: Offset.zero),
+            id: 'a',
+            type: RuleNodeType.manualTrigger,
+            position: Offset.zero,
+          ),
           RuleNode(
-              id: 'b',
-              type: RuleNodeType.greaterThan,
-              position: Offset.zero,
-              config: {'value': 5}),
+            id: 'b',
+            type: RuleNodeType.greaterThan,
+            position: Offset.zero,
+            config: {'value': 5},
+          ),
           RuleNode(
-              id: 'c',
-              type: RuleNodeType.logResult,
-              position: Offset.zero,
-              config: {'message': 'x'}),
+            id: 'c',
+            type: RuleNodeType.logResult,
+            position: Offset.zero,
+            config: {'message': 'x'},
+          ),
         ],
         edges: const [
           RuleEdge(
-              id: 'e1',
-              sourceNodeId: 'a',
-              sourcePort: 'out',
-              targetNodeId: 'b',
-              targetPort: 'in'),
+            id: 'e1',
+            sourceNodeId: 'a',
+            sourcePort: 'out',
+            targetNodeId: 'b',
+            targetPort: 'in',
+          ),
           RuleEdge(
-              id: 'e2',
-              sourceNodeId: 'b',
-              sourcePort: 'out',
-              targetNodeId: 'c',
-              targetPort: 'in'),
+            id: 'e2',
+            sourceNodeId: 'b',
+            sourcePort: 'out',
+            targetNodeId: 'c',
+            targetPort: 'in',
+          ),
           RuleEdge(
-              id: 'e3',
-              sourceNodeId: 'c',
-              sourcePort: 'out',
-              targetNodeId: 'a',
-              targetPort: 'out'),
+            id: 'e3',
+            sourceNodeId: 'c',
+            sourcePort: 'out',
+            targetNodeId: 'a',
+            targetPort: 'out',
+          ),
         ],
       );
       final errors = validator.validate(graph);
@@ -317,11 +346,12 @@ void main() {
         ],
         edges: const [
           RuleEdge(
-              id: 'e1',
-              sourceNodeId: 'n2',
-              sourcePort: 'out',
-              targetNodeId: 'n1',
-              targetPort: 'out'),
+            id: 'e1',
+            sourceNodeId: 'n2',
+            sourcePort: 'out',
+            targetNodeId: 'n1',
+            targetPort: 'out',
+          ),
         ],
       );
       // boolean -> event port (trigger has no input ports; this tests that
@@ -331,50 +361,54 @@ void main() {
       expect(errors, isNotEmpty);
     });
 
-    test('valid complete graph: trigger -> condition -> action has no errors',
-        () {
-      final graph = RuleGraph(
-        nodes: [
-          RuleNode(
-            id: 'trigger',
-            type: RuleNodeType.sensorAboveThreshold,
-            position: Offset.zero,
-            config: {
-              'device_id': 'd1',
-              'sensor_key': 'temperature',
-              'threshold': 30,
-            },
-          ),
-          RuleNode(
-            id: 'cond',
-            type: RuleNodeType.greaterThan,
-            position: const Offset(200, 0),
-            config: {'value': 25},
-          ),
-          RuleNode(
-            id: 'action',
-            type: RuleNodeType.sendCommand,
-            position: const Offset(400, 0),
-            config: {'device_id': 'd2', 'command_type': 'cool_on'},
-          ),
-        ],
-        edges: const [
-          RuleEdge(
+    test(
+      'valid complete graph: trigger -> condition -> action has no errors',
+      () {
+        final graph = RuleGraph(
+          nodes: [
+            RuleNode(
+              id: 'trigger',
+              type: RuleNodeType.sensorAboveThreshold,
+              position: Offset.zero,
+              config: {
+                'device_id': 'd1',
+                'sensor_key': 'temperature',
+                'threshold': 30,
+              },
+            ),
+            RuleNode(
+              id: 'cond',
+              type: RuleNodeType.greaterThan,
+              position: const Offset(200, 0),
+              config: {'value': 25},
+            ),
+            RuleNode(
+              id: 'action',
+              type: RuleNodeType.sendCommand,
+              position: const Offset(400, 0),
+              config: {'device_id': 'd2', 'command_type': 'cool_on'},
+            ),
+          ],
+          edges: const [
+            RuleEdge(
               id: 'e1',
               sourceNodeId: 'trigger',
               sourcePort: 'out',
               targetNodeId: 'cond',
-              targetPort: 'in'),
-          RuleEdge(
+              targetPort: 'in',
+            ),
+            RuleEdge(
               id: 'e2',
               sourceNodeId: 'cond',
               sourcePort: 'out',
               targetNodeId: 'action',
-              targetPort: 'in'),
-        ],
-      );
-      final errors = validator.validate(graph);
-      expect(errors, isEmpty);
-    });
+              targetPort: 'in',
+            ),
+          ],
+        );
+        final errors = validator.validate(graph);
+        expect(errors, isEmpty);
+      },
+    );
   });
 }

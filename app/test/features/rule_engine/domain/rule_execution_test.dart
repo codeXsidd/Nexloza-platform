@@ -5,9 +5,15 @@ void main() {
   group('ExecutionStatus', () {
     test('fromString resolves all values', () {
       expect(ExecutionStatus.fromString('running'), ExecutionStatus.running);
-      expect(ExecutionStatus.fromString('completed'), ExecutionStatus.completed);
+      expect(
+        ExecutionStatus.fromString('completed'),
+        ExecutionStatus.completed,
+      );
       expect(ExecutionStatus.fromString('failed'), ExecutionStatus.failed);
-      expect(ExecutionStatus.fromString('cancelled'), ExecutionStatus.cancelled);
+      expect(
+        ExecutionStatus.fromString('cancelled'),
+        ExecutionStatus.cancelled,
+      );
     });
 
     test('fromString unknown defaults to failed', () {

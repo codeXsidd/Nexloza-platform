@@ -10,27 +10,27 @@ void main() {
     bool isRead = false,
     String category = 'alert',
     String severity = 'warning',
-  }) =>
-      {
-        'id': 'notif-1',
-        'user_id': 'user-1',
-        'project_id': 'proj-1',
-        'title': 'Test Notification',
-        'body': 'Something happened',
-        'category': category,
-        'severity': severity,
-        'is_read': isRead,
-        'read_at': readAt,
-        'data': {'extra': 'info'},
-        'alarm_id': alarmId,
-        'navigation_target': navigationTarget,
-        'created_at': '2026-11-10T10:00:00Z',
-      };
+  }) => {
+    'id': 'notif-1',
+    'user_id': 'user-1',
+    'project_id': 'proj-1',
+    'title': 'Test Notification',
+    'body': 'Something happened',
+    'category': category,
+    'severity': severity,
+    'is_read': isRead,
+    'read_at': readAt,
+    'data': {'extra': 'info'},
+    'alarm_id': alarmId,
+    'navigation_target': navigationTarget,
+    'created_at': '2026-11-10T10:00:00Z',
+  };
 
   group('AppNotification — alarm linking', () {
     test('isAlarmLinked is true when alarmId is present', () {
       final notif = AppNotification.fromJson(
-          makeNotificationJson(alarmId: 'alarm-1'));
+        makeNotificationJson(alarmId: 'alarm-1'),
+      );
       expect(notif.isAlarmLinked, true);
       expect(notif.alarmId, 'alarm-1');
     });
@@ -43,7 +43,8 @@ void main() {
 
     test('navigationTarget is preserved', () {
       final notif = AppNotification.fromJson(
-          makeNotificationJson(navigationTarget: '/alarms/alarm-1'));
+        makeNotificationJson(navigationTarget: '/alarms/alarm-1'),
+      );
       expect(notif.navigationTarget, '/alarms/alarm-1');
     });
   });
@@ -56,10 +57,9 @@ void main() {
     });
 
     test('readAt is parsed for read notification', () {
-      final notif = AppNotification.fromJson(makeNotificationJson(
-        isRead: true,
-        readAt: '2026-11-10T10:05:00Z',
-      ));
+      final notif = AppNotification.fromJson(
+        makeNotificationJson(isRead: true, readAt: '2026-11-10T10:05:00Z'),
+      );
       expect(notif.readAt, isNotNull);
       expect(notif.isRead, true);
     });
@@ -68,31 +68,36 @@ void main() {
   group('AppNotification — category', () {
     test('alert category resolves correctly', () {
       final notif = AppNotification.fromJson(
-          makeNotificationJson(category: 'alert'));
+        makeNotificationJson(category: 'alert'),
+      );
       expect(notif.category, NotificationCategory.alert);
     });
 
     test('device category resolves correctly', () {
       final notif = AppNotification.fromJson(
-          makeNotificationJson(category: 'device'));
+        makeNotificationJson(category: 'device'),
+      );
       expect(notif.category, NotificationCategory.device);
     });
 
     test('automation category resolves correctly', () {
       final notif = AppNotification.fromJson(
-          makeNotificationJson(category: 'automation'));
+        makeNotificationJson(category: 'automation'),
+      );
       expect(notif.category, NotificationCategory.automation);
     });
 
     test('security category resolves correctly', () {
       final notif = AppNotification.fromJson(
-          makeNotificationJson(category: 'security'));
+        makeNotificationJson(category: 'security'),
+      );
       expect(notif.category, NotificationCategory.security);
     });
 
     test('unknown category defaults to system', () {
       final notif = AppNotification.fromJson(
-          makeNotificationJson(category: 'unknown'));
+        makeNotificationJson(category: 'unknown'),
+      );
       expect(notif.category, NotificationCategory.system);
     });
   });
@@ -100,25 +105,29 @@ void main() {
   group('AppNotification — severity', () {
     test('warning severity resolves correctly', () {
       final notif = AppNotification.fromJson(
-          makeNotificationJson(severity: 'warning'));
+        makeNotificationJson(severity: 'warning'),
+      );
       expect(notif.severity, NotificationSeverity.warning);
     });
 
     test('critical severity resolves correctly', () {
       final notif = AppNotification.fromJson(
-          makeNotificationJson(severity: 'critical'));
+        makeNotificationJson(severity: 'critical'),
+      );
       expect(notif.severity, NotificationSeverity.critical);
     });
 
     test('info severity resolves correctly', () {
       final notif = AppNotification.fromJson(
-          makeNotificationJson(severity: 'info'));
+        makeNotificationJson(severity: 'info'),
+      );
       expect(notif.severity, NotificationSeverity.info);
     });
 
     test('unknown severity defaults to info', () {
       final notif = AppNotification.fromJson(
-          makeNotificationJson(severity: 'unknown'));
+        makeNotificationJson(severity: 'unknown'),
+      );
       expect(notif.severity, NotificationSeverity.info);
     });
   });

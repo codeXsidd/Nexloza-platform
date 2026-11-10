@@ -50,8 +50,8 @@ class _EscalationPolicyDetailScreenState
                   keyboardType: TextInputType.number,
                   validator: (v) =>
                       (v == null || int.tryParse(v.trim()) == null)
-                          ? 'Enter a number'
-                          : null,
+                      ? 'Enter a number'
+                      : null,
                 ),
                 AppSpacing.verticalMd,
                 DropdownButtonFormField<String>(
@@ -63,10 +63,13 @@ class _EscalationPolicyDetailScreenState
                   items: const [
                     DropdownMenuItem(value: 'notify', child: Text('Notify')),
                     DropdownMenuItem(
-                        value: 'reassign', child: Text('Reassign')),
+                      value: 'reassign',
+                      child: Text('Reassign'),
+                    ),
                     DropdownMenuItem(
-                        value: 'auto_acknowledge',
-                        child: Text('Auto Acknowledge')),
+                      value: 'auto_acknowledge',
+                      child: Text('Auto Acknowledge'),
+                    ),
                   ],
                   onChanged: (v) => setDialogState(() => actionType = v!),
                 ),
@@ -116,7 +119,8 @@ class _EscalationPolicyDetailScreenState
                 result.when(
                   success: (_) {
                     ref.invalidate(
-                        escalationPolicyDetailProvider(widget.policyId));
+                      escalationPolicyDetailProvider(widget.policyId),
+                    );
                   },
                   failure: (f) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -151,9 +155,8 @@ class _EscalationPolicyDetailScreenState
       },
       failure: (f) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${f.message}')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error: ${f.message}')));
       },
     );
   }
@@ -161,8 +164,9 @@ class _EscalationPolicyDetailScreenState
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final policyAsync =
-        ref.watch(escalationPolicyDetailProvider(widget.policyId));
+    final policyAsync = ref.watch(
+      escalationPolicyDetailProvider(widget.policyId),
+    );
 
     return Scaffold(
       appBar: AppBar(title: const Text('Escalation Policy')),
@@ -174,12 +178,12 @@ class _EscalationPolicyDetailScreenState
             children: [
               const Icon(Icons.error_outline, size: 48),
               AppSpacing.verticalSm,
-              Text('Failed to load policy',
-                  style: theme.textTheme.titleMedium),
+              Text('Failed to load policy', style: theme.textTheme.titleMedium),
               AppSpacing.verticalSm,
               FilledButton(
                 onPressed: () => ref.invalidate(
-                    escalationPolicyDetailProvider(widget.policyId)),
+                  escalationPolicyDetailProvider(widget.policyId),
+                ),
                 child: const Text('Retry'),
               ),
             ],
@@ -198,8 +202,10 @@ class _EscalationPolicyDetailScreenState
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.trending_up,
-                              color: theme.colorScheme.primary),
+                          Icon(
+                            Icons.trending_up,
+                            color: theme.colorScheme.primary,
+                          ),
                           AppSpacing.horizontalSm,
                           Expanded(
                             child: Text(
@@ -226,18 +232,22 @@ class _EscalationPolicyDetailScreenState
                       AppSpacing.verticalSm,
                       Row(
                         children: [
-                          Icon(Icons.layers,
-                              size: 16,
-                              color: theme.colorScheme.onSurfaceVariant),
+                          Icon(
+                            Icons.layers,
+                            size: 16,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             '${policy.stageCount} stages',
                             style: theme.textTheme.bodySmall,
                           ),
                           AppSpacing.horizontalMd,
-                          Icon(Icons.schedule,
-                              size: 16,
-                              color: theme.colorScheme.onSurfaceVariant),
+                          Icon(
+                            Icons.schedule,
+                            size: 16,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             '${policy.totalEscalationMinutes}m total',
@@ -330,7 +340,11 @@ class _StageCard extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.timer, size: 14, color: theme.colorScheme.onSurfaceVariant),
+                      Icon(
+                        Icons.timer,
+                        size: 14,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         '${stage.delayMinutes} min delay',
@@ -339,7 +353,9 @@ class _StageCard extends StatelessWidget {
                       AppSpacing.horizontalSm,
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2),
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: actionColor.withAlpha(30),
                           borderRadius: BorderRadius.circular(8),
@@ -368,8 +384,11 @@ class _StageCard extends StatelessWidget {
               ),
             ),
             IconButton(
-              icon: Icon(Icons.delete_outline,
-                  size: 20, color: theme.colorScheme.error),
+              icon: Icon(
+                Icons.delete_outline,
+                size: 20,
+                color: theme.colorScheme.error,
+              ),
               onPressed: onDelete,
             ),
           ],

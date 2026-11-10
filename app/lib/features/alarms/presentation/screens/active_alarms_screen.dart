@@ -35,8 +35,10 @@ class _ActiveAlarmsScreenState extends ConsumerState<ActiveAlarmsScreen> {
   Future<void> _bulkAcknowledge() async {
     if (_selected.isEmpty) return;
     final notifier = ref.read(alarmActionProvider);
-    final success =
-        await notifier.bulkAcknowledge(widget.projectId, _selected.toList());
+    final success = await notifier.bulkAcknowledge(
+      widget.projectId,
+      _selected.toList(),
+    );
     if (success && mounted) {
       setState(() {
         _selected.clear();
@@ -53,9 +55,9 @@ class _ActiveAlarmsScreenState extends ConsumerState<ActiveAlarmsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_selectionMode
-            ? '${_selected.length} selected'
-            : 'Active Alarms'),
+        title: Text(
+          _selectionMode ? '${_selected.length} selected' : 'Active Alarms',
+        ),
         actions: [
           if (_selectionMode)
             IconButton(
@@ -82,8 +84,7 @@ class _ActiveAlarmsScreenState extends ConsumerState<ActiveAlarmsScreen> {
             children: [
               const Icon(Icons.error_outline, size: 48),
               AppSpacing.verticalSm,
-              Text('Failed to load alarms',
-                  style: theme.textTheme.titleMedium),
+              Text('Failed to load alarms', style: theme.textTheme.titleMedium),
               AppSpacing.verticalSm,
               FilledButton(
                 onPressed: () =>
@@ -182,11 +183,7 @@ class _AlarmCard extends StatelessWidget {
                     color: theme.colorScheme.primary,
                   ),
                 ),
-              Icon(
-                alarm.severity.icon,
-                color: alarm.severity.color,
-                size: 28,
-              ),
+              Icon(alarm.severity.icon, color: alarm.severity.color, size: 28),
               AppSpacing.horizontalSm,
               Expanded(
                 child: Column(
@@ -203,7 +200,9 @@ class _AlarmCard extends StatelessWidget {
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: alarm.severity.color.withAlpha(30),
                             borderRadius: BorderRadius.circular(4),
@@ -220,7 +219,9 @@ class _AlarmCard extends StatelessWidget {
                         const SizedBox(width: 6),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: alarm.status.color.withAlpha(30),
                             borderRadius: BorderRadius.circular(4),

@@ -4,13 +4,14 @@
 
 | File | Focus | Test Count |
 |------|-------|-----------|
-| alarm_entity_test.dart | Alarm entity, AlarmStats, severity, status, source enums | ~25 |
-| alarm_configuration_test.dart | AlarmConfiguration entity, operators, hysteresis | ~15 |
-| alarm_activity_test.dart | AlarmActivity entity, AlarmActivityType enum | ~10 |
-| alarm_lifecycle_test.dart | Alarm lifecycle transitions, deduplication, escalation | ~15 |
-| rule_engine_alarm_test.dart | 4 alarm action node types, config panel integration | ~20 |
-| alarm_widget_test.dart | 5 dashboard alarm widget types, NexWidgetType enum | ~15 |
-| alarm_security_test.dart | Authorization, RLS boundary, escalation target validation | ~15 |
+| alarm_entity_test.dart | Alarm entity, AlarmStats, severity, status, source enums | 37 |
+| alarm_config_test.dart | AlarmConfiguration, operators, hysteresis, AlarmActivityType, AlarmActivity | 21 |
+| alarm_lifecycle_test.dart | Alarm lifecycle transitions, deduplication, escalation, hysteresis | 27 |
+| alarm_security_test.dart | Bad input handling, XSS stored-as-is, null fields, boundary validation | 11 |
+| rule_engine_alarm_test.dart | 4 alarm action node types, ports, config keys, icons, dbValues | 16 |
+| alarm_widget_test.dart | 5 dashboard alarm widget types, categories, sizes, fromTypeId | 12 |
+| notification_outbox_test.dart | AppNotification alarm linking, readAt, categories, severity, data | 15 |
+| escalation_policy_test.dart | EscalationPolicy/Stage fromJson, computed props, action types, toJson | 14 |
 
 ## What Tests Cover
 
@@ -80,7 +81,7 @@ flutter test
 
 To run only Phase 9 tests:
 ```bash
-flutter test test/alarm_entity_test.dart test/alarm_configuration_test.dart test/alarm_activity_test.dart test/alarm_lifecycle_test.dart test/rule_engine_alarm_test.dart test/alarm_widget_test.dart test/alarm_security_test.dart
+flutter test test/alarm_entity_test.dart test/alarm_config_test.dart test/alarm_lifecycle_test.dart test/alarm_security_test.dart test/rule_engine_alarm_test.dart test/alarm_widget_test.dart test/notification_outbox_test.dart test/escalation_policy_test.dart
 ```
 
 ## Test Principles

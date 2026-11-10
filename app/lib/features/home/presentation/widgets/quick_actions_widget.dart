@@ -40,7 +40,7 @@ class QuickActionsWidget extends StatelessWidget {
                 _ActionChip(
                   icon: Icons.smart_toy,
                   label: 'Ask AI',
-                  onTap: () => context.goNamed(RouteNames.aiAssistant),
+                  onTap: () => context.pushNamed(RouteNames.aiAssistant),
                 ),
                 _ActionChip(
                   icon: Icons.dashboard,

@@ -30,8 +30,10 @@ class AlarmConfigScreen extends ConsumerWidget {
             children: [
               const Icon(Icons.error_outline, size: 48),
               AppSpacing.verticalSm,
-              Text('Failed to load configurations',
-                  style: theme.textTheme.titleMedium),
+              Text(
+                'Failed to load configurations',
+                style: theme.textTheme.titleMedium,
+              ),
               AppSpacing.verticalSm,
               FilledButton(
                 onPressed: () =>
@@ -142,8 +144,11 @@ class _ConfigCard extends StatelessWidget {
           padding: AppSpacing.cardPadding,
           child: Row(
             children: [
-              Icon(config.source.icon,
-                  color: theme.colorScheme.primary, size: 28),
+              Icon(
+                config.source.icon,
+                color: theme.colorScheme.primary,
+                size: 28,
+              ),
               AppSpacing.horizontalSm,
               Expanded(
                 child: Column(
@@ -155,7 +160,9 @@ class _ConfigCard extends StatelessWidget {
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: config.severity.color.withAlpha(30),
                             borderRadius: BorderRadius.circular(4),
@@ -179,18 +186,18 @@ class _ConfigCard extends StatelessWidget {
                           ),
                         if (config.hysteresisEnabled) ...[
                           const SizedBox(width: 6),
-                          Icon(Icons.swap_vert,
-                              size: 14, color: theme.colorScheme.outline),
+                          Icon(
+                            Icons.swap_vert,
+                            size: 14,
+                            color: theme.colorScheme.outline,
+                          ),
                         ],
                       ],
                     ),
                   ],
                 ),
               ),
-              Switch(
-                value: config.isEnabled,
-                onChanged: onToggle,
-              ),
+              Switch(value: config.isEnabled, onChanged: onToggle),
             ],
           ),
         ),

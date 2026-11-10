@@ -28,16 +28,20 @@ class RuleGraphValidator {
   void _validateTriggerCount(RuleGraph graph, List<ValidationError> errors) {
     final triggers = graph.triggerNodes;
     if (triggers.isEmpty) {
-      errors.add(const ValidationError(
-        message: 'Rule must have at least one trigger node',
-      ));
+      errors.add(
+        const ValidationError(
+          message: 'Rule must have at least one trigger node',
+        ),
+      );
     }
     if (triggers.length > 1) {
       for (final t in triggers.skip(1)) {
-        errors.add(ValidationError(
-          nodeId: t.id,
-          message: 'Only one trigger node is allowed per rule',
-        ));
+        errors.add(
+          ValidationError(
+            nodeId: t.id,
+            message: 'Only one trigger node is allowed per rule',
+          ),
+        );
       }
     }
   }
@@ -46,10 +50,13 @@ class RuleGraphValidator {
     for (final node in graph.nodes) {
       for (final key in node.type.requiredConfigKeys) {
         if (!node.config.containsKey(key) || node.config[key] == null) {
-          errors.add(ValidationError(
-            nodeId: node.id,
-            message: '${node.type.displayName}: missing required config "$key"',
-          ));
+          errors.add(
+            ValidationError(
+              nodeId: node.id,
+              message:
+                  '${node.type.displayName}: missing required config "$key"',
+            ),
+          );
         }
       }
 
@@ -60,11 +67,17 @@ class RuleGraphValidator {
           node.type == RuleNodeType.equalTo ||
           node.type == RuleNodeType.notEqualTo) {
         final value = node.config['value'];
-        if (value != null && value is! num && value is! bool && value is! String) {
-          errors.add(ValidationError(
-            nodeId: node.id,
-            message: '${node.type.displayName}: value must be a number, boolean, or string',
-          ));
+        if (value != null &&
+            value is! num &&
+            value is! bool &&
+            value is! String) {
+          errors.add(
+            ValidationError(
+              nodeId: node.id,
+              message:
+                  '${node.type.displayName}: value must be a number, boolean, or string',
+            ),
+          );
         }
       }
 
@@ -72,20 +85,24 @@ class RuleGraphValidator {
         final min = node.config['min_value'];
         final max = node.config['max_value'];
         if (min is num && max is num && min > max) {
-          errors.add(ValidationError(
-            nodeId: node.id,
-            message: 'Between Range: min_value must be <= max_value',
-          ));
+          errors.add(
+            ValidationError(
+              nodeId: node.id,
+              message: 'Between Range: min_value must be <= max_value',
+            ),
+          );
         }
       }
 
       if (node.type == RuleNodeType.delay) {
         final duration = node.config['duration_ms'];
         if (duration is num && (duration < 100 || duration > 3600000)) {
-          errors.add(ValidationError(
-            nodeId: node.id,
-            message: 'Delay: duration must be 100ms–3600000ms (1 hour)',
-          ));
+          errors.add(
+            ValidationError(
+              nodeId: node.id,
+              message: 'Delay: duration must be 100ms–3600000ms (1 hour)',
+            ),
+          );
         }
       }
     }
@@ -96,31 +113,42 @@ class RuleGraphValidator {
 
     for (final edge in graph.edges) {
       if (!nodeIds.contains(edge.sourceNodeId)) {
-        errors.add(ValidationError(
-          message: 'Edge ${edge.id}: source node "${edge.sourceNodeId}" not found',
-        ));
+        errors.add(
+          ValidationError(
+            message:
+                'Edge ${edge.id}: source node "${edge.sourceNodeId}" not found',
+          ),
+        );
       }
       if (!nodeIds.contains(edge.targetNodeId)) {
-        errors.add(ValidationError(
-          message: 'Edge ${edge.id}: target node "${edge.targetNodeId}" not found',
-        ));
+        errors.add(
+          ValidationError(
+            message:
+                'Edge ${edge.id}: target node "${edge.targetNodeId}" not found',
+          ),
+        );
       }
 
       if (edge.sourceNodeId == edge.targetNodeId) {
-        errors.add(ValidationError(
-          nodeId: edge.sourceNodeId,
-          message: 'Self-referencing edge not allowed',
-        ));
+        errors.add(
+          ValidationError(
+            nodeId: edge.sourceNodeId,
+            message: 'Self-referencing edge not allowed',
+          ),
+        );
       }
 
       final sourceNode = graph.findNode(edge.sourceNodeId);
       if (sourceNode != null) {
         final validPorts = sourceNode.type.outputPorts.map((p) => p.id).toSet();
         if (!validPorts.contains(edge.sourcePort)) {
-          errors.add(ValidationError(
-            nodeId: edge.sourceNodeId,
-            message: '${sourceNode.type.displayName}: invalid output port "${edge.sourcePort}"',
-          ));
+          errors.add(
+            ValidationError(
+              nodeId: edge.sourceNodeId,
+              message:
+                  '${sourceNode.type.displayName}: invalid output port "${edge.sourcePort}"',
+            ),
+          );
         }
       }
 
@@ -128,17 +156,22 @@ class RuleGraphValidator {
       if (targetNode != null) {
         final validPorts = targetNode.type.inputPorts.map((p) => p.id).toSet();
         if (!validPorts.contains(edge.targetPort)) {
-          errors.add(ValidationError(
-            nodeId: edge.targetNodeId,
-            message: '${targetNode.type.displayName}: invalid input port "${edge.targetPort}"',
-          ));
+          errors.add(
+            ValidationError(
+              nodeId: edge.targetNodeId,
+              message:
+                  '${targetNode.type.displayName}: invalid input port "${edge.targetPort}"',
+            ),
+          );
         }
       }
     }
   }
 
   void _validateDisconnectedNodes(
-      RuleGraph graph, List<ValidationError> errors) {
+    RuleGraph graph,
+    List<ValidationError> errors,
+  ) {
     if (graph.nodes.length <= 1) return;
 
     final connectedIds = <String>{};
@@ -149,10 +182,13 @@ class RuleGraphValidator {
 
     for (final node in graph.nodes) {
       if (!node.type.isTrigger && !connectedIds.contains(node.id)) {
-        errors.add(ValidationError(
-          nodeId: node.id,
-          message: '${node.type.displayName}: node is not connected to any other node',
-        ));
+        errors.add(
+          ValidationError(
+            nodeId: node.id,
+            message:
+                '${node.type.displayName}: node is not connected to any other node',
+          ),
+        );
       }
     }
   }
@@ -184,10 +220,13 @@ class RuleGraphValidator {
 
     for (final node in graph.nodes) {
       if (!visited.contains(node.id) && hasCycle(node.id)) {
-        errors.add(ValidationError(
-          nodeId: node.id,
-          message: 'Cycle detected in graph starting from "${node.type.displayName}"',
-        ));
+        errors.add(
+          ValidationError(
+            nodeId: node.id,
+            message:
+                'Cycle detected in graph starting from "${node.type.displayName}"',
+          ),
+        );
         break;
       }
     }
@@ -218,11 +257,13 @@ class RuleGraphValidator {
       if (sourcePort != null &&
           targetPort != null &&
           !sourcePort.dataType.canConnectTo(targetPort.dataType)) {
-        errors.add(ValidationError(
-          nodeId: edge.targetNodeId,
-          message:
-              'Incompatible port types: ${sourcePort.dataType.name} → ${targetPort.dataType.name}',
-        ));
+        errors.add(
+          ValidationError(
+            nodeId: edge.targetNodeId,
+            message:
+                'Incompatible port types: ${sourcePort.dataType.name} → ${targetPort.dataType.name}',
+          ),
+        );
       }
     }
   }

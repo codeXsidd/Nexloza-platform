@@ -33,8 +33,10 @@ class EscalationPoliciesScreen extends ConsumerWidget {
             children: [
               const Icon(Icons.error_outline, size: 48),
               AppSpacing.verticalSm,
-              Text('Failed to load policies',
-                  style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                'Failed to load policies',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               AppSpacing.verticalSm,
               FilledButton(
                 onPressed: () =>
@@ -182,8 +184,10 @@ class _PolicyCard extends StatelessWidget {
                     ),
                   ),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: policy.isEnabled
                           ? Colors.green.withAlpha(30)

@@ -173,8 +173,7 @@ Widget buildAlarmSeverityDistribution(
   final distribution = <String, int>{};
   if (data.currentValue is Map) {
     for (final entry in (data.currentValue as Map).entries) {
-      distribution[entry.key.toString()] =
-          (entry.value as num?)?.toInt() ?? 0;
+      distribution[entry.key.toString()] = (entry.value as num?)?.toInt() ?? 0;
     }
   }
 
@@ -314,8 +313,7 @@ Widget buildRecentAlarmActivity(
                 ),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(12),
@@ -348,8 +346,8 @@ Widget buildRecentAlarmActivity(
                 separatorBuilder: (_, __) => const Divider(height: 1),
                 itemBuilder: (_, i) {
                   final alarm = alarms[i];
-                  final severity =
-                      (alarm['severity'] as String? ?? 'warning').toLowerCase();
+                  final severity = (alarm['severity'] as String? ?? 'warning')
+                      .toLowerCase();
                   final color =
                       severityColors[severity] ?? theme.colorScheme.outline;
                   return Padding(

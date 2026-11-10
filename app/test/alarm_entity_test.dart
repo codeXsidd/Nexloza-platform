@@ -51,7 +51,10 @@ void main() {
     test('fromString resolves by dbValue', () {
       expect(AlarmSeverity.fromString('critical'), AlarmSeverity.critical);
       expect(AlarmSeverity.fromString('high'), AlarmSeverity.high);
-      expect(AlarmSeverity.fromString('informational'), AlarmSeverity.informational);
+      expect(
+        AlarmSeverity.fromString('informational'),
+        AlarmSeverity.informational,
+      );
     });
 
     test('fromString resolves by enum name', () {
@@ -116,11 +119,17 @@ void main() {
     });
 
     test('fromString resolves sensor_threshold', () {
-      expect(AlarmSource.fromString('sensor_threshold'), AlarmSource.sensorThreshold);
+      expect(
+        AlarmSource.fromString('sensor_threshold'),
+        AlarmSource.sensorThreshold,
+      );
     });
 
     test('fromString resolves device_offline', () {
-      expect(AlarmSource.fromString('device_offline'), AlarmSource.deviceOffline);
+      expect(
+        AlarmSource.fromString('device_offline'),
+        AlarmSource.deviceOffline,
+      );
     });
 
     test('fromString returns manual for invalid input', () {
@@ -130,35 +139,35 @@ void main() {
 
   group('Alarm.fromJson', () {
     Map<String, dynamic> fullAlarmJson() => {
-          'id': 'alarm-001',
-          'alarm_key': 'sensor_threshold:proj1:dev1:temperature',
-          'project_id': 'proj1',
-          'device_id': 'dev1',
-          'organization_id': 'org1',
-          'severity': 'critical',
-          'status': 'active',
-          'source': 'sensor_threshold',
-          'title': 'Temperature High',
-          'message': 'Exceeded 80C',
-          'category': 'temperature',
-          'condition_value': 85.0,
-          'threshold_value': 80.0,
-          'hysteresis_clear_value': 75.0,
-          'acknowledged_by': null,
-          'acknowledged_at': null,
-          'cleared_by': null,
-          'cleared_at': null,
-          'cleared_reason': null,
-          'occurrence_count': 3,
-          'first_occurred_at': '2026-11-10T10:00:00Z',
-          'last_occurred_at': '2026-11-10T10:30:00Z',
-          'data': {'sensor_key': 'temperature'},
-          'escalation_policy_id': 'esc-001',
-          'escalation_stage': 2,
-          'escalated_at': '2026-11-10T10:20:00Z',
-          'created_at': '2026-11-10T10:00:00Z',
-          'updated_at': '2026-11-10T10:30:00Z',
-        };
+      'id': 'alarm-001',
+      'alarm_key': 'sensor_threshold:proj1:dev1:temperature',
+      'project_id': 'proj1',
+      'device_id': 'dev1',
+      'organization_id': 'org1',
+      'severity': 'critical',
+      'status': 'active',
+      'source': 'sensor_threshold',
+      'title': 'Temperature High',
+      'message': 'Exceeded 80C',
+      'category': 'temperature',
+      'condition_value': 85.0,
+      'threshold_value': 80.0,
+      'hysteresis_clear_value': 75.0,
+      'acknowledged_by': null,
+      'acknowledged_at': null,
+      'cleared_by': null,
+      'cleared_at': null,
+      'cleared_reason': null,
+      'occurrence_count': 3,
+      'first_occurred_at': '2026-11-10T10:00:00Z',
+      'last_occurred_at': '2026-11-10T10:30:00Z',
+      'data': {'sensor_key': 'temperature'},
+      'escalation_policy_id': 'esc-001',
+      'escalation_stage': 2,
+      'escalated_at': '2026-11-10T10:20:00Z',
+      'created_at': '2026-11-10T10:00:00Z',
+      'updated_at': '2026-11-10T10:30:00Z',
+    };
 
     test('parses full JSON correctly', () {
       final alarm = Alarm.fromJson(fullAlarmJson());
@@ -199,22 +208,22 @@ void main() {
 
   group('Alarm computed properties', () {
     Alarm alarmWithStatus(String status) => Alarm.fromJson({
-          'id': 'a1',
-          'alarm_key': 'k1',
-          'project_id': 'p1',
-          'organization_id': 'o1',
-          'severity': 'critical',
-          'status': status,
-          'source': 'manual',
-          'title': 'Test',
-          'category': 'general',
-          'occurrence_count': 1,
-          'first_occurred_at': '2026-11-10T10:00:00Z',
-          'last_occurred_at': '2026-11-10T10:00:00Z',
-          'data': <String, dynamic>{},
-          'created_at': '2026-11-10T10:00:00Z',
-          'updated_at': '2026-11-10T10:00:00Z',
-        });
+      'id': 'a1',
+      'alarm_key': 'k1',
+      'project_id': 'p1',
+      'organization_id': 'o1',
+      'severity': 'critical',
+      'status': status,
+      'source': 'manual',
+      'title': 'Test',
+      'category': 'general',
+      'occurrence_count': 1,
+      'first_occurred_at': '2026-11-10T10:00:00Z',
+      'last_occurred_at': '2026-11-10T10:00:00Z',
+      'data': <String, dynamic>{},
+      'created_at': '2026-11-10T10:00:00Z',
+      'updated_at': '2026-11-10T10:00:00Z',
+    });
 
     test('isActive is true only for active', () {
       expect(alarmWithStatus('active').isActive, true);
@@ -282,22 +291,22 @@ void main() {
 
     test('fromAlarms computes correct counts', () {
       Alarm makeAlarm(String status, String severity) => Alarm.fromJson({
-            'id': '${status}_$severity',
-            'alarm_key': 'k_${status}_$severity',
-            'project_id': 'p1',
-            'organization_id': 'o1',
-            'severity': severity,
-            'status': status,
-            'source': 'manual',
-            'title': 'Test',
-            'category': 'general',
-            'occurrence_count': 1,
-            'first_occurred_at': '2026-11-10T10:00:00Z',
-            'last_occurred_at': '2026-11-10T10:00:00Z',
-            'data': <String, dynamic>{},
-            'created_at': '2026-11-10T10:00:00Z',
-            'updated_at': '2026-11-10T10:00:00Z',
-          });
+        'id': '${status}_$severity',
+        'alarm_key': 'k_${status}_$severity',
+        'project_id': 'p1',
+        'organization_id': 'o1',
+        'severity': severity,
+        'status': status,
+        'source': 'manual',
+        'title': 'Test',
+        'category': 'general',
+        'occurrence_count': 1,
+        'first_occurred_at': '2026-11-10T10:00:00Z',
+        'last_occurred_at': '2026-11-10T10:00:00Z',
+        'data': <String, dynamic>{},
+        'created_at': '2026-11-10T10:00:00Z',
+        'updated_at': '2026-11-10T10:00:00Z',
+      });
 
       final alarms = [
         makeAlarm('active', 'critical'),

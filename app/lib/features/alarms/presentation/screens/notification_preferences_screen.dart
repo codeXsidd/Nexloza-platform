@@ -145,36 +145,29 @@ class _NotificationPreferencesScreenState
 
     for (final cat in _categories) {
       final pref = _prefs[cat]!;
-      await supabase.from('notification_preferences').upsert(
-        {
-          'user_id': userId,
-          'category': cat,
-          'push_enabled': pref.pushEnabled,
-          'email_enabled': pref.emailEnabled,
-          'in_app_enabled': pref.inAppEnabled,
-          'quiet_hours_enabled': _quietHoursEnabled,
-          'quiet_hours_start': quietStartStr,
-          'quiet_hours_end': quietEndStr,
-          'timezone': _timezone,
-          'min_severity': _minSeverity,
-        },
-        onConflict: 'user_id,category',
-      );
+      await supabase.from('notification_preferences').upsert({
+        'user_id': userId,
+        'category': cat,
+        'push_enabled': pref.pushEnabled,
+        'email_enabled': pref.emailEnabled,
+        'in_app_enabled': pref.inAppEnabled,
+        'quiet_hours_enabled': _quietHoursEnabled,
+        'quiet_hours_start': quietStartStr,
+        'quiet_hours_end': quietEndStr,
+        'timezone': _timezone,
+        'min_severity': _minSeverity,
+      }, onConflict: 'user_id,category');
     }
 
     if (!mounted) return;
     setState(() => _saving = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Preferences saved')),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('Preferences saved')));
   }
 
   Future<void> _pickTime(bool isStart) async {
     final current = isStart ? _quietStart : _quietEnd;
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: current,
-    );
+    final picked = await showTimePicker(context: context, initialTime: current);
     if (picked != null) {
       setState(() {
         if (isStart) {
@@ -221,13 +214,15 @@ class _NotificationPreferencesScreenState
           children: [
             Text('Categories', style: theme.textTheme.titleMedium),
             AppSpacing.verticalSm,
-            ..._categories.map((cat) => _CategoryCard(
-                  category: cat,
-                  label: _categoryLabels[cat] ?? cat,
-                  icon: _categoryIcons[cat] ?? Icons.notifications,
-                  pref: _prefs[cat]!,
-                  onChanged: () => setState(() {}),
-                )),
+            ..._categories.map(
+              (cat) => _CategoryCard(
+                category: cat,
+                label: _categoryLabels[cat] ?? cat,
+                icon: _categoryIcons[cat] ?? Icons.notifications,
+                pref: _prefs[cat]!,
+                onChanged: () => setState(() {}),
+              ),
+            ),
             AppSpacing.verticalLg,
             Text('Quiet Hours', style: theme.textTheme.titleMedium),
             AppSpacing.verticalSm,
@@ -239,10 +234,10 @@ class _NotificationPreferencesScreenState
                     SwitchListTile(
                       title: const Text('Enable Quiet Hours'),
                       subtitle: const Text(
-                          'Suppress non-critical notifications during these hours'),
+                        'Suppress non-critical notifications during these hours',
+                      ),
                       value: _quietHoursEnabled,
-                      onChanged: (v) =>
-                          setState(() => _quietHoursEnabled = v),
+                      onChanged: (v) => setState(() => _quietHoursEnabled = v),
                     ),
                     if (_quietHoursEnabled) ...[
                       const Divider(),
@@ -269,13 +264,15 @@ class _NotificationPreferencesScreenState
                           value: _timezone,
                           underline: const SizedBox.shrink(),
                           items: _timezones
-                              .map((tz) => DropdownMenuItem(
-                                    value: tz,
-                                    child: Text(
-                                      tz.replaceAll('_', ' '),
-                                      style: theme.textTheme.bodySmall,
-                                    ),
-                                  ))
+                              .map(
+                                (tz) => DropdownMenuItem(
+                                  value: tz,
+                                  child: Text(
+                                    tz.replaceAll('_', ' '),
+                                    style: theme.textTheme.bodySmall,
+                                  ),
+                                ),
+                              )
                               .toList(),
                           onChanged: (v) =>
                               setState(() => _timezone = v ?? 'UTC'),
@@ -299,15 +296,14 @@ class _NotificationPreferencesScreenState
                     prefixIcon: Icon(Icons.filter_list),
                   ),
                   items: const [
+                    DropdownMenuItem(value: 'info', child: Text('Info (all)')),
+                    DropdownMenuItem(value: 'warning', child: Text('Warning+')),
                     DropdownMenuItem(
-                        value: 'info', child: Text('Info (all)')),
-                    DropdownMenuItem(
-                        value: 'warning', child: Text('Warning+')),
-                    DropdownMenuItem(
-                        value: 'critical', child: Text('Critical only')),
+                      value: 'critical',
+                      child: Text('Critical only'),
+                    ),
                   ],
-                  onChanged: (v) =>
-                      setState(() => _minSeverity = v ?? 'info'),
+                  onChanged: (v) => setState(() => _minSeverity = v ?? 'info'),
                 ),
               ),
             ),

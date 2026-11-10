@@ -10,8 +10,7 @@ class EscalationRepository {
 
   EscalationRepository(this._ref);
 
-  Future<Result<List<EscalationPolicy>>> getPolicies(
-      String projectId) async {
+  Future<Result<List<EscalationPolicy>>> getPolicies(String projectId) async {
     try {
       final supabase = _ref.read(supabaseClientProvider);
       final response = await supabase
@@ -25,7 +24,8 @@ class EscalationRepository {
       return Result.success(policies);
     } catch (e) {
       return Result.failure(
-          ServerFailure('Failed to load escalation policies: $e'));
+        ServerFailure('Failed to load escalation policies: $e'),
+      );
     }
   }
 
@@ -40,12 +40,14 @@ class EscalationRepository {
       return Result.success(EscalationPolicy.fromJson(response));
     } catch (e) {
       return Result.failure(
-          ServerFailure('Failed to load escalation policy: $e'));
+        ServerFailure('Failed to load escalation policy: $e'),
+      );
     }
   }
 
   Future<Result<EscalationPolicy>> createPolicy(
-      Map<String, dynamic> data) async {
+    Map<String, dynamic> data,
+  ) async {
     try {
       final supabase = _ref.read(supabaseClientProvider);
       final response = await supabase
@@ -56,12 +58,15 @@ class EscalationRepository {
       return Result.success(EscalationPolicy.fromJson(response));
     } catch (e) {
       return Result.failure(
-          ServerFailure('Failed to create escalation policy: $e'));
+        ServerFailure('Failed to create escalation policy: $e'),
+      );
     }
   }
 
   Future<Result<EscalationPolicy>> updatePolicy(
-      String id, Map<String, dynamic> data) async {
+    String id,
+    Map<String, dynamic> data,
+  ) async {
     try {
       final supabase = _ref.read(supabaseClientProvider);
       final response = await supabase
@@ -73,7 +78,8 @@ class EscalationRepository {
       return Result.success(EscalationPolicy.fromJson(response));
     } catch (e) {
       return Result.failure(
-          ServerFailure('Failed to update escalation policy: $e'));
+        ServerFailure('Failed to update escalation policy: $e'),
+      );
     }
   }
 
@@ -84,7 +90,8 @@ class EscalationRepository {
       return Result.success(null);
     } catch (e) {
       return Result.failure(
-          ServerFailure('Failed to delete escalation policy: $e'));
+        ServerFailure('Failed to delete escalation policy: $e'),
+      );
     }
   }
 
@@ -99,19 +106,20 @@ class EscalationRepository {
       return Result.success(EscalationStage.fromJson(response));
     } catch (e) {
       return Result.failure(
-          ServerFailure('Failed to add escalation stage: $e'));
+        ServerFailure('Failed to add escalation stage: $e'),
+      );
     }
   }
 
-  Future<Result<void>> updateStage(
-      String id, Map<String, dynamic> data) async {
+  Future<Result<void>> updateStage(String id, Map<String, dynamic> data) async {
     try {
       final supabase = _ref.read(supabaseClientProvider);
       await supabase.from('escalation_stages').update(data).eq('id', id);
       return Result.success(null);
     } catch (e) {
       return Result.failure(
-          ServerFailure('Failed to update escalation stage: $e'));
+        ServerFailure('Failed to update escalation stage: $e'),
+      );
     }
   }
 
@@ -122,7 +130,8 @@ class EscalationRepository {
       return Result.success(null);
     } catch (e) {
       return Result.failure(
-          ServerFailure('Failed to remove escalation stage: $e'));
+        ServerFailure('Failed to remove escalation stage: $e'),
+      );
     }
   }
 }
