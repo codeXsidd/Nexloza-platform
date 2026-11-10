@@ -18,7 +18,16 @@ class AutomationsScreen extends ConsumerWidget {
     final automationsAsync = ref.watch(automationsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text(AppStrings.automations)),
+      appBar: AppBar(
+        title: const Text(AppStrings.automations),
+        actions: [
+          TextButton.icon(
+            onPressed: () => context.pushNamed(RouteNames.rules),
+            icon: const Icon(Icons.account_tree, size: 18),
+            label: const Text('Rules'),
+          ),
+        ],
+      ),
       body: automationsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(

@@ -40,4 +40,11 @@ abstract final class RouteNames {
   static const String createVirtualDevice = 'createVirtualDevice';
   static const String simulatorControl = 'simulatorControl';
   static const String digitalTwin = 'digitalTwin';
+  static const String rules = 'rules';
+  static const String createRule = 'createRule';
+  static const String ruleDetail = 'ruleDetail';
+  static const String ruleEditor = 'ruleEditor';
+  static const String ruleExecutionHistory = 'ruleExecutionHistory';
+  static const String ruleExecutionDetail = 'ruleExecutionDetail';
+  static const String ruleDryRun = 'ruleDryRun';
 }

@@ -44,6 +44,13 @@ import '../features/scenes/presentation/screens/scenes_screen.dart';
 import '../features/scenes/presentation/screens/create_scene_screen.dart';
 import '../features/analytics/presentation/screens/analytics_screen.dart';
 import '../features/integrations/presentation/screens/integrations_screen.dart';
+import '../features/rule_engine/presentation/screens/rules_list_screen.dart';
+import '../features/rule_engine/presentation/screens/create_rule_screen.dart';
+import '../features/rule_engine/presentation/screens/rule_detail_screen.dart';
+import '../features/rule_engine/presentation/screens/rule_editor_screen.dart';
+import '../features/rule_engine/presentation/screens/execution_history_screen.dart';
+import '../features/rule_engine/presentation/screens/execution_detail_screen.dart';
+import '../features/rule_engine/presentation/screens/rule_dry_run_screen.dart';
 import '../shared/widgets/app_scaffold.dart';
 import '../shared/widgets/not_found_screen.dart';
 import 'route_names.dart';
@@ -384,6 +391,66 @@ final routerProvider = Provider<GoRouter>((ref) {
             parentNavigatorKey: _rootNavigatorKey,
             builder: (context, state) =>
                 DigitalTwinScreen(deviceId: state.pathParameters['id']!),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: '/rules',
+        name: RouteNames.rules,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => RulesListScreen(
+          projectId: state.uri.queryParameters['projectId'] ?? '',
+        ),
+        routes: [
+          GoRoute(
+            path: 'create',
+            name: RouteNames.createRule,
+            parentNavigatorKey: _rootNavigatorKey,
+            builder: (context, state) => CreateRuleScreen(
+              projectId: state.uri.queryParameters['projectId'] ?? '',
+            ),
+          ),
+          GoRoute(
+            path: ':id',
+            name: RouteNames.ruleDetail,
+            parentNavigatorKey: _rootNavigatorKey,
+            builder: (context, state) => RuleDetailScreen(
+              ruleId: state.pathParameters['id']!,
+            ),
+            routes: [
+              GoRoute(
+                path: 'editor',
+                name: RouteNames.ruleEditor,
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) => RuleEditorScreen(
+                  ruleId: state.pathParameters['id']!,
+                ),
+              ),
+              GoRoute(
+                path: 'executions',
+                name: RouteNames.ruleExecutionHistory,
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) => ExecutionHistoryScreen(
+                  ruleId: state.pathParameters['id']!,
+                ),
+              ),
+              GoRoute(
+                path: 'dry-run',
+                name: RouteNames.ruleDryRun,
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) => RuleDryRunScreen(
+                  automationId: state.pathParameters['id']!,
+                ),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: 'execution/:executionId',
+            name: RouteNames.ruleExecutionDetail,
+            parentNavigatorKey: _rootNavigatorKey,
+            builder: (context, state) => ExecutionDetailScreen(
+              executionId: state.pathParameters['executionId']!,
+            ),
           ),
         ],
       ),
