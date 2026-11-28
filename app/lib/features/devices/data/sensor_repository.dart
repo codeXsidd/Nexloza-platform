@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/services/offline_sync_service.dart';
 import '../../../shared/providers/supabase_provider.dart';
 import '../../../shared/models/result.dart';
 import '../../../core/errors/failures.dart';
@@ -9,17 +10,26 @@ import '../domain/entities/sensor_entity.dart';
 class SensorRepository {
   final SupabaseClient _client;
 
-  SensorRepository(this._client);
+  final OfflineSyncService? _offline;
+
+  SensorRepository(this._client, {OfflineSyncService? offline})
+    : _offline = offline;
 
   Future<Result<List<SensorDefinition>>> getSensors({
     required String deviceId,
   }) async {
     try {
-      final response = await _client
-          .from('sensor_definitions')
-          .select()
-          .eq('device_id', deviceId)
-          .order('created_at');
+      final response = await cachedRead(
+        _offline,
+        'capabilities',
+        deviceId,
+        'sensors',
+        () async => await _client
+            .from('sensor_definitions')
+            .select()
+            .eq('device_id', deviceId)
+            .order('created_at'),
+      );
       final sensors = (response as List)
           .map((e) => SensorDefinition.fromJson(e))
           .toList();
@@ -35,11 +45,17 @@ class SensorRepository {
     required String projectId,
   }) async {
     try {
-      final response = await _client
-          .from('sensor_definitions')
-          .select()
-          .eq('project_id', projectId)
-          .order('created_at');
+      final response = await cachedRead(
+        _offline,
+        'capabilities',
+        projectId,
+        'project-sensors',
+        () async => await _client
+            .from('sensor_definitions')
+            .select()
+            .eq('project_id', projectId)
+            .order('created_at'),
+      );
       final sensors = (response as List)
           .map((e) => SensorDefinition.fromJson(e))
           .toList();
@@ -122,5 +138,8 @@ class SensorRepository {
 }
 
 final sensorRepositoryProvider = Provider<SensorRepository>((ref) {
-  return SensorRepository(ref.watch(supabaseClientProvider));
+  return SensorRepository(
+    ref.watch(supabaseClientProvider),
+    offline: ref.watch(offlineSyncProvider),
+  );
 });

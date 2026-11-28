@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../shared/providers/supabase_provider.dart';
 import '../../../shared/models/result.dart';
@@ -19,25 +20,31 @@ class CommandRepository {
     required String deviceId,
     required String commandType,
     Map<String, dynamic> payload = const {},
+    String? requestId,
   }) async {
     try {
       final response = await _client.functions.invoke(
         'device-command',
         body: {
           'device_id': deviceId,
+          'command_id': requestId ?? const Uuid().v4(),
           'command_type': commandType,
           'payload': payload,
         },
       );
 
       if (response.status != 201) {
-        final error = jsonDecode(response.data as String);
+        final error = response.data is String
+            ? jsonDecode(response.data as String) as Map<String, dynamic>
+            : response.data as Map<String, dynamic>;
         return Result.failure(
           ServerFailure(error['error'] as String? ?? 'Failed to send command'),
         );
       }
 
-      final data = jsonDecode(response.data as String);
+      final data = response.data is String
+          ? jsonDecode(response.data as String) as Map<String, dynamic>
+          : response.data as Map<String, dynamic>;
       final command = DeviceCommand.fromJson(
         data['command'] as Map<String, dynamic>,
       );
@@ -83,31 +90,6 @@ class CommandRepository {
           .map((e) => DeviceCommand.fromJson(e))
           .toList();
       return Result.success(commands);
-    } on PostgrestException catch (e) {
-      return Result.failure(ServerFailure(e.message));
-    } catch (e) {
-      return Result.failure(ServerFailure(e.toString()));
-    }
-  }
-
-  Future<Result<void>> updateCommandStatus(
-    String commandId,
-    CommandStatus status, {
-    String? errorMessage,
-  }) async {
-    try {
-      final updates = <String, dynamic>{'status': status.name};
-      if (status == CommandStatus.sent) {
-        updates['sent_at'] = DateTime.now().toIso8601String();
-      } else if (status == CommandStatus.acknowledged) {
-        updates['acknowledged_at'] = DateTime.now().toIso8601String();
-      } else if (status == CommandStatus.executed) {
-        updates['executed_at'] = DateTime.now().toIso8601String();
-      }
-      if (errorMessage != null) updates['error_message'] = errorMessage;
-
-      await _client.from('device_commands').update(updates).eq('id', commandId);
-      return Result.success(null);
     } on PostgrestException catch (e) {
       return Result.failure(ServerFailure(e.message));
     } catch (e) {

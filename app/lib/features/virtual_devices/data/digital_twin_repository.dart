@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/services/offline_sync_service.dart';
 import '../../../shared/providers/supabase_provider.dart';
 import '../../../shared/models/result.dart';
 import '../../../core/errors/failures.dart';
@@ -9,16 +10,27 @@ import '../domain/entities/digital_twin_state.dart';
 class DigitalTwinRepository {
   final SupabaseClient _client;
 
-  DigitalTwinRepository(this._client);
+  final OfflineSyncService? _offline;
+
+  DigitalTwinRepository(this._client, {OfflineSyncService? offline})
+    : _offline = offline;
 
   Future<Result<DigitalTwinState>> getState(String deviceId) async {
     try {
-      final response = await _client
-          .from('device_twin_state')
-          .select()
-          .eq('device_id', deviceId)
-          .single();
-      return Result.success(DigitalTwinState.fromJson(response));
+      final response = await cachedRead(
+        _offline,
+        'state',
+        deviceId,
+        'detail',
+        () async => await _client
+            .from('device_twin_state')
+            .select()
+            .eq('device_id', deviceId)
+            .single(),
+      );
+      return Result.success(
+        DigitalTwinState.fromJson(response as Map<String, dynamic>),
+      );
     } on PostgrestException catch (e) {
       return Result.failure(ServerFailure(e.message));
     } catch (e) {
@@ -171,5 +183,8 @@ class DigitalTwinRepository {
 }
 
 final digitalTwinRepositoryProvider = Provider<DigitalTwinRepository>((ref) {
-  return DigitalTwinRepository(ref.watch(supabaseClientProvider));
+  return DigitalTwinRepository(
+    ref.watch(supabaseClientProvider),
+    offline: ref.watch(offlineSyncProvider),
+  );
 });

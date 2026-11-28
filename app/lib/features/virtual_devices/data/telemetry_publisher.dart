@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:collection';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -18,6 +19,8 @@ class TelemetryPublisher {
   final SimulatorEngine _engine;
   final _subscriptions = <String, StreamSubscription<SimulatorDeviceState>>{};
   final _brokers = <String, MqttService>{};
+  final _commands = <String, StreamSubscription<NexlozaMqttMessage>>{};
+  final _offlineMessages = <String, ({String topic, String payload})>{};
   final _watchers = <String, StreamSubscription<MqttConnectionStatus>>{};
   final _status = StreamController<(String, String)>.broadcast();
   final _messages = <String, String>{};
@@ -55,20 +58,123 @@ class TelemetryPublisher {
 
     MqttService? broker;
     if (credentials != null) {
-      broker = MqttService();
-      _brokers[deviceId] = broker;
-      _watchers[deviceId] = broker.statusStream.listen((status) {
+      final definitions = await _client
+          .from('actuator_definitions')
+          .select('id,command_key,min_value,max_value,control_type')
+          .eq('device_id', deviceId)
+          .eq('is_active', true);
+      if (_disposed || _brokers.containsKey(deviceId)) return false;
+      final client = broker = MqttService();
+      _brokers[deviceId] = client;
+      final statusTopic = MqttConstants.statusTopic(
+        organizationId,
+        projectId,
+        deviceId,
+      );
+      final commandTopic = MqttConstants.commandTopic(
+        organizationId,
+        projectId,
+        deviceId,
+      );
+      final ackTopic = MqttConstants.commandAckTopic(
+        organizationId,
+        projectId,
+        deviceId,
+      );
+      final stateTopic = MqttConstants.stateTopic(
+        organizationId,
+        projectId,
+        deviceId,
+      );
+      final offline = (
+        topic: statusTopic,
+        payload: jsonEncode({'online': false}),
+      );
+      final acknowledgements = LinkedHashMap<String, Map<String, dynamic>>();
+      _offlineMessages[deviceId] = offline;
+      _commands[deviceId] = client.messageStream
+          .where((m) => m.topic == commandTopic)
+          .listen((message) {
+            try {
+              final command =
+                  jsonDecode(message.payload) as Map<String, dynamic>;
+              final id = command['command_id'] as String;
+              final expiry = DateTime.parse(command['expires_at'] as String);
+              if (!expiry.isAfter(DateTime.now())) return;
+              final previous = acknowledgements[id];
+              if (previous != null) {
+                client.publish(ackTopic, jsonEncode(previous));
+                return;
+              }
+              final payload = command['payload'] as Map<String, dynamic>;
+              final key = command['command_type'] as String;
+              final matches = definitions
+                  .where(
+                    (item) =>
+                        item['command_key'] == key &&
+                        (payload['actuator_id'] == null ||
+                            item['id'] == payload['actuator_id']),
+                  )
+                  .toList();
+              final capability = matches.length == 1 ? matches.single : null;
+              final raw = payload['value'];
+              final value = raw is bool
+                  ? (raw ? 1.0 : 0.0)
+                  : (raw as num?)?.toDouble();
+              double? reported;
+              if (capability != null &&
+                  value != null &&
+                  value.isFinite &&
+                  value >= ((capability['min_value'] as num?) ?? 0) &&
+                  value <= ((capability['max_value'] as num?) ?? 1) &&
+                  (capability['control_type'] != 'toggle' ||
+                      value == 0 ||
+                      value == 1)) {
+                reported = _engine.applyActuatorValue(deviceId, key, value);
+                // Offline/timeout faults intentionally leave the command unanswered.
+                if (reported == null) return;
+              }
+              final ack = <String, dynamic>{
+                'command_id': id,
+                'success': reported != null,
+                if (reported != null) 'value': reported,
+              };
+              acknowledgements[id] = ack;
+              if (acknowledgements.length > 256) {
+                acknowledgements.remove(acknowledgements.keys.first);
+              }
+              if (reported != null) {
+                client.publish(
+                  stateTopic,
+                  jsonEncode({'command_id': id, key: reported}),
+                );
+              }
+              client.publish(ackTopic, jsonEncode(ack));
+            } catch (_) {
+              _report(deviceId, 'Ignored malformed command');
+            }
+          });
+      _watchers[deviceId] = client.statusStream.listen((status) {
         _report(deviceId, 'MQTT: ${status.name}');
+        if (status == MqttConnectionStatus.connected) {
+          client.subscribe(commandTopic);
+          client.publish(
+            statusTopic,
+            jsonEncode({'online': true}),
+            retain: true,
+          );
+        }
       });
-      final connected = await broker.connect(
+      final connected = await client.connect(
         host: EnvConfig.mqttHost,
         port: EnvConfig.mqttPort,
         clientId: 'sim_${const Uuid().v4().substring(0, 16)}',
         username: credentials.username,
         password: credentials.password,
         useTls: EnvConfig.mqttTls,
+        will: offline,
       );
-      if (!identical(_brokers[deviceId], broker)) return false;
+      if (!identical(_brokers[deviceId], client)) return false;
       if (!connected) {
         stopPublishing(deviceId);
         _report(deviceId, 'MQTT connection rejected or unavailable');
@@ -169,7 +275,13 @@ class TelemetryPublisher {
   void stopPublishing(String deviceId) {
     unawaited(_subscriptions.remove(deviceId)?.cancel());
     unawaited(_watchers.remove(deviceId)?.cancel());
-    _brokers.remove(deviceId)?.dispose();
+    unawaited(_commands.remove(deviceId)?.cancel());
+    final broker = _brokers.remove(deviceId);
+    final offline = _offlineMessages.remove(deviceId);
+    if (broker != null && offline != null) {
+      broker.publish(offline.topic, offline.payload, retain: true);
+      broker.dispose();
+    }
     _report(deviceId, 'Telemetry delivery is idle');
   }
 

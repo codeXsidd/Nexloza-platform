@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/services/offline_sync_service.dart';
 import '../../../shared/providers/supabase_provider.dart';
 import '../../../shared/models/result.dart';
 import '../../../core/errors/failures.dart';
@@ -9,17 +10,26 @@ import '../domain/entities/actuator_entity.dart';
 class ActuatorRepository {
   final SupabaseClient _client;
 
-  ActuatorRepository(this._client);
+  final OfflineSyncService? _offline;
+
+  ActuatorRepository(this._client, {OfflineSyncService? offline})
+    : _offline = offline;
 
   Future<Result<List<ActuatorDefinition>>> getActuators({
     required String deviceId,
   }) async {
     try {
-      final response = await _client
-          .from('actuator_definitions')
-          .select()
-          .eq('device_id', deviceId)
-          .order('created_at');
+      final response = await cachedRead(
+        _offline,
+        'capabilities',
+        deviceId,
+        'actuators',
+        () async => await _client
+            .from('actuator_definitions')
+            .select()
+            .eq('device_id', deviceId)
+            .order('created_at'),
+      );
       final actuators = (response as List)
           .map((e) => ActuatorDefinition.fromJson(e))
           .toList();
@@ -100,5 +110,8 @@ class ActuatorRepository {
 }
 
 final actuatorRepositoryProvider = Provider<ActuatorRepository>((ref) {
-  return ActuatorRepository(ref.watch(supabaseClientProvider));
+  return ActuatorRepository(
+    ref.watch(supabaseClientProvider),
+    offline: ref.watch(offlineSyncProvider),
+  );
 });

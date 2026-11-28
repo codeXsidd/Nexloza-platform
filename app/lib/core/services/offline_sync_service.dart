@@ -2,174 +2,183 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../shared/providers/connectivity_provider.dart';
 import '../../shared/providers/supabase_provider.dart';
+import '../storage/offline_database.dart';
 import '../utils/logger.dart';
 
-class PendingOperation {
-  final String id;
-  final String table;
-  final String method;
-  final Map<String, dynamic> data;
-  final Map<String, dynamic>? filters;
-  final DateTime createdAt;
-  final int retryCount;
+class OfflineSyncService {
+  final SupabaseClient _client;
+  final Future<OfflineDatabase> Function() _open;
+  Future<OfflineDatabase>? _database;
+  bool _syncing = false;
+  bool _closed = false;
 
-  const PendingOperation({
-    required this.id,
-    required this.table,
-    required this.method,
-    required this.data,
-    this.filters,
-    required this.createdAt,
-    this.retryCount = 0,
-  });
+  OfflineSyncService(this._client, {Future<OfflineDatabase> Function()? open})
+    : _open = open ?? OfflineDatabase.open;
 
-  factory PendingOperation.fromJson(Map<String, dynamic> json) {
-    return PendingOperation(
-      id: json['id'] as String,
-      table: json['table'] as String,
-      method: json['method'] as String,
-      data: json['data'] as Map<String, dynamic>,
-      filters: json['filters'] as Map<String, dynamic>?,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      retryCount: json['retry_count'] as int? ?? 0,
+  String? get account => _client.auth.currentUser?.id;
+  Future<OfflineDatabase> _store() => _database ??= _open();
+
+  static bool isTransportError(Object error) =>
+      error is http.ClientException || error is TimeoutException;
+
+  bool _sameAccount(String account) => !_closed && this.account == account;
+
+  Future<Object> readThrough({
+    required String kind,
+    required String scope,
+    required String query,
+    required Future<Object> Function() load,
+  }) async {
+    final user = account;
+    try {
+      final result = await load();
+      if (user != null) {
+        if (!_sameAccount(user)) throw StateError('Session changed');
+        await _bestEffort((store) {
+          if (!_sameAccount(user)) return Future<void>.value();
+          return store.write(user, kind, scope, query, result);
+        });
+        if (!_sameAccount(user)) throw StateError('Session changed');
+      }
+      return result;
+    } catch (error) {
+      if (user != null && _sameAccount(user) && isTransportError(error)) {
+        Object? cached;
+        await _bestEffort((store) async {
+          if (_sameAccount(user)) cached = store.read(user, kind, scope, query);
+        });
+        if (_sameAccount(user) && cached != null) return cached!;
+      }
+      rethrow;
+    }
+  }
+
+  Future<void> invalidate(String? account, String kind) async {
+    if (account != null) {
+      await _bestEffort((store) => store.invalidate(account, kind));
+    }
+  }
+
+  Future<void> _bestEffort(
+    Future<void> Function(OfflineDatabase) action,
+  ) async {
+    if (_closed) return;
+    try {
+      await action(await _store());
+    } catch (_) {
+      AppLogger.warning('Offline storage is unavailable');
+    }
+  }
+
+  Future<void> queueProjectEdit({
+    required String account,
+    required String projectId,
+    required String expectedVersion,
+    required JsonMap changes,
+  }) async {
+    final store = await _store();
+    if (!_sameAccount(account)) throw StateError('Session changed');
+    await store.queueProjectEdit(
+      account: account,
+      operationId: const Uuid().v4(),
+      projectId: projectId,
+      expectedVersion: expectedVersion,
+      changes: changes,
     );
   }
 
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'table': table,
-    'method': method,
-    'data': data,
-    'filters': filters,
-    'created_at': createdAt.toIso8601String(),
-    'retry_count': retryCount,
-  };
-
-  PendingOperation incrementRetry() => PendingOperation(
-    id: id,
-    table: table,
-    method: method,
-    data: data,
-    filters: filters,
-    createdAt: createdAt,
-    retryCount: retryCount + 1,
-  );
-}
-
-class OfflineSyncService {
-  static const _queueKey = 'nexloza_offline_queue';
-  static const _maxRetries = 5;
-
-  final SupabaseClient _client;
-  final SharedPreferences _prefs;
-  bool _isSyncing = false;
-
-  OfflineSyncService(this._client, this._prefs);
-
-  List<PendingOperation> get pendingOperations {
-    final raw = _prefs.getStringList(_queueKey) ?? [];
-    return raw
-        .map(
-          (s) =>
-              PendingOperation.fromJson(json.decode(s) as Map<String, dynamic>),
-        )
-        .toList();
-  }
-
-  int get pendingCount => pendingOperations.length;
-
-  Future<void> enqueue(PendingOperation op) async {
-    final ops = pendingOperations;
-    ops.add(op);
-    await _saveQueue(ops);
-    AppLogger.info('Offline queue: enqueued ${op.method} on ${op.table}');
+  Future<({int pending, int conflicts})> summary(String account) async {
+    final store = await _store();
+    if (!_sameAccount(account)) throw StateError('Session changed');
+    return (
+      pending: store.pending(account).length,
+      conflicts: store.conflicts(account).length,
+    );
   }
 
   Future<void> syncAll() async {
-    if (_isSyncing) return;
-    _isSyncing = true;
-
+    final user = account;
+    if (user == null || _syncing || _closed) return;
+    _syncing = true;
     try {
-      final ops = pendingOperations;
-      if (ops.isEmpty) return;
-
-      AppLogger.info('Offline sync: processing ${ops.length} operations');
-      final failed = <PendingOperation>[];
-
-      for (final op in ops) {
+      final store = await _store();
+      for (final row in store.pending(user)) {
+        if (!_sameAccount(user)) break;
+        final id = row['operation_id'] as String;
+        final payload = jsonDecode(row['body'] as String) as JsonMap;
         try {
-          await _executeOperation(op);
-        } catch (e) {
-          AppLogger.error('Offline sync failed for ${op.id}: $e');
-          final retried = op.incrementRetry();
-          if (retried.retryCount < _maxRetries) {
-            failed.add(retried);
+          final result = await _client.rpc<bool>(
+            'apply_offline_project_edit',
+            params: {
+              'p_operation': id,
+              'p_project': row['project_id'] as String,
+              'p_expected_version': row['expected_version'] as String,
+              'p_changes': payload,
+            },
+          );
+          await store.settle(
+            user,
+            id,
+            conflict: result
+                ? null
+                : 'Project changed or is no longer accessible',
+          );
+        } on PostgrestException catch (error) {
+          // Permanent input and permission errors require user action.
+          if (const {'42501', '22P02', '23502', '23514'}.contains(error.code)) {
+            await store.settle(user, id, conflict: 'Project edit was rejected');
           } else {
-            AppLogger.error(
-              'Offline sync: dropping ${op.id} after max retries',
-            );
+            await store.retry(user, id);
+            break;
           }
+        } catch (_) {
+          await store.retry(user, id);
+          break;
         }
       }
-
-      await _saveQueue(failed);
-      AppLogger.info(
-        'Offline sync complete: ${ops.length - failed.length} succeeded, ${failed.length} pending',
-      );
+    } catch (_) {
+      AppLogger.warning('Offline synchronization is unavailable');
     } finally {
-      _isSyncing = false;
+      _syncing = false;
     }
   }
 
-  Future<void> _executeOperation(PendingOperation op) async {
-    switch (op.method) {
-      case 'insert':
-        await _client.from(op.table).insert(op.data);
-      case 'update':
-        var query = _client.from(op.table).update(op.data);
-        if (op.filters != null) {
-          for (final entry in op.filters!.entries) {
-            query = query.eq(entry.key, entry.value);
-          }
-        }
-        await query;
-      case 'delete':
-        var query = _client.from(op.table).delete();
-        if (op.filters != null) {
-          for (final entry in op.filters!.entries) {
-            query = query.eq(entry.key, entry.value);
-          }
-        }
-        await query;
-      case 'upsert':
-        await _client.from(op.table).upsert(op.data);
+  Future<void> dispose() async {
+    _closed = true;
+    try {
+      await (await _database)?.close();
+    } catch (_) {
+      AppLogger.warning('Offline storage could not be closed');
     }
-  }
-
-  Future<void> _saveQueue(List<PendingOperation> ops) async {
-    final encoded = ops.map((op) => json.encode(op.toJson())).toList();
-    await _prefs.setStringList(_queueKey, encoded);
-  }
-
-  Future<void> clearQueue() async {
-    await _prefs.remove(_queueKey);
   }
 }
 
-final offlineSyncInitProvider = FutureProvider<OfflineSyncService>((ref) async {
-  final client = ref.watch(supabaseClientProvider);
-  final prefs = await SharedPreferences.getInstance();
-  return OfflineSyncService(client, prefs);
+final offlineSyncProvider = Provider<OfflineSyncService>((ref) {
+  final service = OfflineSyncService(ref.watch(supabaseClientProvider));
+  ref.onDispose(() => unawaited(service.dispose()));
+  return service;
 });
 
 final offlineSyncControllerProvider = Provider<void>((ref) {
-  final isOnline = ref.watch(isOnlineProvider);
-  if (isOnline) {
-    ref.read(offlineSyncInitProvider).whenData((sync) => sync.syncAll());
+  final service = ref.watch(offlineSyncProvider);
+  ref.watch(authStateProvider);
+  if (ref.watch(isOnlineProvider) && service.account != null) {
+    unawaited(service.syncAll());
   }
 });
+
+Future<Object> cachedRead(
+  OfflineSyncService? offline,
+  String kind,
+  String scope,
+  String query,
+  Future<Object> Function() load,
+) =>
+    offline?.readThrough(kind: kind, scope: scope, query: query, load: load) ??
+    load();

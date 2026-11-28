@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/services/offline_sync_service.dart';
 import '../../../shared/providers/supabase_provider.dart';
 import '../../../shared/models/result.dart';
 import '../../../core/errors/failures.dart';
@@ -12,17 +13,28 @@ import '../domain/entities/dashboard_widget_entity.dart';
 class DashboardRepository {
   final SupabaseClient _client;
 
-  DashboardRepository(this._client);
+  final OfflineSyncService? _offline;
+
+  DashboardRepository(this._client, {OfflineSyncService? offline})
+    : _offline = offline;
 
   Future<Result<List<Dashboard>>> getDashboards({String? projectId}) async {
     try {
-      var query = _client.from('dashboards').select();
-      if (projectId != null) {
-        query = query.eq('project_id', projectId);
-      }
-      final response = await query
-          .order('sort_order')
-          .order('created_at', ascending: false);
+      final response = await cachedRead(
+        _offline,
+        'dashboards',
+        projectId ?? 'all',
+        'list',
+        () async {
+          var query = _client.from('dashboards').select();
+          if (projectId != null) {
+            query = query.eq('project_id', projectId);
+          }
+          return await query
+              .order('sort_order')
+              .order('created_at', ascending: false);
+        },
+      );
       final dashboards = (response as List)
           .map((e) => Dashboard.fromJson(e))
           .toList();
@@ -36,12 +48,17 @@ class DashboardRepository {
 
   Future<Result<Dashboard>> getDashboard(String id) async {
     try {
-      final response = await _client
-          .from('dashboards')
-          .select()
-          .eq('id', id)
-          .single();
-      return Result.success(Dashboard.fromJson(response));
+      final response = await cachedRead(
+        _offline,
+        'dashboards',
+        id,
+        'detail',
+        () async =>
+            await _client.from('dashboards').select().eq('id', id).single(),
+      );
+      return Result.success(
+        Dashboard.fromJson(response as Map<String, dynamic>),
+      );
     } on PostgrestException catch (e) {
       return Result.failure(ServerFailure(e.message));
     } catch (e) {
@@ -150,11 +167,17 @@ class DashboardRepository {
 
   Future<Result<List<DashboardWidget>>> getWidgets(String dashboardId) async {
     try {
-      final response = await _client
-          .from('dashboard_widgets')
-          .select()
-          .eq('dashboard_id', dashboardId)
-          .order('sort_order');
+      final response = await cachedRead(
+        _offline,
+        'dashboards',
+        dashboardId,
+        'widgets',
+        () async => await _client
+            .from('dashboard_widgets')
+            .select()
+            .eq('dashboard_id', dashboardId)
+            .order('sort_order'),
+      );
       final widgets = (response as List)
           .map((e) => DashboardWidget.fromJson(e))
           .toList();
@@ -321,5 +344,8 @@ class DashboardRepository {
 }
 
 final dashboardRepositoryProvider = Provider<DashboardRepository>((ref) {
-  return DashboardRepository(ref.watch(supabaseClientProvider));
+  return DashboardRepository(
+    ref.watch(supabaseClientProvider),
+    offline: ref.watch(offlineSyncProvider),
+  );
 });

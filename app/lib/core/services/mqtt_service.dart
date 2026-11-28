@@ -39,6 +39,7 @@ class MqttService {
     required String username,
     required String password,
     bool useTls = true,
+    ({String topic, String payload})? will,
   }) async {
     if (username.isEmpty || password.isEmpty) {
       _updateStatus(MqttConnectionStatus.error);
@@ -66,6 +67,12 @@ class MqttService {
         .startClean()
         .withWillQos(MqttQos.atLeastOnce);
 
+    if (will != null) {
+      connMsg
+          .withWillTopic(will.topic)
+          .withWillMessage(will.payload)
+          .withWillRetain();
+    }
     connMsg.authenticateAs(username, password);
     client.connectionMessage = connMsg;
 

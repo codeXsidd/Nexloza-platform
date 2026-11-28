@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/services/offline_sync_service.dart';
 import '../../../shared/providers/supabase_provider.dart';
 import '../../../shared/models/result.dart';
 import '../../../core/errors/failures.dart';
@@ -9,19 +10,28 @@ import '../domain/entities/telemetry_entity.dart';
 class TelemetryRepository {
   final SupabaseClient _client;
 
-  TelemetryRepository(this._client);
+  final OfflineSyncService? _offline;
+
+  TelemetryRepository(this._client, {OfflineSyncService? offline})
+    : _offline = offline;
 
   Future<Result<List<TelemetryReading>>> getLatestReadings({
     required String deviceId,
     int limit = 50,
   }) async {
     try {
-      final response = await _client
-          .from('telemetry')
-          .select()
-          .eq('device_id', deviceId)
-          .order('recorded_at', ascending: false)
-          .limit(limit);
+      final response = await cachedRead(
+        _offline,
+        'telemetry',
+        deviceId,
+        'latest:$limit',
+        () async => await _client
+            .from('telemetry')
+            .select()
+            .eq('device_id', deviceId)
+            .order('recorded_at', ascending: false)
+            .limit(limit),
+      );
       final readings = (response as List)
           .map((e) => TelemetryReading.fromJson(e))
           .toList();
@@ -41,22 +51,30 @@ class TelemetryRepository {
     int limit = 100,
   }) async {
     try {
-      var query = _client
-          .from('telemetry')
-          .select()
-          .eq('device_id', deviceId)
-          .eq('sensor_key', sensorKey);
+      final response = await cachedRead(
+        _offline,
+        'telemetry',
+        deviceId,
+        'sensor:$sensorKey:$from:$to:$limit',
+        () async {
+          var query = _client
+              .from('telemetry')
+              .select()
+              .eq('device_id', deviceId)
+              .eq('sensor_key', sensorKey);
 
-      if (from != null) {
-        query = query.gte('recorded_at', from.toIso8601String());
-      }
-      if (to != null) {
-        query = query.lte('recorded_at', to.toIso8601String());
-      }
+          if (from != null) {
+            query = query.gte('recorded_at', from.toIso8601String());
+          }
+          if (to != null) {
+            query = query.lte('recorded_at', to.toIso8601String());
+          }
 
-      final response = await query
-          .order('recorded_at', ascending: false)
-          .limit(limit);
+          return await query
+              .order('recorded_at', ascending: false)
+              .limit(limit);
+        },
+      );
       final readings = (response as List)
           .map((e) => TelemetryReading.fromJson(e))
           .toList();
@@ -72,12 +90,18 @@ class TelemetryRepository {
     required String deviceId,
   }) async {
     try {
-      final response = await _client
-          .from('telemetry')
-          .select()
-          .eq('device_id', deviceId)
-          .order('recorded_at', ascending: false)
-          .limit(200);
+      final response = await cachedRead(
+        _offline,
+        'telemetry',
+        deviceId,
+        'per-sensor',
+        () async => await _client
+            .from('telemetry')
+            .select()
+            .eq('device_id', deviceId)
+            .order('recorded_at', ascending: false)
+            .limit(200),
+      );
 
       final readings = <String, TelemetryReading>{};
       for (final row in (response as List)) {
@@ -104,5 +128,8 @@ class TelemetryRepository {
 }
 
 final telemetryRepositoryProvider = Provider<TelemetryRepository>((ref) {
-  return TelemetryRepository(ref.watch(supabaseClientProvider));
+  return TelemetryRepository(
+    ref.watch(supabaseClientProvider),
+    offline: ref.watch(offlineSyncProvider),
+  );
 });

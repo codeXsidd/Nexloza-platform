@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/services/offline_sync_service.dart';
 import '../../../shared/providers/supabase_provider.dart';
 import '../../../shared/models/result.dart';
 import '../../../core/errors/failures.dart';
@@ -9,26 +10,37 @@ import '../domain/entities/organization_entity.dart';
 class OrganizationRepository {
   final SupabaseClient _client;
 
-  OrganizationRepository(this._client);
+  final OfflineSyncService? _offline;
+
+  OrganizationRepository(this._client, {OfflineSyncService? offline})
+    : _offline = offline;
 
   Future<Result<List<Organization>>> getOrganizations() async {
     try {
-      final userId = _client.auth.currentUser!.id;
-      final memberRows = await _client
-          .from('organization_members')
-          .select('organization_id')
-          .eq('user_id', userId);
-      final orgIds = (memberRows as List)
-          .map((r) => r['organization_id'] as String)
-          .toList();
+      final response = await cachedRead(
+        _offline,
+        'organizations',
+        'all',
+        'list',
+        () async {
+          final userId = _client.auth.currentUser!.id;
+          final memberRows = await _client
+              .from('organization_members')
+              .select('organization_id')
+              .eq('user_id', userId);
+          final orgIds = (memberRows as List)
+              .map((r) => r['organization_id'] as String)
+              .toList();
 
-      if (orgIds.isEmpty) return Result.success([]);
+          if (orgIds.isEmpty) return <Map<String, dynamic>>[];
 
-      final response = await _client
-          .from('organizations')
-          .select()
-          .inFilter('id', orgIds)
-          .order('created_at', ascending: false);
+          return await _client
+              .from('organizations')
+              .select()
+              .inFilter('id', orgIds)
+              .order('created_at', ascending: false);
+        },
+      );
       final orgs = (response as List)
           .map((e) => Organization.fromJson(e))
           .toList();
@@ -42,12 +54,17 @@ class OrganizationRepository {
 
   Future<Result<Organization>> getOrganization(String id) async {
     try {
-      final response = await _client
-          .from('organizations')
-          .select()
-          .eq('id', id)
-          .single();
-      return Result.success(Organization.fromJson(response));
+      final response = await cachedRead(
+        _offline,
+        'organizations',
+        id,
+        'detail',
+        () async =>
+            await _client.from('organizations').select().eq('id', id).single(),
+      );
+      return Result.success(
+        Organization.fromJson(response as Map<String, dynamic>),
+      );
     } on PostgrestException catch (e) {
       return Result.failure(ServerFailure(e.message));
     } catch (e) {
@@ -179,5 +196,8 @@ class OrganizationRepository {
 }
 
 final organizationRepositoryProvider = Provider<OrganizationRepository>((ref) {
-  return OrganizationRepository(ref.watch(supabaseClientProvider));
+  return OrganizationRepository(
+    ref.watch(supabaseClientProvider),
+    offline: ref.watch(offlineSyncProvider),
+  );
 });

@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import secrets
+import socket
 import subprocess
 import threading
 import time
@@ -23,7 +24,7 @@ COMPOSE = ["docker", "compose", "-p", "nexloza-iot", "-f",
 SESSION = STATE / "session.json"
 
 
-def api(path, key, payload=None, token=None):
+def api(path, key, payload=None, token=None, *, preserve_http_error=False):
     headers = {"apikey": key, "Authorization": f"Bearer {token or key}"}
     data = None
     if payload is not None:
@@ -33,11 +34,35 @@ def api(path, key, payload=None, token=None):
         with urlopen(Request(GATEWAY + path, data, headers), timeout=10) as response:
             return json.loads(response.read() or b"null")
     except HTTPError as error:
+        if preserve_http_error:
+            raise
         raise RuntimeError(f"{path.split('?')[0]} returned HTTP {error.code}") from None
 
 
 def load():
     return json.loads(SESSION.read_text(encoding="utf-8"))
+
+
+def channel(device, name):
+    return device["topic"].rsplit("/", 1)[0] + "/" + name
+
+
+ACTUATORS = {
+    "relay": ("relay", "toggle", 1),
+    "led": ("light", "toggle", 1),
+    "fan_speed": ("fan", "slider", 100),
+    "brightness": ("light", "slider", 100),
+    "servo_angle": ("servo", "slider", 180),
+}
+
+
+def add_actuators(public_key, token, device, project):
+    for name, (kind, control, maximum) in ACTUATORS.items():
+        api("/rest/v1/actuator_definitions", public_key, {
+            "device_id": device, "project_id": project, "name": name,
+            "actuator_type": kind, "control_type": control,
+            "command_key": name, "min_value": 0, "max_value": maximum,
+        }, token)
 
 
 def write_broker(device):
@@ -47,15 +72,22 @@ def write_broker(device):
         'auth {\n allow_anonymous = false\n no_match = deny\n deny_action = disconnect\n'
         ' password = {include "/run/nexloza/pw.conf"}\n'
         ' acl = {include "/run/nexloza/acl.conf"}\n}\n', encoding="utf-8")
+    devices = [device, *device.get("additional_devices", [])]
+    credentials = {item["key"]: item["secret"] for item in devices}
+    credentials["bridge"] = device["bridge_secret"]
     (STATE / "pw.conf").write_text(
-        f'{json.dumps(device["key"])}: {json.dumps(device["secret"])}\n'
-        f'"bridge": {json.dumps(device["bridge_secret"])}\n', encoding="utf-8")
-    rules = [
-        {"permit": "allow", "username": device["key"], "action": "publish",
-         "topics": [device["topic"]]},
-        {"permit": "allow", "username": "bridge", "action": "subscribe",
-         "topics": [device["topic"]]},
-    ]
+        "".join(f"{json.dumps(key)}: {json.dumps(secret)}\n"
+                for key, secret in credentials.items()), encoding="utf-8")
+    rules = []
+    for item in devices:
+        published = [channel(item, name) for name in ("telemetry", "command-ack", "state", "status")]
+        command = channel(item, "command")
+        rules.extend([
+            {"permit": "allow", "username": item["key"], "action": "publish", "topics": published},
+            {"permit": "allow", "username": item["key"], "action": "subscribe", "topics": [command]},
+            {"permit": "allow", "username": "bridge", "action": "subscribe", "topics": published},
+            {"permit": "allow", "username": "bridge", "action": "publish", "topics": [command]},
+        ])
     if "other_topic" in device:
         rules.extend([
             {"permit": "allow", "username": "bridge", "action": "subscribe",
@@ -103,6 +135,38 @@ def provision(public_key):
                "key": key, "secret": secret, "bridge_secret": secrets.token_hex(32),
                "device": device, "project": project, "org": org,
                "topic": f"nexloza/v1/{org}/{project}/{device}/telemetry"}
+    add_actuators(public_key, token, device, project)
+    second_email = f"iot-second-{suffix}@example.com"
+    second_password = secrets.token_urlsafe(24)
+    second_owner = api("/auth/v1/signup", public_key, {
+        "email": second_email, "password": second_password,
+    })
+    second_token = second_owner["access_token"]
+    second_org, second_project, second_device = [str(uuid4()) for _ in range(3)]
+
+    def insert_second(table, row):
+        api(f"/rest/v1/{table}", public_key, row, second_token)
+
+    insert_second("organizations", {"id": second_org, "name": "IoT Agriculture",
+                                     "slug": f"farm-{suffix}", "created_by": second_owner["user"]["id"]})
+    insert_second("projects", {"id": second_project, "organization_id": second_org,
+                                "owner_id": second_owner["user"]["id"],
+                                "name": "IoT Farm", "category": "smart_agriculture"})
+    insert_second("devices", {"id": second_device, "project_id": second_project,
+                               "name": "IoT Soil", "hardware_platform": "generic_mqtt",
+                               "is_virtual": True, "simulation_profile": "agriculture"})
+    insert_second("sensor_definitions", {"device_id": second_device, "project_id": second_project,
+                                         "name": "Soil", "sensor_type": "soil_moisture",
+                                         "telemetry_key": "soil_moisture"})
+    key2, secret2 = secrets.token_hex(16), secrets.token_hex(32)
+    insert_second("device_credentials", {"device_id": second_device, "api_key": key2,
+                                         "secret_hash": hashlib.sha256(secret2.encode()).hexdigest()})
+    fixture["additional_devices"] = [
+        {"device": second_device, "project": second_project, "org": second_org,
+         "public_key": public_key, "email": second_email, "password": second_password,
+         "key": key2, "secret": secret2,
+         "topic": f"nexloza/v1/{second_org}/{second_project}/{second_device}/telemetry"}
+    ]
     write_broker(fixture)
     fd = os.open(SESSION, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(fd, "w", encoding="utf-8") as file:
@@ -110,11 +174,13 @@ def provision(public_key):
     print("Created disposable user, organization, project and virtual temperature device")
 
 
-def connect(username, password, client_id=None):
+def connect(username, password, client_id=None, *, will=None):
     client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=client_id or "",
                          clean_session=client_id is None)
     if username is not None:
         client.username_pw_set(username, password)
+    if will is not None:
+        client.will_set(will, json.dumps({"online": False}), qos=1, retain=True)
     client.connect("127.0.0.1", int(os.environ.get("NEXLOZA_MQTT_PORT", "1883")), 15)
     return client
 
@@ -136,41 +202,83 @@ def ingest(key, secret, payload):
             raise RuntimeError("Ingest rejected reading")
 
 
+def device_runtime(fixture, action, **fields):
+    payload = json.dumps({"action": action, "device_id": fixture["device"], **fields}).encode()
+    request = Request(GATEWAY + "/functions/v1/virtual-device-runtime", payload, {
+        "Content-Type": "application/json", "x-api-key": fixture["key"],
+        "x-api-secret": fixture["secret"],
+    })
+    with urlopen(request, timeout=10) as response:
+        return json.load(response)
+
+
 def worker():
     fixture = load()
+    devices = [fixture, *fixture.get("additional_devices", [])]
+    routes = {
+        channel(device, name): (device, name)
+        for device in devices for name in ("telemetry", "command-ack", "state", "status")
+    }
     client = connect("bridge", fixture["bridge_secret"], "nexloza-smoke-bridge")
     client.manual_ack_set(True)
+    ready = threading.Event()
+    stop = threading.Event()
 
     def on_connect(connection, _, flags, reason, properties):
         if reason.is_failure:
             raise RuntimeError(f"Bridge authentication rejected ({reason})")
-        connection.subscribe(fixture["topic"], qos=1)
+        connection.subscribe([(topic, 1) for topic in routes])
 
     def on_subscribe(_, data, mid, reasons, properties):
         if any(reason.is_failure for reason in reasons):
             raise RuntimeError("Bridge subscription rejected")
-        print("Bridge subscribed to the scoped telemetry topic", flush=True)
+        ready.set()
+        print("Bridge subscribed to the scoped telemetry topics", flush=True)
 
     def on_message(connection, _, message):
-        if message.topic != fixture["topic"]:
-            raise RuntimeError("Unexpected broker topic")
+        fixture, kind = routes[message.topic]
         try:
-            message_id = forward(fixture, message.payload)
+            if kind == "telemetry":
+                message_id = forward(fixture, message.payload)
+                print(f"Ingested message {message_id}", flush=True)
+            elif kind == "command-ack":
+                body = json.loads(message.payload)
+                device_runtime(fixture, "ack", command_id=body["command_id"],
+                               success=body["success"], value=body.get("value"))
+            elif kind == "status":
+                device_runtime(fixture, "availability", online=json.loads(message.payload)["online"])
+            # Reported state changes are committed atomically from the matching ack.
         except (ValueError, KeyError, TypeError, HTTPError) as error:
-            if isinstance(error, HTTPError) and (
-                error.code >= 500 or error.code == 429
-            ):
-                raise RuntimeError(f"Retryable ingest HTTP {error.code}") from None
-            print("Rejected invalid telemetry", flush=True)
-            connection.ack(message.mid, message.qos)
-            return
+            if isinstance(error, HTTPError) and (error.code >= 500 or error.code == 429):
+                raise RuntimeError(f"Retryable device HTTP {error.code}") from None
+            print(f"Rejected invalid {kind} event", flush=True)
         connection.ack(message.mid, message.qos)
-        print(f"Ingested message {message_id}", flush=True)
+
+    def dispatch():
+        while not stop.wait(1):
+            if not ready.is_set() or not client.is_connected():
+                continue
+            for device in devices:
+                try:
+                    for command in device_runtime(device, "dispatch")["commands"]:
+                        payload = {
+                            "command_id": command["id"], "command_type": command["command_type"],
+                            "payload": command["payload"], "expires_at": command["expires_at"],
+                        }
+                        client.publish(channel(device, "command"), json.dumps(payload), qos=1)
+                except (OSError, RuntimeError) as error:
+                    status = f"HTTP {error.code}" if isinstance(error, HTTPError) else type(error).__name__
+                    print(f"Command dispatch unavailable ({status})", flush=True)
 
     client.on_connect = on_connect
     client.on_subscribe = on_subscribe
     client.on_message = on_message
-    client.loop_forever()
+    thread = threading.Thread(target=dispatch, daemon=True)
+    thread.start()
+    try:
+        client.loop_forever()
+    finally:
+        stop.set()
 
 
 def assert_auth(user, password, allowed):
@@ -248,6 +356,136 @@ def rows(fixture, message_id=None, token=None):
     return api(query, fixture["public_key"], token=token)
 
 
+def sign_in(fixture):
+    return api("/auth/v1/token?grant_type=password", fixture["public_key"],
+               {"email": fixture["email"], "password": fixture["password"]})["access_token"]
+
+
+def wait_for(check, description, seconds=20):
+    end = time.monotonic() + seconds
+    while time.monotonic() < end:
+        result = check()
+        if result:
+            return result
+        time.sleep(0.25)
+    raise RuntimeError(f"Timed out waiting for {description}")
+
+
+def command_e2e(fixture):
+    other = fixture["additional_devices"][0]
+    token = sign_in(fixture)
+    public_key = fixture["public_key"]
+
+    def send(name, value, command_id=None, owner=token, device=fixture["device"]):
+        return api("/functions/v1/device-command", public_key,
+                   {"device_id": device, "command_type": name, "payload": {"value": value},
+                    "command_id": command_id or str(uuid4())}, owner, preserve_http_error=True)["command"]
+
+    def reject(status, call):
+        try:
+            call()
+        except HTTPError as error:
+            if error.code == status:
+                return
+            raise RuntimeError(f"Expected HTTP {status}, got {error.code}") from None
+        raise RuntimeError(f"Expected HTTP {status}")
+
+    def select(table, query, owner=token):
+        return api(f"/rest/v1/{table}?{query}", public_key, token=owner)
+
+    def command_status(id, status):
+        records = select("device_commands", f"id=eq.{id}")
+        return records[0] if records and records[0]["status"] == status else None
+
+    def online(value):
+        records = select("devices", f'id=eq.{fixture["device"]}')
+        return records and records[0]["is_online"] is value
+
+    reject(404, lambda: send("relay", True, device=other["device"]))
+    reject(400, lambda: send("fan_speed", 101))
+    reject(400, lambda: send("unknown", 1))
+    outsider = sign_in(other)
+    reject(404, lambda: send("relay", True, owner=outsider))
+
+    client = connect(fixture["key"], fixture["secret"], will=channel(fixture, "status"))
+    client.reconnect_delay_set(min_delay=4, max_delay=4)
+    client.on_connect = lambda c, *_: c.subscribe(channel(fixture, "command"), qos=1)
+    client.on_subscribe = lambda c, *_: c.publish(
+        channel(fixture, "status"), '{"online":true}', qos=1, retain=True)
+    received = {}
+    completed = set()
+
+    def on_command(connection, _, message):
+        body = json.loads(message.payload)
+        received[body["command_id"]] = body
+        if body["command_id"] in completed:
+            acknowledge(body)
+
+    def acknowledge(body, success=True):
+        value = body["payload"]["value"]
+        id = body["command_id"]
+        ack = {"command_id": id, "success": success, "value": value + 0 if success else None}
+        if success:
+            client.publish(channel(fixture, "state"),
+                           json.dumps({"command_id": id, body["command_type"]: value}), qos=1)
+        client.publish(channel(fixture, "command-ack"), json.dumps(ack), qos=1)
+
+    client.on_message = on_command
+    client.loop_start()
+    try:
+        wait_for(lambda: online(True), "online")
+        for key, value in (("relay", True), ("relay", False), ("led", True), ("led", False),
+                           ("fan_speed", 60), ("brightness", 45), ("servo_angle", 90)):
+            command = send(key, value)
+            id = command["id"]
+            delivered = wait_for(lambda: received.get(id), f"delivery of {key}")
+            wait_for(lambda: command_status(id, "sent"), "unacknowledged status")
+            if send(key, value, id)["id"] != id:
+                raise RuntimeError("Command retry created a duplicate")
+            completed.add(id)
+            acknowledge(delivered)
+            acknowledge(delivered)
+            wait_for(lambda: command_status(id, "executed"), f"acknowledgement of {key}")
+            twin = select("device_twin_state", f'device_id=eq.{fixture["device"]}')[0]
+            results = select("command_results", f"command_id=eq.{id}")
+            if twin["reported_state"][key] != value or len(results) != 1 or not results[0]["success"]:
+                raise RuntimeError(f"Invalid reported state or duplicate result for {key}")
+
+        rejected = send("relay", True)["id"]
+        acknowledge(wait_for(lambda: received.get(rejected), "rejectable command"), False)
+        wait_for(lambda: command_status(rejected, "failed"), "device rejection")
+
+        timeout = send("relay", True)["id"]
+        wait_for(lambda: received.get(timeout), "unanswered command")
+        wait_for(lambda: command_status(timeout, "timeout"), "command timeout", seconds=40)
+        if select("command_results", f"command_id=eq.{timeout}"):
+            raise RuntimeError("Timed-out command generated a result")
+
+        # Abort only this test client's connection. The broker publishes its Will.
+        client.socket().shutdown(socket.SHUT_RDWR)
+        wait_for(lambda: online(False), "Last Will offline")
+        wait_for(lambda: online(True), "automatic reconnect online")
+
+        soil_id = str(uuid4())
+        soil = connect(other["key"], other["secret"])
+        soil.loop_start()
+        try:
+            reading = {"device_id": other["device"], "message_id": soil_id,
+                       "readings": [{"key": "soil_moisture", "value": 42.125,
+                                     "timestamp": datetime.now(timezone.utc).isoformat()}]}
+            soil.publish(other["topic"], json.dumps(reading), qos=1).wait_for_publish(timeout=5)
+            found = wait_for(lambda: rows(other, soil_id, outsider), "soil moisture")
+            if len(found) != 1 or found[0]["value_numeric"] != 42.125 or rows(other, soil_id, token):
+                raise RuntimeError("Soil moisture value or account isolation mismatch")
+        finally:
+            soil.disconnect()
+            soil.loop_stop()
+    finally:
+        client.disconnect()
+        client.loop_stop()
+    print("PASS: soil moisture, relay/LED ON/OFF, fan, brightness, servo, ack, replay, timeout, Will and reconnect")
+
+
 def e2e():
     fixture = load()
     message_id = str(uuid4())
@@ -301,6 +539,7 @@ def e2e():
             raise RuntimeError(f"Expected ingestion rejection HTTP {expected}")
     print(f"PASS: one persisted row per sensor, message {message_id}; outsider denied")
     print("PASS: invalid device secret and mismatched device identity rejected")
+    command_e2e(fixture)
 
 
 def main():

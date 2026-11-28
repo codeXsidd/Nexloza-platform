@@ -189,6 +189,21 @@ class SimulatorEngine {
     _actuatorValues[deviceId]?[commandKey] = value;
   }
 
+  double? applyActuatorValue(String deviceId, String key, double value) {
+    final state = _deviceStates[deviceId];
+    if (state == null ||
+        state.status != SimulatorStatus.running ||
+        state.sensors.values.any(
+          (sensor) =>
+              sensor.activeFault == FaultScenario.deviceOffline ||
+              sensor.activeFault == FaultScenario.commandTimeout,
+        )) {
+      return null;
+    }
+    handleActuatorCommand(deviceId, key, value);
+    return _actuatorValues[deviceId]?[key];
+  }
+
   Map<String, double> getLatestValues(String deviceId) {
     final state = _deviceStates[deviceId];
     if (state == null) return {};

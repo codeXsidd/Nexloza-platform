@@ -5,6 +5,7 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/services/offline_sync_service.dart';
 import '../../../shared/providers/supabase_provider.dart';
 import '../../../shared/models/result.dart';
 import '../../../core/errors/failures.dart';
@@ -14,7 +15,10 @@ import '../domain/entities/device_credential_entity.dart';
 class DeviceRepository {
   final SupabaseClient _client;
 
-  DeviceRepository(this._client);
+  final OfflineSyncService? _offline;
+
+  DeviceRepository(this._client, {OfflineSyncService? offline})
+    : _offline = offline;
 
   Future<Result<List<Device>>> getDevices({
     String? projectId,
@@ -22,15 +26,23 @@ class DeviceRepository {
     int pageSize = 20,
   }) async {
     try {
-      var query = _client.from('devices').select();
-      if (projectId != null) {
-        query = query.eq('project_id', projectId);
-      }
-      final from = page * pageSize;
-      final to = from + pageSize - 1;
-      final response = await query
-          .order('created_at', ascending: false)
-          .range(from, to);
+      final response = await cachedRead(
+        _offline,
+        'devices',
+        projectId ?? 'all',
+        'page:$page:$pageSize',
+        () async {
+          var query = _client.from('devices').select();
+          if (projectId != null) {
+            query = query.eq('project_id', projectId);
+          }
+          final from = page * pageSize;
+          final to = from + pageSize - 1;
+          return await query
+              .order('created_at', ascending: false)
+              .range(from, to);
+        },
+      );
       final devices = (response as List)
           .map((e) => Device.fromJson(e))
           .toList();
@@ -44,12 +56,15 @@ class DeviceRepository {
 
   Future<Result<Device>> getDevice(String id) async {
     try {
-      final response = await _client
-          .from('devices')
-          .select()
-          .eq('id', id)
-          .single();
-      return Result.success(Device.fromJson(response));
+      final response = await cachedRead(
+        _offline,
+        'devices',
+        id,
+        'detail',
+        () async =>
+            await _client.from('devices').select().eq('id', id).single(),
+      );
+      return Result.success(Device.fromJson(response as Map<String, dynamic>));
     } on PostgrestException catch (e) {
       return Result.failure(ServerFailure(e.message));
     } catch (e) {
@@ -204,5 +219,8 @@ class DeviceRepository {
 }
 
 final deviceRepositoryProvider = Provider<DeviceRepository>((ref) {
-  return DeviceRepository(ref.watch(supabaseClientProvider));
+  return DeviceRepository(
+    ref.watch(supabaseClientProvider),
+    offline: ref.watch(offlineSyncProvider),
+  );
 });

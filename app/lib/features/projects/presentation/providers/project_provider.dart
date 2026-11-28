@@ -1,11 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../shared/providers/supabase_provider.dart';
 import '../../data/project_repository.dart';
 import '../../domain/entities/project_entity.dart';
 
 class ProjectsNotifier extends AsyncNotifier<List<Project>> {
   @override
   Future<List<Project>> build() async {
+    ref.watch(currentUserProvider);
     final repo = ref.read(projectRepositoryProvider);
     final result = await repo.getProjects();
     return result.when(
@@ -67,7 +69,8 @@ final projectDetailProvider = FutureProvider.family<Project?, String>((
   ref,
   id,
 ) async {
-  final repo = ref.read(projectRepositoryProvider);
+  ref.watch(currentUserProvider);
+  final repo = ref.watch(projectRepositoryProvider);
   final result = await repo.getProject(id);
   return result.when(success: (p) => p, failure: (_) => null);
 });
