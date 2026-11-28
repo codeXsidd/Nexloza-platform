@@ -2,18 +2,18 @@
 
 ## Baseline inspected
 
-The application baseline is `e486d66077a4cd452dd4fe72b669b2091504a2e4` (Phase 10). On 2026-11-28, a Git fetch confirmed that GitHub PR #1 merged the first handoff commit (`fabbcd6fcc6a48f0bc81217d170f98c7c78769f2`) into `main` at `259fd33afbf3ceeb4b4da7a94a91d79a77d11639`. The remote continuation ref was absent when recovery began. This recovery continues from `fabbcd6` on `codex/continuation-baseline`.
+The application baseline is `e486d66077a4cd452dd4fe72b669b2091504a2e4` (Phase 10). On 2026-11-28, a Git fetch confirmed that GitHub PR #1 merged the first handoff commit (`fabbcd6fcc6a48f0bc81217d170f98c7c78769f2`) into `main` at `259fd33afbf3ceeb4b4da7a94a91d79a77d11639`. The remote continuation ref was absent when recovery began and was restored on the same GitHub remote. Git verified that `codex/continuation-baseline` contains `fabbcd6` and the hosted validation commit `76925a6c08589e4179e575dc81566de6cc240856`. [Compare the recovery branch with main](https://github.com/codeXsidd/Nexloza-platform/compare/main...codex/continuation-baseline?expand=1).
 
 | Item | Evidence at this commit |
 | --- | --- |
 | Flutter features | 22 immediate tracked directories under `app/lib/features/` |
 | Screens | 60 Dart files directly under directories named `screen` or `screens`. This is a file count. Routable pages and panels can have a different total. |
-| Tests | 25 `*_test.dart` files in `app/test/` and 879 source lines starting with a `test(` or `testWidgets(` call. [Phase 10 completion](PHASE_10_COMPLETION_REPORT.md) reports 879 passing. Neither that total nor the earlier claimed 399 passes was reproduced in this environment. |
+| Tests | 25 `*_test.dart` files in `app/test/` and 879 source lines starting with a `test(` or `testWidgets(` call. [Phase 10 completion](PHASE_10_COMPLETION_REPORT.md) reports 879 passing. GitHub Actions reproduced 879 passes at the recovery commit. The cloud-local suite was blocked before discovery. |
 | Database | 20 migration files and 43 distinct names in direct `CREATE TABLE` statements. The applied schema and RLS behavior still need validation. |
 | Edge Functions | 7 `index.ts` entry points under `backend/supabase/functions/`. Deployment was outside this baseline. |
 | Firmware | 22 tracked example directories under `firmware/examples/`. Board builds and hardware verification are pending. |
 
-[README](../README.md), [architecture](../ARCHITECTURE.md), [project audit](PROJECT_AUDIT.md), [Phase 10 audit](PHASE_10_AUDIT_REPORT.md), [Phase 10 completion](PHASE_10_COMPLETION_REPORT.md), and [CI](../.github/workflows/ci.yml) were inspected. The early audit and architecture describe earlier schema and broker setups. CI uses stable Flutter and Java 17 for its Android build. It checks formatting and analysis, runs tests with coverage, builds web, and performs backend and firmware file checks. The backend checks do not apply migrations or run RLS tests. A GitHub Actions run lookup for this commit returned `Forbidden`, so this handoff does not establish the hosted CI result.
+[README](../README.md), [architecture](../ARCHITECTURE.md), [project audit](PROJECT_AUDIT.md), [Phase 10 audit](PHASE_10_AUDIT_REPORT.md), [Phase 10 completion](PHASE_10_COMPLETION_REPORT.md), and [CI](../.github/workflows/ci.yml) were inspected. The early audit and architecture describe earlier schema and broker setups. CI uses stable Flutter and Java 17 for its Android build. It checks formatting and analysis, runs tests with coverage, builds web, and performs backend and firmware file checks. The backend checks do not apply migrations or run RLS tests. The recovery workflow below was verified through GitHub’s public run page.
 
 ## Toolchain and run results
 
@@ -58,7 +58,19 @@ Preserve each command's exit status and record the final passed, failed, and ski
 
 The [Continuation baseline workflow](../.github/workflows/continuation-baseline.yml) runs on pushes to `codex/continuation-baseline` using GitHub-hosted Ubuntu, Flutter 3.47.5, and Java 17. After a successful locked dependency install, it attempts analysis, tests, release web, and debug APK independently. Each command's exit status is preserved and the `continuation-baseline-logs` artifact collects its output. This workflow does not deploy services or use application credentials.
 
-**Next task:** Open the branch's Continuation baseline run in GitHub Actions. Record the actual analyzer output, final passed/failed/skipped totals from `test.log`, and both build outcomes. If the runner fails before executing tests, resolve only the first confirmed toolchain or dependency blocker and rerun. Keep SQLite and feature changes out of scope until the regression baseline is established.
+[GitHub Actions run 46148375896](https://github.com/codeXsidd/Nexloza-platform/actions/runs/46148375896) completed successfully at `76925a6`. The application and lockfile match the Phase 10 baseline.
+
+| Hosted check | Verified result |
+| --- | --- |
+| Flutter/Dart bootstrap, version commands, and doctor | Passed on GitHub-hosted Ubuntu with the workflow’s Flutter 3.47.5 and Java 17 setup. |
+| `flutter pub get --enforce-lockfile` | Passed. |
+| `flutter analyze --no-pub` | Passed with no fatal diagnostics. The public job status provides the exit result. Full analyzer and doctor output is in the uploaded logs. |
+| `flutter test --no-pub --reporter expanded` | Runner reported `00:09 +879: All tests passed!`. The reporter showed 879 passes, no failures, and no skips. |
+| `flutter build web --release --no-pub` | Passed. |
+| `flutter build apk --debug --no-pub` | Passed. No device or emulator was used. |
+| Upload validation logs | Passed. Open `continuation-baseline-logs` on the run page for individual command output. |
+
+**Next task:** Establish the first end-to-end development smoke test against a disposable Supabase gateway and an authenticated NanoMQ broker. Verify the app on Windows `emulator-5554`: sign in as a development user, create and start a virtual device in a test project, and confirm that one reading for the same device ID and timestamp reaches the expected MQTT topic and Supabase row. Record any broker authentication or duplicate-ingestion failure before changing offline storage or starting feature work. Apply the saved artifact allowlist separately to restore Flutter execution in Codex Cloud.
 
 ## Offline synchronization
 
@@ -105,7 +117,7 @@ flutter run -d emulator-5554 --no-pub --dart-define=SUPABASE_URL=http://10.0.2.2
 
 | Order | Task and verification | Files |
 | --- | --- | --- |
-| 1 | Verify the pinned GitHub Actions run or apply the artifact allowlist and rerun in Codex Cloud. Record compiler and test results before changing dependencies. | `app/pubspec.yaml`, `app/pubspec.lock`, `app/analysis_options.yaml`, `app/test/`, `.github/workflows/ci.yml` |
+| 1 | Hosted baseline verified. Apply the artifact allowlist and rerun in Codex Cloud when local execution is needed. | `app/pubspec.yaml`, `app/pubspec.lock`, `app/analysis_options.yaml`, `app/test/`, `.github/workflows/ci.yml` |
 | 2 | Recover Docker storage and use a supported Studio image or a local Supabase CLI stack. Verify the local gateway, apply the 20 migrations, and run the existing RLS SQL with stop-on-error. Check the fixture and its reported assertions. | `docker-compose.yml`, `.env.example`, `backend/supabase/config.toml`, `backend/supabase/migrations/`, `backend/supabase/seed/`, `backend/supabase/tests/rls_integration_test.sql`, `backend/supabase/functions/` |
 | 3 | Validate and wire scoped durable offline replay. Verify startup, reconnect, persisted operations, concurrency, and failure reporting. | `app/lib/core/services/offline_sync_service.dart`, `app/lib/shared/providers/{connectivity_provider,supabase_provider}.dart`, `app/lib/core/storage/preferences_service.dart`, `app/lib/{app,main}.dart`, participating feature repositories, `app/test/` |
 | 4 | Verify simulator-to-dashboard delivery with an authenticated broker, a single effective ingestion path, and observable publish failures. Exercise command and twin state, reconnect, and web transport separately. | `app/lib/features/virtual_devices/`, `app/lib/features/devices/presentation/providers/device_mqtt_provider.dart`, `app/lib/core/{services/mqtt_service,constants/mqtt_constants}.dart`, `app/test/phase7_test.dart`, `infra/nanomq/`, `backend/services/mqtt/`, `backend/supabase/functions/{telemetry-ingest,device-auth,device-command}/`, `backend/supabase/migrations/00018_virtual_devices_phase7.sql`, [Phase 7 testing](PHASE_7_TESTING.md) and [virtual MQTT](VIRTUAL_DEVICE_MQTT.md) |
