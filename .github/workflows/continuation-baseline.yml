@@ -54,7 +54,16 @@ jobs:
 
       - name: Run Flutter tests
         if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
-        run: flutter test --no-pub --reporter expanded 2>&1 | tee "$RUNNER_TEMP/nexloza-baseline/test.log"
+        run: |
+          test_status=0
+          log="$RUNNER_TEMP/nexloza-baseline/test.log"
+          flutter test --no-pub --reporter expanded 2>&1 | tee "$log" || test_status=$?
+          result=$(grep -E 'All tests passed|Some tests failed|No tests were found' "$log" | tail -1 || true)
+          if [[ -n "$result" ]]; then
+            printf '### Flutter test result\n\n%s\n' "$result" >> "$GITHUB_STEP_SUMMARY"
+            printf '::notice title=Flutter test result::%s\n' "$result"
+          fi
+          exit "$test_status"
 
       - name: Build release web app
         if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
