@@ -193,16 +193,17 @@ services:
     container_name: nexloza-nanomq
     restart: unless-stopped
     ports:
-      - "${MQTT_PORT:-1883}:1883"
+      - "127.0.0.1:${MQTT_PORT:-1883}:1883"
       - "${MQTT_WS_PORT:-8083}:8083"
       - "${NANOMQ_HTTP_PORT:-8081}:8081"
+    command: ["--conf", "/run/nexloza/nanomq.conf"]
     volumes:
-      - ./infra/nanomq/config/nanomq.conf:/etc/nanomq/nanomq.conf:ro
-      - ./infra/nanomq/config/pw.conf:/etc/nanomq/pw.conf:ro
-      - ./infra/nanomq/config/acl.conf:/etc/nanomq/acl.conf:ro
-    environment:
-      NANOMQ_ADMIN_PASSWORD: ${NANOMQ_ADMIN_PASSWORD:-change_me_in_production}
-      NANOMQ_APP_PASSWORD: ${NANOMQ_APP_PASSWORD:-change_me_in_production}
+      - type: bind
+        source: ${NEXLOZA_BROKER_CONFIG:-./.nexloza-iot}
+        target: /run/nexloza
+        read_only: true
+        bind:
+          create_host_path: false
     healthcheck:
       test: ["CMD", "bash", "-c", "true </dev/tcp/127.0.0.1/1883"]
       interval: 15s
