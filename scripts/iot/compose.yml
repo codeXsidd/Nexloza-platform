@@ -1,0 +1,13 @@
+services:
+  broker:
+    image: emqx/nanomq:0.22.6-slim
+    command: ["--conf", "/run/nexloza/nanomq.conf"]
+    ports:
+      - "127.0.0.1:${NEXLOZA_MQTT_PORT:-1883}:1883"
+    volumes:
+      - "${NEXLOZA_BROKER_CONFIG:?Run prepare first}:/run/nexloza:ro"
+    healthcheck:
+      test: ["CMD", "bash", "-c", "true </dev/tcp/127.0.0.1/1883"]
+      interval: 2s
+      timeout: 2s
+      retries: 15

@@ -23,6 +23,7 @@ class NexlozaMqttMessage {
 
 class MqttService {
   MqttServerClient? _client;
+  StreamSubscription<List<MqttReceivedMessage<MqttMessage>>>? _updates;
   final _statusController = StreamController<MqttConnectionStatus>.broadcast();
   final _messageController = StreamController<NexlozaMqttMessage>.broadcast();
   MqttConnectionStatus _status = MqttConnectionStatus.disconnected;
@@ -35,15 +36,19 @@ class MqttService {
     required String host,
     required int port,
     required String clientId,
-    String? username,
-    String? password,
-    bool useTls = false,
+    required String username,
+    required String password,
+    bool useTls = true,
   }) async {
-    if (_status == MqttConnectionStatus.connected) return true;
+    if (username.isEmpty || password.isEmpty) {
+      _updateStatus(MqttConnectionStatus.error);
+      return false;
+    }
+    disconnect();
 
     _updateStatus(MqttConnectionStatus.connecting);
 
-    _client = MqttServerClient(host, clientId)
+    final client = MqttServerClient(host, clientId)
       ..port = port
       ..keepAlivePeriod = MqttConstants.keepAliveSeconds
       ..autoReconnect = true
@@ -53,35 +58,32 @@ class MqttService {
       ..onAutoReconnect = _onAutoReconnect
       ..onAutoReconnected = _onAutoReconnected;
 
-    if (useTls) {
-      _client!.secure = true;
-    }
+    client.secure = useTls;
+    _client = client;
 
     final connMsg = MqttConnectMessage()
         .withClientIdentifier(clientId)
         .startClean()
         .withWillQos(MqttQos.atLeastOnce);
 
-    if (username != null && password != null) {
-      connMsg.authenticateAs(username, password);
-    }
-
-    _client!.connectionMessage = connMsg;
+    connMsg.authenticateAs(username, password);
+    client.connectionMessage = connMsg;
 
     try {
-      await _client!.connect(username, password);
-      if (_client!.connectionStatus?.state == MqttConnectionState.connected) {
+      await client.connect(username, password);
+      if (!identical(_client, client)) return false;
+      if (client.connectionStatus?.state == MqttConnectionState.connected) {
         _setupMessageListener();
         return true;
       }
-      _updateStatus(MqttConnectionStatus.error);
-      return false;
-    } catch (e) {
-      AppLogger.error('MQTT connection failed', error: e);
-      _updateStatus(MqttConnectionStatus.error);
-      _client?.disconnect();
-      return false;
+    } catch (_) {
+      AppLogger.warning('MQTT connection failed');
     }
+    if (identical(_client, client)) {
+      disconnect();
+      _updateStatus(MqttConnectionStatus.error);
+    }
+    return false;
   }
 
   void subscribe(String topic, {MqttQos qos = MqttQos.atLeastOnce}) {
@@ -97,7 +99,7 @@ class MqttService {
     _client?.unsubscribe(topic);
   }
 
-  void publish(
+  bool publish(
     String topic,
     String payload, {
     MqttQos qos = MqttQos.atLeastOnce,
@@ -105,15 +107,23 @@ class MqttService {
   }) {
     if (_client?.connectionStatus?.state != MqttConnectionState.connected) {
       AppLogger.warning('Cannot publish: not connected');
-      return;
+      return false;
     }
     final builder = MqttClientPayloadBuilder()..addString(payload);
     _client!.publishMessage(topic, qos, builder.payload!, retain: retain);
+    return true;
   }
 
   void disconnect() {
-    _client?.disconnect();
+    unawaited(_updates?.cancel());
+    _updates = null;
+    final client = _client;
     _client = null;
+    client?.onConnected = null;
+    client?.onDisconnected = null;
+    client?.onAutoReconnect = null;
+    client?.onAutoReconnected = null;
+    client?.disconnect();
     _updateStatus(MqttConnectionStatus.disconnected);
   }
 
@@ -124,7 +134,8 @@ class MqttService {
   }
 
   void _setupMessageListener() {
-    _client!.updates?.listen((messages) {
+    unawaited(_updates?.cancel());
+    _updates = _client?.updates?.listen((messages) {
       for (final msg in messages) {
         final pubMsg = msg.payload as MqttPublishMessage;
         final text = MqttPublishPayload.bytesToStringAsString(
@@ -157,6 +168,7 @@ class MqttService {
   }
 
   void _onAutoReconnected() {
+    _setupMessageListener();
     _updateStatus(MqttConnectionStatus.connected);
     AppLogger.info('MQTT auto-reconnected');
   }

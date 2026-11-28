@@ -1,3 +1,5 @@
+project_id = "nexloza-iot-dev"
+
 [api]
 enabled = true
 port = 54321
@@ -30,3 +32,6 @@ enable_confirmations = false
 [storage]
 enabled = true
 file_size_limit = "50MiB"
+
+[db.seed]
+enabled = false

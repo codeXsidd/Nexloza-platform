@@ -2,7 +2,7 @@
 
 ## Overview
 
-Virtual devices use the same MQTT topic contract and pipeline as physical devices. No separate MQTT topics, brokers, or ingestion paths are created for virtual devices. The `TelemetryPublisher` bridges the in-memory `SimulatorEngine` to MQTT and Supabase using the existing canonical format.
+Virtual devices use the same MQTT topic contract and pipeline as physical devices. The simulator uses either direct Supabase storage or the MQTT telemetry path for each run. The disposable bridge forwards the exact fixture topic to the existing `telemetry-ingest` Edge Function.
 
 ## Topic Contract
 
@@ -12,7 +12,7 @@ Virtual devices follow the same NEXLOZA v1 topic format:
 nexloza/v1/{organization_id}/{project_id}/{device_id}/{channel}
 ```
 
-### Channels Used by Virtual Devices
+### Topic contract channels
 
 | Channel | Direction | Purpose |
 |---------|-----------|---------|
@@ -33,7 +33,7 @@ nexloza/v1/{organization_id}/{project_id}/{device_id}/{channel}
 ```json
 {
   "device_id": "uuid",
-  "timestamp": "2026-11-01T12:00:00.000Z",
+  "message_id": "0ce985bc-1fa4-4d49-bd8f-dd3270e70c5d",
   "readings": [
     { "key": "temperature", "value": 22.3, "timestamp": "2026-11-01T12:00:00.000Z" },
     { "key": "humidity", "value": 55.1, "timestamp": "2026-11-01T12:00:00.000Z" }
@@ -41,30 +41,22 @@ nexloza/v1/{organization_id}/{project_id}/{device_id}/{channel}
 }
 ```
 
-4. Inserts into the `telemetry` table (same schema as `telemetry-ingest` Edge Function).
-5. Updates `devices.last_seen_at` and `devices.is_online`.
+In MQTT mode the worker passes the batch to the Edge Function. In direct mode the signed-in user writes virtual-device telemetry under RLS. Both paths use the same schema and deduplicate by device ID, message ID, and sensor key.
 
 ## Command Handling
 
-Actuator commands for virtual devices use the standard `CommandRepository.sendCommand()`:
-
-1. The app sends a command via the `device-command` Edge Function.
-2. The Edge Function inserts into `device_commands` and publishes to `nexloza/v1/{org}/{proj}/{device}/command`.
-3. `SimulatorEngine.handleActuatorCommand()` processes the command by updating internal actuator state.
-4. Actuator state changes influence subsequent sensor value computations (e.g., fan_speed affects temperature, water_pump affects soil_moisture).
+The simulator engine can update actuator state through `handleActuatorCommand()`. The disposable telemetry bridge does not subscribe to or deliver commands. Relay, LED, and fan MQTT round trips still require scoped command routing and verification.
 
 ## Connection Management
 
-- `TelemetryPublisher` checks `MqttService.status == MqttConnectionStatus.connected` before publishing.
-- If MQTT is disconnected, telemetry is still written to Supabase (database is the primary store; MQTT is for real-time push).
-- The publisher does not create its own MQTT connection — it uses the shared `MqttService` singleton.
+- **Start with MQTT** creates a per-device native MQTT connection with a device API key and API secret. The application uses TLS by default.
+- MQTT mode reports connection state, skipped readings, and submissions. It does not switch to direct storage on disconnect.
+- **Start** uses direct storage under the signed-in user's virtual-device write policy.
+- The UI displays the latest stored reading separately from MQTT submission status. Match its message ID to the bridge receipt.
 
 ## Rate Limiting
 
-- The `SimulatorEngine` enforces a minimum interval of 1000ms between ticks.
-- The default interval is 5000ms (5 seconds).
-- At maximum speed (10x), the effective interval is `5000 / 10 = 500ms`, but clamped to 1000ms minimum.
-- This prevents flooding NanoMQ or Supabase with unbounded high-frequency messages.
+The simulator defaults to one tick every five seconds. Use the default speed for smoke tests. The Edge Function applies a per-device ingestion limit, so high simulation speeds or large profiles can hit that limit.
 
 ## Fault Effects on MQTT
 
@@ -74,7 +66,7 @@ Actuator commands for virtual devices use the standard `CommandRepository.sendCo
 | sensorFailure | The faulted sensor is excluded from readings |
 | outOfRange | The sensor publishes values outside normal bounds |
 | networkInterrupt | Simulates connectivity loss (no MQTT publish) |
-| commandTimeout | Commands received but no ack published |
+| commandTimeout | Requires a command transport to validate |
 
 ## NanoMQ Compatibility
 
@@ -83,6 +75,8 @@ Virtual device telemetry uses QoS 1 (`MqttQos.atLeastOnce`) for publishing, matc
 ## Security
 
 - Virtual devices do not expose privileged MQTT credentials in Flutter.
-- The `TelemetryPublisher` uses the app's existing MQTT connection, which authenticates through the standard device credential flow.
+- The disposable broker uses the fixture device credential and exact per-device ACL. It does not issue production credentials.
 - No service-role or admin credentials are used for virtual device MQTT operations.
-- Virtual device telemetry is subject to the same RLS policies as physical device telemetry.
+- Project members can read telemetry. Only project developers can directly insert virtual-device telemetry. Physical-device ingestion uses the Edge Function.
+
+See [local setup](LOCAL_DEVELOPMENT_SETUP.md) and [runtime evidence](test-results/VIRTUAL_IOT_E2E_TEST.md).

@@ -77,20 +77,25 @@ class VirtualDeviceController {
     return result.when(success: (device) => device, failure: (_) => null);
   }
 
-  void startSimulation({
+  Future<bool> startSimulation({
     required String deviceId,
     required String projectId,
     required String organizationId,
     required SimulationProfileType profileType,
     int? seed,
-  }) {
+    ({String username, String password})? credentials,
+  }) async {
     final profile = SimulationProfiles.forType(profileType);
-    _engine.startSimulation(deviceId: deviceId, profile: profile, seed: seed);
-    _publisher.startPublishing(
+    final ready = await _publisher.startPublishing(
       deviceId: deviceId,
       projectId: projectId,
       organizationId: organizationId,
+      credentials: credentials,
     );
+    if (ready) {
+      _engine.startSimulation(deviceId: deviceId, profile: profile, seed: seed);
+    }
+    return ready;
   }
 
   void pauseSimulation(String deviceId) {

@@ -1,0 +1,149 @@
+name: Continuation baseline
+
+on:
+  push:
+    branches: [codex/continuation-baseline]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  flutter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    defaults:
+      run:
+        working-directory: app
+        shell: bash
+    env:
+      CI: 'true'
+      FLUTTER_SUPPRESS_ANALYTICS: 'true'
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.47.5'
+          cache: true
+
+      - name: Record SDK versions and doctor output
+        run: |
+          mkdir -p "$RUNNER_TEMP/nexloza-baseline"
+          {
+            flutter --version
+            dart --version
+            flutter doctor -v
+          } 2>&1 | tee "$RUNNER_TEMP/nexloza-baseline/toolchain.log"
+
+      - name: Install locked dependencies
+        id: dependencies
+        if: ${{ !cancelled() }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/nexloza-baseline"
+          flutter pub get --enforce-lockfile 2>&1 | tee "$RUNNER_TEMP/nexloza-baseline/dependencies.log"
+
+      - name: Check Dart formatting
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: |
+          dart format .
+          if ! git diff --quiet -- '*.dart'; then
+            git diff -- '*.dart' > "$RUNNER_TEMP/nexloza-baseline/format.patch"
+            {
+              echo '### Dart formatting patch'
+              echo
+              echo '```diff'
+              cat "$RUNNER_TEMP/nexloza-baseline/format.patch"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+      - name: Analyze
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: |
+          log="$RUNNER_TEMP/nexloza-baseline/analyze.log"
+          if ! flutter analyze --no-pub 2>&1 | tee "$log"; then
+            {
+              echo '### Analyzer diagnostics'
+              echo
+              echo '```text'
+              tail -40 "$log"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+      - name: Run Flutter tests
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: |
+          test_status=0
+          log="$RUNNER_TEMP/nexloza-baseline/test.log"
+          flutter test --no-pub --reporter expanded 2>&1 | tee "$log" || test_status=$?
+          result=$(grep -E 'All tests passed|Some tests failed|No tests were found' "$log" | tail -1 || true)
+          if [[ -n "$result" ]]; then
+            printf '### Flutter test result\n\n%s\n' "$result" >> "$GITHUB_STEP_SUMMARY"
+            printf '::notice title=Flutter test result::%s\n' "$result"
+          fi
+          exit "$test_status"
+
+      - name: Build release web app
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: flutter build web --release --no-pub 2>&1 | tee "$RUNNER_TEMP/nexloza-baseline/web.log"
+
+      - name: Build debug APK
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: flutter build apk --debug --no-pub 2>&1 | tee "$RUNNER_TEMP/nexloza-baseline/android.log"
+
+      - name: Upload validation logs
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: continuation-baseline-logs
+          path: ${{ runner.temp }}/nexloza-baseline/
+          if-no-files-found: ignore
+
+  iot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: supabase/setup-cli@v1
+        with:
+          version: '2.39.2'
+
+      - name: Check scoped NanoMQ authentication and ACLs
+        run: |
+          python -m pip install --only-binary=:all: --require-hashes -r scripts/iot/requirements.txt
+          python scripts/iot/runtime.py broker-smoke
+
+      - name: Start disposable Supabase and apply migrations
+        run: |
+          supabase --workdir backend start -x studio,logflare,vector,storage-api,imgproxy,postgres-meta,edge-runtime >/dev/null
+          docker exec -i supabase_db_nexloza-iot-dev psql -v ON_ERROR_STOP=1 -U postgres < backend/supabase/tests/rls_integration_test.sql
+
+      - name: Verify MQTT worker through Edge ingestion and Supabase
+        run: |
+          export NEXLOZA_PUBLIC_KEY="$(supabase --workdir backend status -o json | jq -er '.ANON_KEY')"
+          python scripts/iot/runtime.py prepare
+          python scripts/iot/runtime.py broker
+          supabase --workdir backend functions serve --no-verify-jwt >"$RUNNER_TEMP/iot-functions.log" 2>&1 &
+          functions_pid=$!
+          python -u scripts/iot/runtime.py worker >"$RUNNER_TEMP/iot-worker.log" 2>&1 &
+          worker_pid=$!
+          trap 'kill "$worker_pid" "$functions_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..60}; do
+            status=$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:54321/functions/v1/telemetry-ingest || true)
+            if [[ "$status" == 401 ]] && grep -q 'Bridge subscribed' "$RUNNER_TEMP/iot-worker.log"; then break; fi
+            sleep 2
+          done
+          [[ "$status" == 401 ]] && grep -q 'Bridge subscribed' "$RUNNER_TEMP/iot-worker.log"
+          python scripts/iot/runtime.py e2e
