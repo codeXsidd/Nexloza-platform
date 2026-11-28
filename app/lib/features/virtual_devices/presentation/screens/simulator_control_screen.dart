@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../devices/presentation/providers/device_provider.dart';
 import '../../../devices/presentation/providers/telemetry_provider.dart';
+import '../../../projects/presentation/providers/project_provider.dart';
 import '../../data/simulator_engine.dart';
 import '../../data/telemetry_publisher.dart';
 import '../../domain/entities/simulation_profile.dart';
@@ -193,12 +195,24 @@ class _SimulatorControlScreenState
     if (_starting) return;
     setState(() => _starting = true);
     try {
+      final device = await ref.read(deviceDetailProvider(widget.deviceId).future);
+      if (!mounted) return;
+      final project = device == null
+          ? null
+          : await ref.read(projectDetailProvider(device.projectId).future);
+      if (!mounted) return;
+      if (project == null || device == null || !device.isVirtual) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cannot resolve the virtual device project')),
+        );
+        return;
+      }
       await ref
         .read(virtualDeviceControllerProvider)
         .startSimulation(
-          deviceId: widget.deviceId,
-          projectId: widget.projectId,
-          organizationId: widget.organizationId,
+          deviceId: device.id,
+          projectId: project.id,
+          organizationId: project.organizationId ?? 'default',
           profileType: SimulationProfileType.fromString(widget.profileType),
           credentials: credentials,
         );

@@ -143,7 +143,7 @@
 
 | Feature | Status | Detail |
 |---|---|---|
-| NanoMQ broker | NOT IMPLEMENTED | EMQX 5.8.3 only |
+| NanoMQ broker | SCOPED DEV BROKER VERIFIED | NanoMQ 0.22.6 authenticated publish/subscribe and exact-topic denial checks passed. |
 | Flutter MQTT service | IMPLEMENTED | mqtt_client, auto-reconnect |
 | Firmware MQTT | IMPLEMENTED | PubSubClient, LWT, heartbeat |
 | Topic structure | INCONSISTENT | Three-way mismatch |
@@ -202,3 +202,7 @@
 | NOT IMPLEMENTED | 62 |
 
 **Overall: ~55% of master prompt requirements implemented**
+
+### Live IoT verification
+
+See [virtual IoT test results](test-results/VIRTUAL_IOT_E2E_TEST.md) for broker, backend, emulator, and hardware coverage.

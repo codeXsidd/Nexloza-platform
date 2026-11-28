@@ -22,8 +22,20 @@ class TelemetryPublisher {
   final _status = StreamController<(String, String)>.broadcast();
   final _messages = <String, String>{};
   bool _disposed = false;
+  late final StreamSubscription<AuthState> _auth;
 
-  TelemetryPublisher(this._client, this._engine);
+  TelemetryPublisher(this._client, this._engine) {
+    var userId = _client.auth.currentUser?.id;
+    _auth = _client.auth.onAuthStateChange.listen((event) {
+      if (userId == event.session?.user.id) return;
+      userId = event.session?.user.id;
+      for (final id in {..._subscriptions.keys, ..._brokers.keys}) {
+        stopPublishing(id);
+        _engine.stopSimulation(id);
+      }
+      _messages.clear();
+    });
+  }
 
   Stream<String> watchDelivery(String deviceId) async* {
     yield _messages[deviceId] ?? 'Telemetry delivery is idle';
@@ -144,6 +156,7 @@ class TelemetryPublisher {
 
   void dispose() {
     _disposed = true;
+    unawaited(_auth.cancel());
     for (final deviceId in {..._subscriptions.keys, ..._brokers.keys}) {
       stopPublishing(deviceId);
     }

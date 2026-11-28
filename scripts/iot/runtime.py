@@ -83,6 +83,7 @@ def provision(public_key):
     user = owner["user"]["id"]
     org, project, device = [str(uuid4()) for _ in range(3)]
     key, secret = secrets.token_hex(16), secrets.token_hex(32)
+
     def insert(table, row):
         api(f"/rest/v1/{table}", public_key, row, token)
 
@@ -268,7 +269,8 @@ def e2e():
         if time.monotonic() >= deadline:
             raise RuntimeError("MQTT bridge did not persist the reading")
         time.sleep(1)
-    # Confirm the second request through the same idempotent Edge Function contract.
+    # Replaying through HTTP additionally exercises the shared ingest contract.
+    # The row above must already exist from the broker; HTTP cannot rescue it.
     forward(fixture, body.encode())
     result = rows(fixture, message_id)
     if (len(result) != 1 or result[0]["value_numeric"] != 23.875

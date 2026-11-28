@@ -66,7 +66,18 @@ jobs:
 
       - name: Analyze
         if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
-        run: flutter analyze --no-pub 2>&1 | tee "$RUNNER_TEMP/nexloza-baseline/analyze.log"
+        run: |
+          log="$RUNNER_TEMP/nexloza-baseline/analyze.log"
+          if ! flutter analyze --no-pub 2>&1 | tee "$log"; then
+            {
+              echo '### Analyzer diagnostics'
+              echo
+              echo '```text'
+              tail -40 "$log"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
 
       - name: Run Flutter tests
         if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
