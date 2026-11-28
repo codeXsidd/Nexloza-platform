@@ -115,8 +115,9 @@ class _SimulatorControlScreenState
               .watch(telemetryStreamProvider(widget.deviceId))
               .when(
                 data: (readings) {
-                  if (readings.isEmpty)
+                  if (readings.isEmpty) {
                     return const Text('No stored readings yet');
+                  }
                   final reading = readings.firstWhere(
                     (reading) => reading.sensorKey == 'temperature',
                     orElse: () => readings.first,

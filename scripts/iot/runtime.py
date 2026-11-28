@@ -253,8 +253,10 @@ def e2e():
     message_id = str(uuid4())
     timestamp = datetime.now(timezone.utc)
     body = json.dumps({"device_id": fixture["device"], "message_id": message_id,
-                       "readings": [{"key": "temperature", "value": 23.875,
-                                     "timestamp": timestamp.isoformat()}]})
+                       "readings": [
+                           {"key": key, "value": value, "timestamp": timestamp.isoformat()}
+                           for key, value in {"temperature": 23.875, "humidity": 61.25}.items()
+                       ]})
     client = connect(fixture["key"], fixture["secret"])
     client.loop_start()
     try:
@@ -276,10 +278,11 @@ def e2e():
     # The row above must already exist from the broker; HTTP cannot rescue it.
     forward(fixture, body.encode())
     result = rows(fixture, message_id)
-    if (len(result) != 1 or result[0]["value_numeric"] != 23.875
-            or result[0]["sensor_key"] != "temperature"
-            or datetime.fromisoformat(result[0]["recorded_at"]) != timestamp):
-        raise RuntimeError("Expected exactly one matching temperature row")
+    expected = {"temperature": 23.875, "humidity": 61.25}
+    values = {row["sensor_key"]: row["value_numeric"] for row in result}
+    if (len(result) != len(expected) or values != expected
+            or any(datetime.fromisoformat(row["recorded_at"]) != timestamp for row in result)):
+        raise RuntimeError("Expected exactly one matching row for each sensor")
     outsider = api("/auth/v1/signup", fixture["public_key"],
                    {"email": f"outsider-{uuid4().hex}@example.com",
                     "password": secrets.token_urlsafe(24)})["access_token"]
@@ -296,7 +299,7 @@ def e2e():
                 raise RuntimeError(f"Expected HTTP {expected}, got {error.code}") from None
         else:
             raise RuntimeError(f"Expected ingestion rejection HTTP {expected}")
-    print(f"PASS: one persisted temperature row, message {message_id}; outsider denied")
+    print(f"PASS: one persisted row per sensor, message {message_id}; outsider denied")
     print("PASS: invalid device secret and mismatched device identity rejected")
 
 
