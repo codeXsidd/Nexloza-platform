@@ -94,6 +94,7 @@ class DeviceMqttController {
     dispose();
     _mqtt.disconnect();
   }
+
   void dispose() {
     unawaited(_acknowledgements?.cancel());
     _acknowledgements = null;

@@ -76,13 +76,20 @@ class TelemetryPublisher {
       }
     }
     _subscriptions[deviceId] = _engine.stateStream
-        .where((state) =>
-            state.deviceId == deviceId && state.status == SimulatorStatus.running)
-        .listen((state) => unawaited(_publish(
+        .where(
+          (state) =>
+              state.deviceId == deviceId &&
+              state.status == SimulatorStatus.running,
+        )
+        .listen(
+          (state) => unawaited(
+            _publish(
               state,
               MqttConstants.telemetryTopic(organizationId, projectId, deviceId),
               broker,
-            )));
+            ),
+          ),
+        );
     return true;
   }
 
@@ -110,26 +117,38 @@ class TelemetryPublisher {
 
     try {
       if (broker != null) {
-        final accepted = broker.publish(topic, jsonEncode({
-          'device_id': deviceId,
-          'message_id': messageId,
-          'readings': readings,
-        }));
-        _report(deviceId, accepted
-            ? 'Submitted to MQTT · $messageId'
-            : 'MQTT disconnected · reading skipped');
-        return;
-      }
-      await _client.from('telemetry').upsert([
-        for (final reading in readings)
-          {
+        final accepted = broker.publish(
+          topic,
+          jsonEncode({
             'device_id': deviceId,
             'message_id': messageId,
-            'sensor_key': reading['key'],
-            'value_numeric': reading['value'],
-            'recorded_at': timestamp,
-          },
-      ], onConflict: 'device_id,message_id,sensor_key', ignoreDuplicates: true);
+            'readings': readings,
+          }),
+        );
+        _report(
+          deviceId,
+          accepted
+              ? 'Submitted to MQTT · $messageId'
+              : 'MQTT disconnected · reading skipped',
+        );
+        return;
+      }
+      await _client
+          .from('telemetry')
+          .upsert(
+            [
+              for (final reading in readings)
+                {
+                  'device_id': deviceId,
+                  'message_id': messageId,
+                  'sensor_key': reading['key'],
+                  'value_numeric': reading['value'],
+                  'recorded_at': timestamp,
+                },
+            ],
+            onConflict: 'device_id,message_id,sensor_key',
+            ignoreDuplicates: true,
+          );
       await _client
           .from('devices')
           .update({'last_seen_at': timestamp, 'is_online': true})
@@ -173,6 +192,8 @@ final telemetryPublisherProvider = Provider<TelemetryPublisher>((ref) {
   return publisher;
 });
 
-final simulatorDeliveryProvider = StreamProvider.autoDispose.family<String, String>(
-  (ref, deviceId) => ref.watch(telemetryPublisherProvider).watchDelivery(deviceId),
-);
+final simulatorDeliveryProvider = StreamProvider.autoDispose
+    .family<String, String>(
+      (ref, deviceId) =>
+          ref.watch(telemetryPublisherProvider).watchDelivery(deviceId),
+    );

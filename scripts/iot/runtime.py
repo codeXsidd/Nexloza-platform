@@ -123,14 +123,17 @@ def forward(fixture, payload):
     data = json.loads(payload)
     if data["device_id"] != fixture["device"] or not data.get("message_id"):
         raise ValueError("Device scope or message ID mismatch")
+    ingest(fixture["key"], fixture["secret"], payload)
+    return data["message_id"]
+
+
+def ingest(key, secret, payload):
     request = Request(GATEWAY + "/functions/v1/telemetry-ingest", payload, {
-        "Content-Type": "application/json", "x-api-key": fixture["key"],
-        "x-api-secret": fixture["secret"],
+        "Content-Type": "application/json", "x-api-key": key, "x-api-secret": secret,
     })
     with urlopen(request, timeout=10) as response:
         if not json.load(response).get("success"):
             raise RuntimeError("Ingest rejected reading")
-    return data["message_id"]
 
 
 def worker():
@@ -282,7 +285,19 @@ def e2e():
                     "password": secrets.token_urlsafe(24)})["access_token"]
     if rows(fixture, message_id, outsider):
         raise RuntimeError("Cross-project JWT unexpectedly read telemetry")
+    for secret, payload, expected in [
+        ("invalid", body.encode(), 401),
+        (fixture["secret"], body.replace(fixture["device"], str(uuid4())).encode(), 403),
+    ]:
+        try:
+            ingest(fixture["key"], secret, payload)
+        except HTTPError as error:
+            if error.code != expected:
+                raise RuntimeError(f"Expected HTTP {expected}, got {error.code}") from None
+        else:
+            raise RuntimeError(f"Expected ingestion rejection HTTP {expected}")
     print(f"PASS: one persisted temperature row, message {message_id}; outsider denied")
+    print("PASS: invalid device secret and mismatched device identity rejected")
 
 
 def main():

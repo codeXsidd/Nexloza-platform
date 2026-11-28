@@ -96,7 +96,8 @@ class _SimulatorControlScreenState
             ref.watch(simulatorDeliveryProvider(widget.deviceId)).valueOrNull ??
                 'Waiting for telemetry status',
           ),
-          if (status == SimulatorStatus.idle || status == SimulatorStatus.stopped)
+          if (status == SimulatorStatus.idle ||
+              status == SimulatorStatus.stopped)
             OutlinedButton(
               onPressed: _starting ? null : _startMqtt,
               child: const Text('Start with MQTT'),
@@ -110,22 +111,25 @@ class _SimulatorControlScreenState
             onStop: _onStop,
           ),
           const SizedBox(height: 16),
-          ref.watch(telemetryStreamProvider(widget.deviceId)).when(
-            data: (readings) {
-              if (readings.isEmpty) return const Text('No stored readings yet');
-              final reading = readings.firstWhere(
-                (reading) => reading.sensorKey == 'temperature',
-                orElse: () => readings.first,
-              );
-              return Text(
-                'Stored ${reading.sensorKey}: ${reading.displayValue}\n'
-                '${reading.recordedAt.toUtc().toIso8601String()}'
-                '${reading.messageId == null ? '' : '\n${reading.messageId}'}',
-              );
-            },
-            loading: () => const Text('Loading stored telemetry'),
-            error: (_, __) => const Text('Unable to read stored telemetry'),
-          ),
+          ref
+              .watch(telemetryStreamProvider(widget.deviceId))
+              .when(
+                data: (readings) {
+                  if (readings.isEmpty)
+                    return const Text('No stored readings yet');
+                  final reading = readings.firstWhere(
+                    (reading) => reading.sensorKey == 'temperature',
+                    orElse: () => readings.first,
+                  );
+                  return Text(
+                    'Stored ${reading.sensorKey}: ${reading.value}\n'
+                    '${reading.recordedAt.toUtc().toIso8601String()}'
+                    '${reading.messageId == null ? '' : '\n${reading.messageId}'}',
+                  );
+                },
+                loading: () => const Text('Loading stored telemetry'),
+                error: (_, __) => const Text('Unable to read stored telemetry'),
+              ),
           _SensorValuesCard(
             state: state,
             deviceId: widget.deviceId,
@@ -195,7 +199,9 @@ class _SimulatorControlScreenState
     if (_starting) return;
     setState(() => _starting = true);
     try {
-      final device = await ref.read(deviceDetailProvider(widget.deviceId).future);
+      final device = await ref.read(
+        deviceDetailProvider(widget.deviceId).future,
+      );
       if (!mounted) return;
       final project = device == null
           ? null
@@ -203,19 +209,21 @@ class _SimulatorControlScreenState
       if (!mounted) return;
       if (project == null || device == null || !device.isVirtual) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Cannot resolve the virtual device project')),
+          const SnackBar(
+            content: Text('Cannot resolve the virtual device project'),
+          ),
         );
         return;
       }
       await ref
-        .read(virtualDeviceControllerProvider)
-        .startSimulation(
-          deviceId: device.id,
-          projectId: project.id,
-          organizationId: project.organizationId ?? 'default',
-          profileType: SimulationProfileType.fromString(widget.profileType),
-          credentials: credentials,
-        );
+          .read(virtualDeviceControllerProvider)
+          .startSimulation(
+            deviceId: device.id,
+            projectId: project.id,
+            organizationId: project.organizationId ?? 'default',
+            profileType: SimulationProfileType.fromString(widget.profileType),
+            credentials: credentials,
+          );
     } finally {
       if (mounted) setState(() => _starting = false);
     }
