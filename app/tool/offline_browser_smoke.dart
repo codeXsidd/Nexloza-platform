@@ -1,8 +1,11 @@
+import 'dart:js_interop';
+
 import 'package:nexloza/core/storage/offline_database.dart';
 import 'package:web/web.dart' as web;
 
 Future<void> main() async {
   final body = web.document.body!;
+  String result;
   try {
     final original = await OfflineDatabase.open();
     try {
@@ -31,8 +34,12 @@ Future<void> main() async {
     } finally {
       await reopened.close();
     }
-    body.textContent = 'PASS: browser SQLite persistence and single writer';
+    result = 'PASS: browser SQLite persistence and single writer';
   } catch (error) {
-    body.textContent = 'FAIL: $error';
+    result = 'FAIL: $error';
   }
+  body.textContent = result;
+  await web.window
+      .fetch('/__sqlite_result?report=${Uri.encodeQueryComponent(result)}'.toJS)
+      .toDart;
 }

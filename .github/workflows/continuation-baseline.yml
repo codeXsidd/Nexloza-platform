@@ -97,24 +97,6 @@ jobs:
           fi
           exit "$test_status"
 
-      - name: Check browser SQLite persistence
-        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
-        run: |
-          browser_dir=$(mktemp -d)
-          cp web/sqlite3.wasm "$browser_dir/"
-          dart compile js tool/offline_browser_smoke.dart -o "$browser_dir/smoke.js"
-          printf '<!doctype html><body>Pending<script defer src="smoke.js"></script></body>\n' >"$browser_dir/index.html"
-          python3 -m http.server 8910 --bind 127.0.0.1 --directory "$browser_dir" >"$RUNNER_TEMP/nexloza-baseline/browser-server.log" 2>&1 &
-          server=$!
-          trap 'kill "$server" 2>/dev/null || true' EXIT
-          for retry in {1..20}; do
-            if curl -fsS http://127.0.0.1:8910/ >/dev/null; then break; fi
-            sleep 1
-          done
-          timeout 40s google-chrome --headless --no-sandbox --disable-gpu --virtual-time-budget=10000 \
-            --dump-dom http://127.0.0.1:8910/ 2>"$RUNNER_TEMP/nexloza-baseline/browser.log" | tee "$RUNNER_TEMP/nexloza-baseline/browser.html"
-          grep -q 'PASS: browser SQLite persistence and single writer' "$RUNNER_TEMP/nexloza-baseline/browser.html"
-
       - name: Build release web app
         if: ${{ !cancelled() && steps.analysis.outcome == 'success' }}
         run: flutter build web --release --no-pub 2>&1 | tee "$RUNNER_TEMP/nexloza-baseline/web.log"
@@ -130,6 +112,59 @@ jobs:
           name: continuation-baseline-logs
           path: ${{ runner.temp }}/nexloza-baseline/
           if-no-files-found: ignore
+
+  offline-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: app
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.47.5'
+          cache: true
+      - run: flutter pub get --enforce-lockfile
+      - name: Check browser SQLite persistence
+        run: |
+          browser_dir=$(mktemp -d)
+          cp web/sqlite3.wasm "$browser_dir/"
+          if ! dart compile js tool/offline_browser_smoke.dart -o "$browser_dir/smoke.js" 2>&1 | tee "$browser_dir/compile.log"; then
+            grep -E 'Error:' "$browser_dir/compile.log" | head -8 | while IFS= read -r line; do
+              printf '::error title=Browser SQLite compile::%s\n' "$line"
+            done || true
+            exit 1
+          fi
+          printf '<!doctype html><body>Pending<script defer src="smoke.js"></script></body>\n' >"$browser_dir/index.html"
+          python3 -m http.server 8910 --bind 127.0.0.1 --directory "$browser_dir" >"$browser_dir/server.log" 2>&1 &
+          server=$!
+          trap 'kill "$server" "${chrome:-}" 2>/dev/null || true' EXIT
+          for retry in {1..20}; do
+            if curl -fsS http://127.0.0.1:8910/ >/dev/null; then break; fi
+            sleep 1
+          done
+          google-chrome --headless --no-sandbox --disable-gpu --user-data-dir="$browser_dir/profile" \
+            http://127.0.0.1:8910/ >"$browser_dir/browser.log" 2>&1 &
+          chrome=$!
+          for retry in {1..30}; do
+            report=$(sed -n 's/.*GET \/__sqlite_result?report=\([^ ]*\) .*//p' "$browser_dir/server.log" | tail -1)
+            if [[ -n "$report" ]]; then
+              message=$(python3 -c 'import sys,urllib.parse; print(urllib.parse.unquote_plus(sys.argv[1]))' "$report")
+              if [[ "$message" == PASS:* ]]; then
+                printf '::notice title=Browser SQLite::%s\n' "$message"
+                exit 0
+              fi
+              printf '::error title=Browser SQLite::%s\n' "$message"
+              exit 1
+            fi
+            sleep 1
+          done
+          tail -20 "$browser_dir/browser.log"
+          echo '::error title=Browser SQLite::No persistence result received from Chrome'
+          exit 1
 
   iot:
     runs-on: ubuntu-latest
