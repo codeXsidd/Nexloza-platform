@@ -50,16 +50,17 @@ class _EditProjectScreenState extends ConsumerState<EditProjectScreen> {
 
     setState(() => _isLoading = true);
 
-    final success = await ref
-        .read(projectsProvider.notifier)
-        .updateProject(widget.projectId, {
-          'name': _nameController.text.trim(),
-          'description': _descriptionController.text.trim().isEmpty
-              ? null
-              : _descriptionController.text.trim(),
-          'category': _selectedCategory.toLowerCase().replaceAll(' ', '_'),
-          'is_active': _isActive,
-        });
+    final success = await ref.read(projectsProvider.notifier).updateProject(
+      widget.projectId,
+      {
+        'name': _nameController.text.trim(),
+        'description': _descriptionController.text.trim().isEmpty
+            ? null
+            : _descriptionController.text.trim(),
+        'category': _selectedCategory.toLowerCase().replaceAll(' ', '_'),
+        'is_active': _isActive,
+      },
+    );
 
     if (!mounted) return;
     setState(() => _isLoading = false);

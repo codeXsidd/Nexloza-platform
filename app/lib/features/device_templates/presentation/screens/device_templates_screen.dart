@@ -70,16 +70,14 @@ class DeviceTemplatesScreen extends ConsumerWidget {
             icon: Icons.router_outlined,
             name: 'Generic MQTT',
             platform: HardwarePlatform.genericMqtt,
-            description:
-                'Any device that can publish/subscribe via MQTT. Connect using standard MQTT 3.1.1 or 5.0.',
+            description: 'Any device that can publish/subscribe via MQTT. Connect using standard MQTT 3.1.1 or 5.0.',
             features: ['MQTT 3.1.1', 'MQTT 5.0', 'TLS', 'WebSocket'],
           ),
           _ProtocolCard(
             icon: Icons.http_outlined,
             name: 'HTTP REST',
             platform: HardwarePlatform.other,
-            description:
-                'Devices that communicate via HTTP REST API. Send telemetry and receive commands over HTTP.',
+            description: 'Devices that communicate via HTTP REST API. Send telemetry and receive commands over HTTP.',
             features: ['REST API', 'JSON', 'Bearer Auth', 'Webhooks'],
           ),
           AppSpacing.verticalLg,
@@ -89,16 +87,14 @@ class DeviceTemplatesScreen extends ConsumerWidget {
             icon: Icons.memory_outlined,
             name: 'Raspberry Pi',
             platform: HardwarePlatform.raspberryPi,
-            description:
-                'Full Linux SBC. Run NexIoza agent as a system service for rich IoT gateway use cases.',
+            description: 'Full Linux SBC. Run NexIoza agent as a system service for rich IoT gateway use cases.',
             features: ['Linux', 'GPIO', 'I2C', 'SPI', 'Wi-Fi', 'Bluetooth'],
           ),
           _ProtocolCard(
             icon: Icons.developer_board_outlined,
             name: 'Arduino',
             platform: HardwarePlatform.arduino,
-            description:
-                'Classic Arduino boards with Ethernet or Wi-Fi shields. Use the NexIoza Arduino SDK.',
+            description: 'Classic Arduino boards with Ethernet or Wi-Fi shields. Use the NexIoza Arduino SDK.',
             features: ['Serial', 'Ethernet', 'Wi-Fi Shield', 'MQTT'],
           ),
           AppSpacing.verticalXl,

@@ -97,8 +97,7 @@ class _DeviceDetailBody extends ConsumerWidget {
                   final confirmed = await showConfirmationDialog(
                     context,
                     title: 'Delete Device',
-                    message:
-                        'This will permanently delete this device and all its data.',
+                    message: 'This will permanently delete this device and all its data.',
                     isDestructive: true,
                   );
                   if (confirmed && context.mounted) {
@@ -910,9 +909,9 @@ class _CommandsTab extends ConsumerWidget {
               if (type.isEmpty) return;
               Map<String, dynamic> payload = {};
               try {
-                payload =
-                    jsonDecode(payloadController.text.trim())
-                        as Map<String, dynamic>;
+                payload = jsonDecode(
+                  payloadController.text.trim(),
+                ) as Map<String, dynamic>;
               } catch (_) {}
               ref
                   .read(commandRepositoryProvider)
