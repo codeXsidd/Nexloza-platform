@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../devices/presentation/providers/telemetry_provider.dart';
 import '../../data/simulator_engine.dart';
+import '../../data/telemetry_publisher.dart';
 import '../../domain/entities/simulation_profile.dart';
 import '../../domain/entities/simulator_state.dart';
 import '../providers/virtual_device_provider.dart';
@@ -29,6 +31,7 @@ class SimulatorControlScreen extends ConsumerStatefulWidget {
 class _SimulatorControlScreenState
     extends ConsumerState<SimulatorControlScreen> {
   final Map<FaultScenario, String?> _selectedFaultSensors = {};
+  bool _starting = false;
 
   @override
   Widget build(BuildContext context) {
@@ -87,6 +90,15 @@ class _SimulatorControlScreenState
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _StatusCard(status: status, state: state, theme: theme),
+          Text(
+            ref.watch(simulatorDeliveryProvider(widget.deviceId)).valueOrNull ??
+                'Waiting for telemetry status',
+          ),
+          if (status == SimulatorStatus.idle || status == SimulatorStatus.stopped)
+            OutlinedButton(
+              onPressed: _starting ? null : _startMqtt,
+              child: const Text('Start with MQTT'),
+            ),
           const SizedBox(height: 16),
           _ControlButtons(
             status: status,
@@ -96,6 +108,22 @@ class _SimulatorControlScreenState
             onStop: _onStop,
           ),
           const SizedBox(height: 16),
+          ref.watch(telemetryStreamProvider(widget.deviceId)).when(
+            data: (readings) {
+              if (readings.isEmpty) return const Text('No stored readings yet');
+              final reading = readings.firstWhere(
+                (reading) => reading.sensorKey == 'temperature',
+                orElse: () => readings.first,
+              );
+              return Text(
+                'Stored ${reading.sensorKey}: ${reading.displayValue}\n'
+                '${reading.recordedAt.toUtc().toIso8601String()}'
+                '${reading.messageId == null ? '' : '\n${reading.messageId}'}',
+              );
+            },
+            loading: () => const Text('Loading stored telemetry'),
+            error: (_, __) => const Text('Unable to read stored telemetry'),
+          ),
           _SensorValuesCard(
             state: state,
             deviceId: widget.deviceId,
@@ -117,15 +145,66 @@ class _SimulatorControlScreenState
     );
   }
 
-  void _onStart() {
-    ref
+  Future<void> _startMqtt() async {
+    var key = '';
+    var secret = '';
+    final credentials = await showDialog<({String username, String password})>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Device MQTT credentials'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              decoration: const InputDecoration(labelText: 'Device API key'),
+              onChanged: (value) => key = value.trim(),
+            ),
+            TextField(
+              decoration: const InputDecoration(labelText: 'Device API secret'),
+              obscureText: true,
+              autocorrect: false,
+              enableSuggestions: false,
+              onChanged: (value) => secret = value,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (key.isNotEmpty && secret.isNotEmpty) {
+                Navigator.pop(context, (username: key, password: secret));
+              }
+            },
+            child: const Text('Connect'),
+          ),
+        ],
+      ),
+    );
+    if (credentials != null && mounted) await _onStart(credentials);
+  }
+
+  Future<void> _onStart([
+    ({String username, String password})? credentials,
+  ]) async {
+    if (_starting) return;
+    setState(() => _starting = true);
+    try {
+      await ref
         .read(virtualDeviceControllerProvider)
         .startSimulation(
           deviceId: widget.deviceId,
           projectId: widget.projectId,
           organizationId: widget.organizationId,
           profileType: SimulationProfileType.fromString(widget.profileType),
+          credentials: credentials,
         );
+    } finally {
+      if (mounted) setState(() => _starting = false);
+    }
   }
 
   void _onPause() {

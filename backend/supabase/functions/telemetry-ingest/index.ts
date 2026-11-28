@@ -37,12 +37,13 @@ serve(async (req) => {
     // Authenticate device via API key + secret hash
     const { data: cred, error: credError } = await supabase
       .from("device_credentials")
-      .select("device_id, secret_hash, devices(id, project_id)")
+      .select("device_id, secret_hash, expires_at, devices(id, project_id)")
       .eq("api_key", apiKey)
       .eq("is_active", true)
       .single();
 
-    if (credError || !cred) {
+    if (credError || !cred ||
+      (cred.expires_at && Date.parse(cred.expires_at) <= Date.now())) {
       return new Response(
         JSON.stringify({ error: "Invalid device credentials" }),
         {
@@ -83,7 +84,16 @@ serve(async (req) => {
 
     // Parse and validate payload
     const body = await req.json();
-    const { readings } = body;
+    const { readings, message_id: messageId, device_id: suppliedDeviceId } = body;
+    if (suppliedDeviceId !== undefined && suppliedDeviceId !== deviceId) {
+      return Response.json({ error: "Device mismatch" }, { status: 403, headers: corsHeaders });
+    }
+    if (messageId !== undefined && (
+      typeof messageId !== "string" ||
+      !/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(messageId)
+    )) {
+      return Response.json({ error: "Invalid message_id" }, { status: 400, headers: corsHeaders });
+    }
 
     if (!readings || !Array.isArray(readings) || readings.length === 0) {
       return new Response(
@@ -108,11 +118,14 @@ serve(async (req) => {
     }
 
     // Check rate limit
-    const { data: withinLimit } = await supabase.rpc(
+    const { data: withinLimit, error: limitError } = await supabase.rpc(
       "check_telemetry_rate_limit",
       { p_device_id: deviceId }
     );
-    if (withinLimit === false) {
+    if (limitError || withinLimit == null) {
+      return Response.json({ error: "Rate limit check failed" }, { status: 503, headers: corsHeaders });
+    }
+    if (!withinLimit) {
       return new Response(
         JSON.stringify({ error: "Rate limit exceeded" }),
         {
@@ -125,12 +138,13 @@ serve(async (req) => {
     // Validate and build telemetry rows
     const telemetryRows = [];
     for (const r of readings) {
-      if (!r.key || typeof r.key !== "string") continue;
+      if (!r || !r.key || typeof r.key !== "string") continue;
       if (r.key.length > MAX_SENSOR_KEY_LENGTH) continue;
       if (r.value === undefined || r.value === null) continue;
 
       telemetryRows.push({
         device_id: deviceId,
+        message_id: messageId ?? null,
         sensor_key: r.key,
         value_numeric: typeof r.value === "number" ? r.value : null,
         value_text: typeof r.value === "string" ? r.value : null,
@@ -149,9 +163,13 @@ serve(async (req) => {
       );
     }
 
-    const { error: insertError } = await supabase
-      .from("telemetry")
-      .insert(telemetryRows);
+    const telemetry = supabase.from("telemetry");
+    const { error: insertError } = messageId
+      ? await telemetry.upsert(telemetryRows, {
+          onConflict: "device_id,message_id,sensor_key",
+          ignoreDuplicates: true,
+        })
+      : await telemetry.insert(telemetryRows);
 
     if (insertError) {
       return new Response(

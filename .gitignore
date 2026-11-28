@@ -140,3 +140,6 @@ logs/
 coverage/
 lcov.info
 .coverage
+
+# Disposable IoT runtime credentials
+.nexloza-iot/

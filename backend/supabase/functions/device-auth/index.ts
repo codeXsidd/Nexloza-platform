@@ -34,7 +34,8 @@ serve(async (req) => {
       .eq("is_active", true)
       .single();
 
-    if (error || !cred) {
+    if (error || !cred ||
+      (cred.expires_at && Date.parse(cred.expires_at) <= Date.now())) {
       return new Response(JSON.stringify({ error: "Invalid credentials" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

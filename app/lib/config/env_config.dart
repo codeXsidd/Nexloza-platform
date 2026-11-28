@@ -19,6 +19,11 @@ abstract final class EnvConfig {
     defaultValue: 1883,
   );
 
+  static const bool mqttTls = bool.fromEnvironment(
+    'MQTT_TLS',
+    defaultValue: true,
+  );
+
   static const String bedrockRegion = String.fromEnvironment(
     'BEDROCK_REGION',
     defaultValue: 'us-east-1',

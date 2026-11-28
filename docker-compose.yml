@@ -181,7 +181,7 @@ services:
     container_name: nexloza-inbucket
     restart: unless-stopped
     ports:
-      - "${INBUCKET_WEB_PORT:-54324}:9000"
+      - "${INBUCKET_WEB_PORT:-54328}:9000"
       - "${INBUCKET_SMTP_PORT:-2500}:2500"
       - "${INBUCKET_POP3_PORT:-1100}:1100"
 
@@ -204,7 +204,7 @@ services:
       NANOMQ_ADMIN_PASSWORD: ${NANOMQ_ADMIN_PASSWORD:-change_me_in_production}
       NANOMQ_APP_PASSWORD: ${NANOMQ_APP_PASSWORD:-change_me_in_production}
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:8081/api/v4"]
+      test: ["CMD", "bash", "-c", "true </dev/tcp/127.0.0.1/1883"]
       interval: 15s
       timeout: 5s
       retries: 5

@@ -44,12 +44,12 @@ begin
   raise notice '============================================================';
 
   -- --------------------------------------------------------
-  -- Insert test profiles (simulating auth.users trigger)
+  -- Insert Auth users so the actual profile trigger creates the profiles
   -- --------------------------------------------------------
-  insert into public.profiles (id, email, full_name) values
-    (v_user_a, 'alice@test.com', 'Alice Test'),
-    (v_user_b, 'bob@test.com', 'Bob Test'),
-    (v_user_c, 'carol@test.com', 'Carol Test')
+  insert into auth.users (id, email, raw_user_meta_data) values
+    (v_user_a, 'alice@test.com', '{"full_name":"Alice Test"}'),
+    (v_user_b, 'bob@test.com', '{"full_name":"Bob Test"}'),
+    (v_user_c, 'carol@test.com', '{"full_name":"Carol Test"}')
   on conflict (id) do nothing;
 
   -- --------------------------------------------------------
@@ -344,6 +344,40 @@ begin
     v_fail_count := v_fail_count + 1;
   end if;
 
+  -- Exercise policies with the actual authenticated role.
+  update public.devices set is_virtual = true where id = v_device_alpha;
+  perform set_config('request.jwt.claim.sub', v_user_a::text, true);
+  set local role authenticated;
+  insert into public.telemetry (device_id, sensor_key, value_numeric, message_id)
+    values (v_device_alpha, 'verified', 23.875, 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee');
+  insert into public.telemetry (device_id, sensor_key, value_numeric, message_id)
+    values (v_device_alpha, 'verified', 99, 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee')
+    on conflict (device_id, message_id, sensor_key) do nothing;
+  if (select count(*) from public.telemetry where device_id = v_device_alpha
+      and sensor_key = 'verified' and value_numeric = 23.875) <> 1 then
+    raise exception 'Identified telemetry did not persist exactly once';
+  end if;
+  perform set_config('request.jwt.claim.sub', v_user_b::text, true);
+  if exists (select 1 from public.telemetry where device_id = v_device_alpha) then
+    raise exception 'Cross-project user could read telemetry';
+  end if;
+  begin
+    insert into public.telemetry (device_id, sensor_key, value_numeric)
+      values (v_device_alpha, 'unauthorized', 1);
+    raise exception 'Cross-project user could write telemetry';
+  exception when insufficient_privilege then
+    null;
+  end;
+  begin
+    insert into public.telemetry (device_id, sensor_key, value_numeric)
+      values (v_device_beta, 'unauthorized', 1);
+    raise exception 'Authenticated user could write physical device telemetry';
+  exception when insufficient_privilege then
+    null;
+  end;
+  reset role;
+  raise notice 'PASS: authenticated isolation, virtual-only writes and replay deduplication';
+
   -- ============================================================
   -- Summary
   -- ============================================================
@@ -353,7 +387,7 @@ begin
   raise notice '============================================================';
 
   if v_fail_count > 0 then
-    raise notice 'SOME TESTS FAILED — review output above';
+    raise exception 'RLS integration suite failed';
   else
     raise notice 'ALL TESTS PASSED';
   end if;

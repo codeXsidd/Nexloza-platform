@@ -18,7 +18,7 @@ services:
       NANOMQ_APP_PASSWORD: ${NANOMQ_APP_PASSWORD:-change_me_in_production}
       NANOMQ_HTTP_PASSWORD: ${NANOMQ_HTTP_PASSWORD:-nanomq_admin}
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8081/api/v4"]
+      test: ["CMD", "bash", "-c", "true </dev/tcp/127.0.0.1/1883"]
       interval: 15s
       timeout: 5s
       retries: 5

@@ -2,6 +2,7 @@ class TelemetryReading {
   final int id;
   final String deviceId;
   final String sensorKey;
+  final String? messageId;
   final double? valueNumeric;
   final String? valueText;
   final Map<String, dynamic>? valueJson;
@@ -12,6 +13,7 @@ class TelemetryReading {
     required this.id,
     required this.deviceId,
     required this.sensorKey,
+    this.messageId,
     this.valueNumeric,
     this.valueText,
     this.valueJson,
@@ -24,6 +26,7 @@ class TelemetryReading {
       id: json['id'] as int,
       deviceId: json['device_id'] as String,
       sensorKey: json['sensor_key'] as String,
+      messageId: json['message_id'] as String?,
       valueNumeric: (json['value_numeric'] as num?)?.toDouble(),
       valueText: json['value_text'] as String?,
       valueJson: json['value_json'] as Map<String, dynamic>?,

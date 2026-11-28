@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +12,7 @@ import '../../domain/entities/device_command_entity.dart';
 class DeviceMqttController {
   final MqttService _mqtt;
   final CommandRepository _commands;
+  StreamSubscription<NexlozaMqttMessage>? _acknowledgements;
 
   DeviceMqttController(this._mqtt, this._commands);
 
@@ -20,16 +22,18 @@ class DeviceMqttController {
     required String organizationId,
     required String projectId,
     required String deviceId,
+    required String username,
+    required String password,
   }) async {
-    if (isConnected) {
-      _subscribeToDevice(organizationId, projectId, deviceId);
-      return true;
-    }
+    await _acknowledgements?.cancel();
 
     final connected = await _mqtt.connect(
       host: EnvConfig.mqttHost,
       port: EnvConfig.mqttPort,
       clientId: 'nexloza_app_$deviceId',
+      username: username,
+      password: password,
+      useTls: EnvConfig.mqttTls,
     );
 
     if (connected) {
@@ -52,7 +56,7 @@ class DeviceMqttController {
     String deviceId,
   ) {
     final ackTopic = MqttConstants.commandAckTopic(orgId, projectId, deviceId);
-    _mqtt.messageStream.listen((msg) {
+    _acknowledgements = _mqtt.messageStream.listen((msg) {
       if (msg.topic == ackTopic) {
         try {
           final data = jsonDecode(msg.payload) as Map<String, dynamic>;
@@ -87,12 +91,20 @@ class DeviceMqttController {
     _mqtt.unsubscribe(
       MqttConstants.stateTopic(organizationId, projectId, deviceId),
     );
+    dispose();
+    _mqtt.disconnect();
+  }
+  void dispose() {
+    unawaited(_acknowledgements?.cancel());
+    _acknowledgements = null;
   }
 }
 
 final deviceMqttControllerProvider = Provider<DeviceMqttController>((ref) {
-  return DeviceMqttController(
+  final controller = DeviceMqttController(
     ref.watch(mqttServiceProvider),
     ref.watch(commandRepositoryProvider),
   );
+  ref.onDispose(controller.dispose);
+  return controller;
 });
