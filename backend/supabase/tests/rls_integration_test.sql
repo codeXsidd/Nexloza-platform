@@ -34,6 +34,8 @@ declare
   v_proj_beta uuid;
   v_device_alpha uuid;
   v_device_beta uuid;
+  v_project_version timestamptz;
+  v_edit uuid := 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeed';
   v_test_count int := 0;
   v_pass_count int := 0;
   v_fail_count int := 0;
@@ -375,8 +377,35 @@ begin
   exception when insufficient_privilege then
     null;
   end;
+  begin
+    update public.device_commands set status = 'executed' where device_id = v_device_beta;
+    raise exception 'Authenticated user could forge command completion';
+  exception when insufficient_privilege then null;
+  end;
+  if public.apply_offline_project_edit(v_user_a, v_edit, v_proj_alpha, now(),
+        '{"name":"Unexpected edit"}') then
+    raise exception 'Another account replayed an offline edit';
+  end if;
+  perform set_config('request.jwt.claim.sub', v_user_a::text, true);
+  select updated_at into v_project_version from public.projects where id = v_proj_alpha;
+  if not public.apply_offline_project_edit(v_user_a, v_edit, v_proj_alpha,
+      v_project_version, '{"name":"Offline project edit"}') then
+    raise exception 'Authorized project replay rejected';
+  end if;
+  if not public.apply_offline_project_edit(v_user_a, v_edit, v_proj_alpha,
+      v_project_version, '{"name":"Offline project edit"}') then
+    raise exception 'Idempotent project replay rejected';
+  end if;
+  if public.apply_offline_project_edit(v_user_a, gen_random_uuid(), v_proj_alpha,
+      v_project_version - interval '1 second', '{"name":"Stale name"}') then
+    raise exception 'Stale offline project edit overwrote the newer version';
+  end if;
+  if (select name from public.projects where id = v_proj_alpha) <> 'Offline project edit' then
+    raise exception 'Authorized replay did not preserve the edited name';
+  end if;
   reset role;
   raise notice 'PASS: authenticated isolation, virtual-only writes and replay deduplication';
+  raise notice 'PASS: offline project account/version checks and command acknowledgement protection';
 
   -- ============================================================
   -- Summary

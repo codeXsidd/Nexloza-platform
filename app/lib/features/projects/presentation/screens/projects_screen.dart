@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/services/offline_sync_service.dart';
 import '../../../../routing/route_names.dart';
 import '../../../../shared/widgets/empty_state_widget.dart';
 import '../../../../shared/widgets/error_widget.dart';
@@ -26,9 +27,23 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
   @override
   Widget build(BuildContext context) {
     final projectsAsync = ref.watch(projectsProvider);
+    final sync = ref.watch(offlineStatusProvider).valueOrNull;
 
     return Scaffold(
-      appBar: AppBar(title: const Text(AppStrings.projects)),
+      appBar: AppBar(
+        title: const Text(AppStrings.projects),
+        bottom: sync == null || (sync.pending == 0 && sync.conflicts == 0)
+            ? null
+            : PreferredSize(
+                preferredSize: const Size.fromHeight(28),
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    '${sync.pending} queued · ${sync.conflicts} need review',
+                  ),
+                ),
+              ),
+      ),
       body: projectsAsync.when(
         loading: () => const LoadingIndicator(),
         error: (error, _) => AppErrorWidget(

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/services/offline_sync_service.dart';
 import '../../../devices/domain/entities/device_entity.dart';
 import '../../data/virtual_device_repository.dart';
 import '../../data/digital_twin_repository.dart';
@@ -15,6 +16,7 @@ final virtualDevicesProvider = FutureProvider.family<List<Device>, String>((
   ref,
   projectId,
 ) async {
+  ref.watch(offlineAccountProvider);
   final repo = ref.watch(virtualDeviceRepositoryProvider);
   final result = await repo.getVirtualDevices(projectId: projectId);
   return result.when(success: (devices) => devices, failure: (_) => []);
@@ -44,6 +46,7 @@ final digitalTwinProvider = FutureProvider.family<DigitalTwinState?, String>((
   ref,
   deviceId,
 ) async {
+  ref.watch(offlineAccountProvider);
   final repo = ref.watch(digitalTwinRepositoryProvider);
   final result = await repo.getState(deviceId);
   return result.when(success: (state) => state, failure: (_) => null);

@@ -1,11 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/services/offline_sync_service.dart';
 import '../../data/organization_repository.dart';
 import '../../domain/entities/organization_entity.dart';
 
 class OrganizationsNotifier extends AsyncNotifier<List<Organization>> {
   @override
   Future<List<Organization>> build() async {
+    ref.watch(offlineAccountProvider);
     final repo = ref.read(organizationRepositoryProvider);
     final result = await repo.getOrganizations();
     return result.when(
@@ -67,6 +69,7 @@ final organizationsProvider =
 
 final organizationDetailProvider = FutureProvider.family<Organization?, String>(
   (ref, id) async {
+    ref.watch(offlineAccountProvider);
     final repo = ref.read(organizationRepositoryProvider);
     final result = await repo.getOrganization(id);
     return result.when(success: (org) => org, failure: (_) => null);
@@ -77,6 +80,7 @@ final orgMembersProvider = FutureProvider.family<List<OrgMember>, String>((
   ref,
   orgId,
 ) async {
+  ref.watch(offlineAccountProvider);
   final repo = ref.read(organizationRepositoryProvider);
   final result = await repo.getMembers(orgId);
   return result.when(success: (members) => members, failure: (_) => []);
@@ -86,6 +90,7 @@ final currentUserOrgRoleProvider = FutureProvider.family<OrgRole?, String>((
   ref,
   orgId,
 ) async {
+  ref.watch(offlineAccountProvider);
   final repo = ref.read(organizationRepositoryProvider);
   final result = await repo.getCurrentUserRole(orgId);
   return result.when(success: (role) => role, failure: (_) => null);

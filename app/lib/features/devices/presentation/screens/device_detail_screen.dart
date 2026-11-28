@@ -61,6 +61,19 @@ class _DeviceDetailBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final mqttStatus = ref.watch(mqttStatusProvider);
+    ref.listen(commandStreamProvider(deviceId), (before, after) {
+      final earlier = before?.valueOrNull ?? const <DeviceCommand>[];
+      final current = after.valueOrNull ?? const <DeviceCommand>[];
+      if (current.any(
+        (command) =>
+            command.status == CommandStatus.executed &&
+            !earlier.any(
+              (old) => old.id == command.id && old.status == command.status,
+            ),
+      )) {
+        ref.invalidate(deviceActuatorsProvider(deviceId));
+      }
+    });
 
     return DefaultTabController(
       length: 4,
@@ -84,7 +97,8 @@ class _DeviceDetailBody extends ConsumerWidget {
                   final confirmed = await showConfirmationDialog(
                     context,
                     title: 'Delete Device',
-                    message: 'This will permanently delete this device and all its data.',
+                    message:
+                        'This will permanently delete this device and all its data.',
                     isDestructive: true,
                   );
                   if (confirmed && context.mounted) {
@@ -786,7 +800,7 @@ class _CommandsTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final commandsAsync = ref.watch(deviceCommandsProvider(deviceId));
+    final commandsAsync = ref.watch(commandStreamProvider(deviceId));
     final theme = Theme.of(context);
 
     return Column(
@@ -896,9 +910,9 @@ class _CommandsTab extends ConsumerWidget {
               if (type.isEmpty) return;
               Map<String, dynamic> payload = {};
               try {
-                payload = jsonDecode(
-                  payloadController.text.trim(),
-                ) as Map<String, dynamic>;
+                payload =
+                    jsonDecode(payloadController.text.trim())
+                        as Map<String, dynamic>;
               } catch (_) {}
               ref
                   .read(commandRepositoryProvider)

@@ -59,10 +59,10 @@ begin
     if not found or p_value is null or p_value not between
        coalesce(capability.min_value, 0) and coalesce(capability.max_value, 1)
        or (capability.control_type = 'toggle' and p_value not in (0, 1))
-       or p_value is distinct from case jsonb_typeof(command.payload->'value')
+       or p_value is distinct from (case jsonb_typeof(command.payload->'value')
          when 'boolean' then case when (command.payload->>'value')::boolean then 1 else 0 end
          when 'number' then (command.payload->>'value')::double precision
-         else null end
+         else null end)
     then return false; end if;
 
     reported := jsonb_build_object(command.command_type, p_value);

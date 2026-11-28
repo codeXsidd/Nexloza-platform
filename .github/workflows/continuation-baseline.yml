@@ -65,6 +65,7 @@ jobs:
           fi
 
       - name: Analyze
+        id: analysis
         if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
         run: |
           log="$RUNNER_TEMP/nexloza-baseline/analyze.log"
@@ -76,6 +77,9 @@ jobs:
               tail -40 "$log"
               echo '```'
             } >> "$GITHUB_STEP_SUMMARY"
+            grep -E ' • |Error:|warning:' "$log" | head -16 | while IFS= read -r line; do
+              printf '::warning title=Analyzer diagnostic::%s\n' "$line"
+            done || true
             exit 1
           fi
 
@@ -93,11 +97,11 @@ jobs:
           exit "$test_status"
 
       - name: Build release web app
-        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.analysis.outcome == 'success' }}
         run: flutter build web --release --no-pub 2>&1 | tee "$RUNNER_TEMP/nexloza-baseline/web.log"
 
       - name: Build debug APK
-        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.analysis.outcome == 'success' }}
         run: flutter build apk --debug --no-pub 2>&1 | tee "$RUNNER_TEMP/nexloza-baseline/android.log"
 
       - name: Upload validation logs
@@ -146,4 +150,9 @@ jobs:
             sleep 2
           done
           [[ "$status" == 401 ]] && grep -q 'Bridge subscribed' "$RUNNER_TEMP/iot-worker.log"
-          python scripts/iot/runtime.py e2e
+          result=0
+          python scripts/iot/runtime.py e2e 2>&1 | tee "$RUNNER_TEMP/iot-e2e.log" || result=$?
+          if [[ "$result" != 0 ]]; then
+            printf '::error title=IoT integration::%s\n' "$(tail -1 "$RUNNER_TEMP/iot-e2e.log")"
+          fi
+          exit "$result"

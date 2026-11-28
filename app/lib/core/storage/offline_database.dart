@@ -103,7 +103,7 @@ class OfflineDatabase {
           now - telemetryLifetime.inMilliseconds,
         ],
       );
-      if (encoded.length > maxSnapshotBytes) {
+      if (utf8.encode(encoded).length > maxSnapshotBytes) {
         _db.execute(
           'DELETE FROM snapshots WHERE account = ? AND kind = ? AND scope = ? '
           'AND query_key = ?',
@@ -155,9 +155,14 @@ class OfflineDatabase {
         DateTime.tryParse(expectedVersion) == null ||
         changes.isEmpty ||
         changes.entries.any(
-          (entry) =>
-              !const {'name', 'description', 'category'}.contains(entry.key) ||
-              (entry.value != null && entry.value is! String),
+          (entry) => entry.key == 'is_active'
+              ? entry.value is! bool
+              : !const {
+                      'name',
+                      'description',
+                      'category',
+                    }.contains(entry.key) ||
+                    (entry.value != null && entry.value is! String),
         )) {
       throw ArgumentError('Unsupported offline project edit');
     }
@@ -178,6 +183,25 @@ class OfflineDatabase {
       throw StateError('A project edit is already waiting to synchronize');
     }
     await _connection.flush();
+  }
+
+  Object? projectPreview(String account, Object? snapshot) {
+    final edits = {for (final row in pending(account)) row['project_id']: row};
+    Object? overlay(Object? value) {
+      if (value is! JsonMap) return value;
+      final edit = edits[value['id']];
+      final version = DateTime.tryParse(value['updated_at']?.toString() ?? '');
+      if (edit == null ||
+          version == null ||
+          version != DateTime.tryParse(edit['expected_version'] as String)) {
+        return value;
+      }
+      return {...value, ...jsonDecode(edit['body'] as String) as JsonMap};
+    }
+
+    return snapshot is List
+        ? snapshot.map(overlay).toList()
+        : overlay(snapshot);
   }
 
   List<Row> pending(String account) => _db.select(

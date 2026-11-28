@@ -50,25 +50,25 @@ class _EditProjectScreenState extends ConsumerState<EditProjectScreen> {
 
     setState(() => _isLoading = true);
 
-    final success = await ref.read(projectsProvider.notifier).updateProject(
-      widget.projectId,
-      {
-        'name': _nameController.text.trim(),
-        'description': _descriptionController.text.trim().isEmpty
-            ? null
-            : _descriptionController.text.trim(),
-        'category': _selectedCategory.toLowerCase().replaceAll(' ', '_'),
-        'is_active': _isActive,
-      },
-    );
+    final success = await ref
+        .read(projectsProvider.notifier)
+        .updateProject(widget.projectId, {
+          'name': _nameController.text.trim(),
+          'description': _descriptionController.text.trim().isEmpty
+              ? null
+              : _descriptionController.text.trim(),
+          'category': _selectedCategory.toLowerCase().replaceAll(' ', '_'),
+          'is_active': _isActive,
+        });
 
     if (!mounted) return;
     setState(() => _isLoading = false);
 
     if (success) {
       ref.invalidate(projectDetailProvider(widget.projectId));
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Project updated')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Project edit saved or queued')),
+      );
       context.pop();
     } else {
       ScaffoldMessenger.of(
