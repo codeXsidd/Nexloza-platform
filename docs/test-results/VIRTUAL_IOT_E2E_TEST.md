@@ -28,6 +28,7 @@ The hosted harness uses two Supabase users, organizations, projects and device c
 | Command lifecycle | Commands remained sent before acknowledgement. Duplicate requests reused the command ID and duplicate acknowledgements kept one result. Device rejection produced a failure. An unacknowledged command expired without a result. |
 | Authorization | Invalid device credentials and device IDs were rejected. Cross-project requests and a viewer issuing a command for a visible device were rejected. |
 | Availability | An interrupted MQTT connection triggered the retained offline Last Will. The test client automatically reconnected and returned to online. |
+| Regression | 886 Flutter tests passed. Locked dependencies, formatting, analysis, release web, debug APK, the browser SQLite smoke and all 23 disposable Supabase migrations passed. |
 | Flutter and physical devices | Windows `emulator-5554`, physical relay/LED/fan/servo hardware, and native runtime reconnect on the emulator are unrun. |
 
-[Hosted protocol evidence](https://github.com/codeXsidd/Nexloza-platform/actions/runs/46154220702)
+[Hosted protocol evidence](https://github.com/codeXsidd/Nexloza-platform/actions/runs/46155132303)
