@@ -29,7 +29,7 @@ Leave it open after `Bridge subscribed to the scoped telemetry topic`. In a thir
 .\scripts\iot\Test-Iot.ps1 -Action Install
 ```
 
-`Verify` sends an identified temperature batch twice and checks that the authenticated project owner sees exactly one matching database row and another authenticated user sees none. It also replays the batch via the Edge Function. `Install` builds with the public local API key, uses `10.0.2.2` for the Windows host, installs the debug APK on the existing emulator, and starts `com.nexloza.nexloza/.MainActivity`. The debug manifest permits cleartext HTTP to the emulator's host alias. Use this only with the local fixture. The broker is published on host loopback and uses per-fixture passwords and exact topic ACLs.
+`Verify` sends a batch containing temperature and humidity twice. It checks that the authenticated project owner sees exactly one matching row per sensor and another authenticated user sees none. It also replays the batch via the Edge Function. `Install` builds with the public local API key, uses `10.0.2.2` for the Windows host, installs the debug APK on the existing emulator, and starts `com.nexloza.nexloza/.MainActivity`. The debug manifest permits cleartext HTTP to the emulator's host alias. Use this only with the local fixture. The broker is published on host loopback and uses per-fixture passwords and exact topic ACLs.
 
 ## Sign in and match a simulator reading
 
