@@ -12,8 +12,7 @@ class TelemetryRepository {
 
   final OfflineSyncService? _offline;
 
-  TelemetryRepository(this._client, {OfflineSyncService? offline})
-    : _offline = offline;
+  TelemetryRepository(this._client, [this._offline]);
 
   Future<Result<List<TelemetryReading>>> getLatestReadings({
     required String deviceId,
@@ -130,6 +129,6 @@ class TelemetryRepository {
 final telemetryRepositoryProvider = Provider<TelemetryRepository>((ref) {
   return TelemetryRepository(
     ref.watch(supabaseClientProvider),
-    offline: ref.watch(offlineSyncProvider),
+    ref.watch(offlineSyncProvider),
   );
 });

@@ -105,8 +105,11 @@ def broker_env():
 
 def provision(public_key):
     if SESSION.exists():
-        print("Reusing existing disposable fixture")
-        return
+        if load().get("additional_devices"):
+            print("Reusing existing disposable fixture")
+            return
+        SESSION.replace(STATE / f"session-v1-{uuid4().hex[:8]}.json")
+        print("Archived the previous disposable fixture before adding command scopes")
     suffix = uuid4().hex[:12]
     email = f"iot-{suffix}@example.com"
     password = secrets.token_urlsafe(24)
@@ -406,6 +409,14 @@ def command_e2e(fixture):
     reject(400, lambda: send("unknown", 1))
     outsider = sign_in(other)
     reject(404, lambda: send("relay", True, owner=outsider))
+    viewer = api("/auth/v1/signup", public_key, {
+        "email": f"viewer-{uuid4().hex}@example.com",
+        "password": secrets.token_urlsafe(24),
+    })
+    api("/rest/v1/project_members", public_key, {
+        "project_id": fixture["project"], "user_id": viewer["user"]["id"], "role": "viewer",
+    }, token)
+    reject(403, lambda: send("relay", True, owner=viewer["access_token"]))
 
     client = connect(fixture["key"], fixture["secret"], will=channel(fixture, "status"))
     client.reconnect_delay_set(min_delay=4, max_delay=4)
@@ -550,7 +561,8 @@ def main():
     if action == "prepare":
         provision(os.environ["NEXLOZA_PUBLIC_KEY"])
     elif action == "broker":
-        subprocess.run([*COMPOSE, "up", "-d", "--wait"], env=broker_env(), check=True)
+        subprocess.run([*COMPOSE, "up", "-d", "--force-recreate", "--wait"],
+                       env=broker_env(), check=True)
         broker_check(load())
     elif action == "worker":
         worker()

@@ -11,6 +11,59 @@ import '../../shared/providers/supabase_provider.dart';
 import '../storage/offline_database.dart';
 import '../utils/logger.dart';
 
+/// Legacy operation JSON format. Unscoped legacy records are never replayed.
+class PendingOperation {
+  final String id;
+  final String table;
+  final String method;
+  final Map<String, dynamic> data;
+  final Map<String, dynamic>? filters;
+  final DateTime createdAt;
+  final int retryCount;
+
+  const PendingOperation({
+    required this.id,
+    required this.table,
+    required this.method,
+    required this.data,
+    this.filters,
+    required this.createdAt,
+    this.retryCount = 0,
+  });
+
+  factory PendingOperation.fromJson(Map<String, dynamic> json) {
+    return PendingOperation(
+      id: json['id'] as String,
+      table: json['table'] as String,
+      method: json['method'] as String,
+      data: json['data'] as Map<String, dynamic>,
+      filters: json['filters'] as Map<String, dynamic>?,
+      createdAt: DateTime.parse(json['created_at'] as String),
+      retryCount: json['retry_count'] as int? ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'table': table,
+    'method': method,
+    'data': data,
+    'filters': filters,
+    'created_at': createdAt.toIso8601String(),
+    'retry_count': retryCount,
+  };
+
+  PendingOperation incrementRetry() => PendingOperation(
+    id: id,
+    table: table,
+    method: method,
+    data: data,
+    filters: filters,
+    createdAt: createdAt,
+    retryCount: retryCount + 1,
+  );
+}
+
 class OfflineSyncService {
   final SupabaseClient _client;
   final Future<OfflineDatabase> Function() _open;

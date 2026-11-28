@@ -12,8 +12,7 @@ class DigitalTwinRepository {
 
   final OfflineSyncService? _offline;
 
-  DigitalTwinRepository(this._client, {OfflineSyncService? offline})
-    : _offline = offline;
+  DigitalTwinRepository(this._client, [this._offline]);
 
   Future<Result<DigitalTwinState>> getState(String deviceId) async {
     try {
@@ -185,6 +184,6 @@ class DigitalTwinRepository {
 final digitalTwinRepositoryProvider = Provider<DigitalTwinRepository>((ref) {
   return DigitalTwinRepository(
     ref.watch(supabaseClientProvider),
-    offline: ref.watch(offlineSyncProvider),
+    ref.watch(offlineSyncProvider),
   );
 });

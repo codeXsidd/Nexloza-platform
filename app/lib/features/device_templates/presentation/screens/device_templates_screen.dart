@@ -1,14 +1,50 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/services/offline_sync_service.dart';
 import '../../../../theme/app_spacing.dart';
 import '../../../device_studio/domain/board_definitions.dart';
 import '../../../devices/domain/entities/device_entity.dart';
 
-class DeviceTemplatesScreen extends StatelessWidget {
+final _templateSnapshotProvider = FutureProvider<void>((ref) async {
+  if (ref.watch(offlineAccountProvider) == null) return;
+  await ref
+      .watch(offlineSyncProvider)
+      .readThrough(
+        kind: 'device_templates',
+        scope: 'bundled',
+        query: 'catalog-v1',
+        load: () async => [
+          for (final board in Boards.all)
+            {
+              'id': board.id,
+              'name': board.name,
+              'description': board.description,
+              'features': board.features,
+              'platformio_board': board.platformioBoard,
+              'include_header': board.includeHeader,
+              'pins': [
+                for (final pin in board.gpioPins)
+                  {
+                    'number': pin.number,
+                    'label': pin.label,
+                    'analog': pin.isAnalog,
+                    'pwm': pin.isPwm,
+                    'i2c': pin.isI2c,
+                    'spi': pin.isSpi,
+                  },
+              ],
+            },
+        ],
+      );
+});
+
+class DeviceTemplatesScreen extends ConsumerWidget {
   const DeviceTemplatesScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(_templateSnapshotProvider);
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
 
@@ -34,14 +70,16 @@ class DeviceTemplatesScreen extends StatelessWidget {
             icon: Icons.router_outlined,
             name: 'Generic MQTT',
             platform: HardwarePlatform.genericMqtt,
-            description: 'Any device that can publish/subscribe via MQTT. Connect using standard MQTT 3.1.1 or 5.0.',
+            description:
+                'Any device that can publish/subscribe via MQTT. Connect using standard MQTT 3.1.1 or 5.0.',
             features: ['MQTT 3.1.1', 'MQTT 5.0', 'TLS', 'WebSocket'],
           ),
           _ProtocolCard(
             icon: Icons.http_outlined,
             name: 'HTTP REST',
             platform: HardwarePlatform.other,
-            description: 'Devices that communicate via HTTP REST API. Send telemetry and receive commands over HTTP.',
+            description:
+                'Devices that communicate via HTTP REST API. Send telemetry and receive commands over HTTP.',
             features: ['REST API', 'JSON', 'Bearer Auth', 'Webhooks'],
           ),
           AppSpacing.verticalLg,
@@ -51,14 +89,16 @@ class DeviceTemplatesScreen extends StatelessWidget {
             icon: Icons.memory_outlined,
             name: 'Raspberry Pi',
             platform: HardwarePlatform.raspberryPi,
-            description: 'Full Linux SBC. Run NexIoza agent as a system service for rich IoT gateway use cases.',
+            description:
+                'Full Linux SBC. Run NexIoza agent as a system service for rich IoT gateway use cases.',
             features: ['Linux', 'GPIO', 'I2C', 'SPI', 'Wi-Fi', 'Bluetooth'],
           ),
           _ProtocolCard(
             icon: Icons.developer_board_outlined,
             name: 'Arduino',
             platform: HardwarePlatform.arduino,
-            description: 'Classic Arduino boards with Ethernet or Wi-Fi shields. Use the NexIoza Arduino SDK.',
+            description:
+                'Classic Arduino boards with Ethernet or Wi-Fi shields. Use the NexIoza Arduino SDK.',
             features: ['Serial', 'Ethernet', 'Wi-Fi Shield', 'MQTT'],
           ),
           AppSpacing.verticalXl,

@@ -54,6 +54,7 @@ jobs:
           dart format .
           if ! git diff --quiet -- '*.dart'; then
             git diff -- '*.dart' > "$RUNNER_TEMP/nexloza-baseline/format.patch"
+            printf '::notice title=Formatting patch (base64)::%s\n' "$(base64 -w0 "$RUNNER_TEMP/nexloza-baseline/format.patch")"
             {
               echo '### Dart formatting patch'
               echo
@@ -154,5 +155,10 @@ jobs:
           python scripts/iot/runtime.py e2e 2>&1 | tee "$RUNNER_TEMP/iot-e2e.log" || result=$?
           if [[ "$result" != 0 ]]; then
             printf '::error title=IoT integration::%s\n' "$(tail -1 "$RUNNER_TEMP/iot-e2e.log")"
+          fi
+          if [[ "$result" == 0 ]]; then
+            grep '^PASS:' "$RUNNER_TEMP/iot-e2e.log" | while IFS= read -r line; do
+              printf '::notice title=IoT integration::%s\n' "$line"
+            done
           fi
           exit "$result"

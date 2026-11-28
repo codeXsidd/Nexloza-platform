@@ -12,8 +12,7 @@ class OrganizationRepository {
 
   final OfflineSyncService? _offline;
 
-  OrganizationRepository(this._client, {OfflineSyncService? offline})
-    : _offline = offline;
+  OrganizationRepository(this._client, [this._offline]);
 
   Future<Result<List<Organization>>> getOrganizations() async {
     try {
@@ -198,6 +197,6 @@ class OrganizationRepository {
 final organizationRepositoryProvider = Provider<OrganizationRepository>((ref) {
   return OrganizationRepository(
     ref.watch(supabaseClientProvider),
-    offline: ref.watch(offlineSyncProvider),
+    ref.watch(offlineSyncProvider),
   );
 });

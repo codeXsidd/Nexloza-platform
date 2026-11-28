@@ -12,8 +12,7 @@ class ActuatorRepository {
 
   final OfflineSyncService? _offline;
 
-  ActuatorRepository(this._client, {OfflineSyncService? offline})
-    : _offline = offline;
+  ActuatorRepository(this._client, [this._offline]);
 
   Future<Result<List<ActuatorDefinition>>> getActuators({
     required String deviceId,
@@ -112,6 +111,6 @@ class ActuatorRepository {
 final actuatorRepositoryProvider = Provider<ActuatorRepository>((ref) {
   return ActuatorRepository(
     ref.watch(supabaseClientProvider),
-    offline: ref.watch(offlineSyncProvider),
+    ref.watch(offlineSyncProvider),
   );
 });

@@ -12,8 +12,7 @@ class SensorRepository {
 
   final OfflineSyncService? _offline;
 
-  SensorRepository(this._client, {OfflineSyncService? offline})
-    : _offline = offline;
+  SensorRepository(this._client, [this._offline]);
 
   Future<Result<List<SensorDefinition>>> getSensors({
     required String deviceId,
@@ -140,6 +139,6 @@ class SensorRepository {
 final sensorRepositoryProvider = Provider<SensorRepository>((ref) {
   return SensorRepository(
     ref.watch(supabaseClientProvider),
-    offline: ref.watch(offlineSyncProvider),
+    ref.watch(offlineSyncProvider),
   );
 });

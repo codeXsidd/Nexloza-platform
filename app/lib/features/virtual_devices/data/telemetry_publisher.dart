@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:collection';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -90,7 +89,7 @@ class TelemetryPublisher {
         topic: statusTopic,
         payload: jsonEncode({'online': false}),
       );
-      final acknowledgements = LinkedHashMap<String, Map<String, dynamic>>();
+      final acknowledgements = <String, Map<String, dynamic>>{};
       _offlineMessages[deviceId] = offline;
       _commands[deviceId] = client.messageStream
           .where((m) => m.topic == commandTopic)

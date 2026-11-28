@@ -17,8 +17,7 @@ class DeviceRepository {
 
   final OfflineSyncService? _offline;
 
-  DeviceRepository(this._client, {OfflineSyncService? offline})
-    : _offline = offline;
+  DeviceRepository(this._client, [this._offline]);
 
   Future<Result<List<Device>>> getDevices({
     String? projectId,
@@ -221,6 +220,6 @@ class DeviceRepository {
 final deviceRepositoryProvider = Provider<DeviceRepository>((ref) {
   return DeviceRepository(
     ref.watch(supabaseClientProvider),
-    offline: ref.watch(offlineSyncProvider),
+    ref.watch(offlineSyncProvider),
   );
 });

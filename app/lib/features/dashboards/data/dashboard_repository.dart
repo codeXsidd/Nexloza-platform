@@ -15,8 +15,7 @@ class DashboardRepository {
 
   final OfflineSyncService? _offline;
 
-  DashboardRepository(this._client, {OfflineSyncService? offline})
-    : _offline = offline;
+  DashboardRepository(this._client, [this._offline]);
 
   Future<Result<List<Dashboard>>> getDashboards({String? projectId}) async {
     try {
@@ -346,6 +345,6 @@ class DashboardRepository {
 final dashboardRepositoryProvider = Provider<DashboardRepository>((ref) {
   return DashboardRepository(
     ref.watch(supabaseClientProvider),
-    offline: ref.watch(offlineSyncProvider),
+    ref.watch(offlineSyncProvider),
   );
 });

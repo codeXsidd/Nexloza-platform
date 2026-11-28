@@ -787,6 +787,24 @@ void main() {
       expect(engine.getState('dev-1')!.sensors['humidity']!.isEnabled, isTrue);
     });
 
+    test('remote actuator value is applied only while responsive', () {
+      engine.startSimulation(
+        deviceId: 'command',
+        profile: SimulationProfiles.smartHome,
+      );
+      expect(engine.applyActuatorValue('command', 'fan_speed', 60), 60);
+      engine.pauseSimulation('command');
+      expect(engine.applyActuatorValue('command', 'fan_speed', 80), isNull);
+      engine.resumeSimulation('command');
+      engine.enableFault(
+        'command',
+        'temperature',
+        FaultScenario.commandTimeout,
+      );
+      expect(engine.applyActuatorValue('command', 'fan_speed', 80), isNull);
+      expect(engine.applyActuatorValue('missing', 'fan_speed', 80), isNull);
+    });
+
     test('handleActuatorCommand stores value', () {
       engine.startSimulation(
         deviceId: 'dev-1',

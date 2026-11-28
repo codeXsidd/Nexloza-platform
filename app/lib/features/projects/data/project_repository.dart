@@ -12,8 +12,7 @@ class ProjectRepository {
 
   final OfflineSyncService? _offline;
 
-  ProjectRepository(this._client, {OfflineSyncService? offline})
-    : _offline = offline;
+  ProjectRepository(this._client, [this._offline]);
 
   Future<Result<List<Project>>> getProjects({
     int page = 0,
@@ -144,6 +143,6 @@ class ProjectRepository {
 final projectRepositoryProvider = Provider<ProjectRepository>((ref) {
   return ProjectRepository(
     ref.watch(supabaseClientProvider),
-    offline: ref.watch(offlineSyncProvider),
+    ref.watch(offlineSyncProvider),
   );
 });
