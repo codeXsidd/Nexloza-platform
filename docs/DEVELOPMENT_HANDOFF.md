@@ -127,3 +127,9 @@ flutter run -d emulator-5554 --no-pub --dart-define=SUPABASE_URL=http://10.0.2.2
 ## Live IoT continuation
 
 The [Windows IoT kit](LOCAL_DEVELOPMENT_SETUP.md) uses a disposable Supabase CLI stack and an authenticated, device-scoped NanoMQ broker. The simulator can use direct Supabase storage or MQTT through the local bridge, with one ingestion path per session. Current evidence is in the [runtime report](test-results/VIRTUAL_IOT_E2E_TEST.md) and [Android launch report](test-results/EMULATOR_LAUNCH_TEST.md). GitHub Actions passed the expanded 881-test suite, web and APK builds, Supabase migrations and RLS, and the scoped temperature/humidity broker-to-database replay test. The original handoff above describes the pre-IoT baseline. The next check is to use the Windows kit on `emulator-5554` and match a simulator-generated temperature reading between the Flutter UI, the bridge receipt, and Supabase. Production broker identity provisioning, command delivery, and physical devices need their own verification.
+
+## Advanced runtime and offline continuation
+
+The single offline controller now uses account-scoped SQLite snapshots, a durable project edit outbox, and transactional conflict records. Project replay uses an authenticated, version-checked RPC and an idempotency receipt. Read the [SQLite design](OFFLINE_SQLITE_ARCHITECTURE.md) for retention, browser storage, and the supported offline write scope.
+
+Virtual commands use a scoped broker bridge and a server-authorized outbox. Only an authenticated matching device acknowledgement can complete a command; the same transaction records its result and updates reported actuator/twin state. The disposable harness provisions two organizations and exercises the respective device scopes. See [runtime evidence](test-results/VIRTUAL_IOT_E2E_TEST.md) for what actually ran. The existing Windows emulator still needs the app runtime smoke check.

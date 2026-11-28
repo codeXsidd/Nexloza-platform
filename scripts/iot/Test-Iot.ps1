@@ -52,6 +52,7 @@ switch ($Action) {
         if ($status.API_URL -notmatch '^http://(127\.0\.0\.1|localhost):54321$') {
             throw 'Expected a disposable local Supabase API gateway on port 54321'
         }
+        Invoke-Checked supabase @('--workdir','backend','migration','up','--local')
         $env:NEXLOZA_PUBLIC_KEY = $status.ANON_KEY
         try {
             Invoke-RestMethod -Uri "$($status.API_URL)/auth/v1/health" -Headers @{apikey=$status.ANON_KEY} | Out-Null

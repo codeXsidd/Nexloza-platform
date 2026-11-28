@@ -95,15 +95,15 @@ nexloza/
 ```
 IoT Device
     |
-    | MQTT PUBLISH nexloza/{project_id}/{device_id}/telemetry/{sensor_key}
+    | MQTT PUBLISH nexloza/v1/{organization_id}/{project_id}/{device_id}/telemetry
     v
-EMQX Broker
+MQTT broker
     |
-    | Webhook / MQTT bridge
+    | Scoped MQTT bridge
     v
 Supabase Edge Function (telemetry-ingest)
     |
-    | Validates device JWT, parses payload
+    | Validates the device credential and parses the readings
     v
 PostgreSQL (telemetry table)
     |
@@ -121,22 +121,28 @@ Flutter App
     v
 PostgreSQL (device_commands table, status: pending)
     |
-    | Edge Function publishes to MQTT
+    | Scoped bridge dispatches pending commands
     v
-EMQX Broker
+NanoMQ broker (disposable test runtime)
     |
-    | MQTT DELIVER nexloza/{project_id}/{device_id}/commands
+    | MQTT DELIVER nexloza/v1/{organization_id}/{project_id}/{device_id}/command
     v
 IoT Device
     |
     | Executes command, publishes ACK
     v
-EMQX Broker --> Edge Function --> PostgreSQL (command_results)
+NanoMQ --> scoped bridge --> Edge Function --> PostgreSQL (command_results)
     |
     | Realtime notification
     v
 Flutter App (command status updated)
 ```
+
+For the disposable virtual-device runtime, the Edge Function queues a command under the caller's project permissions. A device-scoped bridge polls pending commands, publishes to the exact device topic and forwards acknowledgements. Postgres atomically records completion and reported state after a matching acknowledgement. The bridge also persists online/offline MQTT status, including the device's retained Last Will. See the [runtime test report](docs/test-results/VIRTUAL_IOT_E2E_TEST.md).
+
+### Offline persistence
+
+The app uses account-scoped SQLite snapshots and a transactional outbox for version-checked project edits. See the [SQLite architecture](docs/OFFLINE_SQLITE_ARCHITECTURE.md) for platform setup, retention, and replay semantics.
 
 ### Automation Execution
 

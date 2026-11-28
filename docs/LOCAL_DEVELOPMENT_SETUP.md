@@ -55,7 +55,7 @@ Click **Connect** after pasting, wait for a **Stored temperature** reading, and 
 .\scripts\iot\Test-Iot.ps1 -Action Logs
 ```
 
-The transport status **Submitted to MQTT** reports that the client handed a batch to the broker library. Use **Stored temperature** and the row query to verify persistence. The normal **Start** button uses the authenticated Supabase virtual-device policy directly. It does not publish over MQTT. The scoped fixture broker supports temperature-profile telemetry including humidity. Additional agriculture profiles require a separately provisioned fixture and scope. Command delivery and status last-will are not part of this telemetry-only ACL.
+The transport status **Submitted to MQTT** reports that the client handed a batch to the broker library. Use **Stored temperature** and the row query to verify persistence. The normal **Start** button uses the authenticated Supabase virtual-device policy directly. It does not publish over MQTT. The kit also provisions a separately scoped agriculture device for soil moisture. `Verify` exercises command acknowledgements, duplicate and invalid commands, reported state, timeout, offline Last Will and automatic reconnect before you launch the app. The Windows Flutter runtime smoke still requires your emulator.
 
 Stop the bridge and functions with Ctrl+C in their terminals, then run:
 
@@ -63,4 +63,4 @@ Stop the bridge and functions with Ctrl+C in their terminals, then run:
 .\scripts\iot\Test-Iot.ps1 -Action Stop
 ```
 
-The ignored `.nexloza-iot` directory holds the local fixture and credentials. Do not share it. The kit restricts directory access and uses the same fixture on restart. Only remove the directory after stopping the stack, and only when you intend to discard its credentials.
+The ignored `.nexloza-iot` directory holds the local fixture and credentials. Do not share it. The kit restricts directory access and uses the same fixture on restart. On the first setup after upgrading a telemetry-only fixture, it archives the former local session file and creates the new two-device fixture without resetting Supabase. Only remove the directory after stopping the stack, and only when you intend to discard its credentials.

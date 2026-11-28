@@ -15,3 +15,19 @@
 The simulator's direct Supabase mode and MQTT mode are mutually exclusive per run. Both write a message UUID alongside each sensor key. A database constraint protects that tuple against retries. Historic clients may still submit readings without message IDs.
 
 [Passing hosted run 46151429807](https://github.com/codeXsidd/Nexloza-platform/actions/runs/46151429807) validated the Flutter and backend changes at `481c820`. Its broker publisher was the integration harness. The Flutter UI matching check requires the Windows emulator.
+
+## Advanced virtual-device run
+
+The hosted harness uses two Supabase users, organizations, projects and device credentials with exact NanoMQ ACLs. The broker participant in this evidence is the Python test device.
+
+| Check | Observed result |
+| --- | --- |
+| Temperature, humidity and soil moisture | Values persisted in the intended account and device. Replayed temperature/humidity batches retained one row per sensor/message. Another account could not read the soil rows. |
+| Relay and LED | Both ON and OFF reached the command topic and produced a matching acknowledgement, result and reported value. |
+| Fan speed, brightness and servo angle | The test exercised fan 60, brightness 45 and servo 90 for registered capabilities. Each value matched the stored reported twin state. |
+| Command lifecycle | Commands remained sent before acknowledgement. Duplicate requests reused the command ID and duplicate acknowledgements kept one result. Device rejection produced a failure. An unacknowledged command expired without a result. |
+| Authorization | Invalid device credentials and device IDs were rejected. Cross-project requests and a viewer issuing a command for a visible device were rejected. |
+| Availability | An interrupted MQTT connection triggered the retained offline Last Will. The test client automatically reconnected and returned to online. |
+| Flutter and physical devices | Windows `emulator-5554`, physical relay/LED/fan/servo hardware, and native runtime reconnect on the emulator are unrun. |
+
+[Hosted protocol evidence](https://github.com/codeXsidd/Nexloza-platform/actions/runs/46154220702)
